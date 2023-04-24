@@ -15,11 +15,12 @@ contract MapleUNO is ERC4626 {
     IERC20 private immutable _asset;
     
 
-    /**@notice need to provide the asset that is used in this vault
+    /**@notice need to provide the asset that is used in this vault 
+      *@notice vault shares are an ERC20 called "Maple UNO", these represent a user's stablecoin stake into an UNO-RWA pool
       *@dev an example Maple USDC pool address: 0xd3cd37a7299B963bbc69592e5Ba933388f70dc88
       *@param asset_ the IERC contract you wish to use as the vault asset */
-    constructor(IERC20 asset_) ERC4626(asset_) ERC20("Maple UNO","mUNO") {
-      _asset = asset_;
+    constructor(address asset_) ERC4626(IERC20(asset_)) ERC20("Maple UNO","mUNO") {
+      _asset = IERC20(asset_);
     }
 
 
