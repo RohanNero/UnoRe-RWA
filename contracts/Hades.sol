@@ -22,8 +22,6 @@ contract Hades {
 
     address private immutable i_vault;
 
-    mapping(address => uint ) private _balances;
-
     event HadesDeposit(uint depositAmount, uint sharesReceived);
 
 
@@ -43,9 +41,6 @@ contract Hades {
         
         // USDC received
         i_usdc.transferFrom(msg.sender, address(this), amount);
-
-        // balance mapping updated
-        _balances[msg.sender] += amount;
 
         // approve USDC for Maple `transferFrom`
         i_usdc.approve(address(i_pool), amount);
@@ -70,5 +65,8 @@ contract Hades {
         // return sharesReceived
         return postBal - bal;
     }
+
+
+    // function leaveFromInPending()
 
 }
