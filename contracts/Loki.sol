@@ -17,6 +17,9 @@ contract Loki {
     /**@notice the MatrixUNO vault */
     address private immutable i_vault;
 
+    /**@notice STBT issuer that handles deposits and redemptions */
+    address private immutable i_issuer;
+
     event HadesDeposit(uint depositAmount, uint sharesReceived);
 
 
@@ -29,40 +32,25 @@ contract Loki {
         //i_vault = MapleUNO(vault);
         i_usdc = IERC20(usdc);
         i_vault = vault;
+        i_issuer = issuer;
     }
 
      /**@notice users use this function to deposit USDC in return for mUNO 
       *@dev must approve before this function can transferFrom */
       function enterPool(uint amount) public payable returns(uint sharesReceived) {
 
-        // // to ensure mUNO was sent to user we check the user's balance before deposit
-        // uint bal = IERC20(i_vault).balanceOf(msg.sender);
-        
-        // // USDC received
-        // i_usdc.transferFrom(msg.sender, address(this), amount);
+        // first accept stablecoin from user (must approve first)
+        i_usdc.transferFrom(msg.sender, addres(this), amount);
 
-        // // approve USDC for Maple `transferFrom`
-        // i_usdc.approve(address(i_pool), amount);
+        // deposit stablecoin into MatrixUNO vault
+        i_vault.deposit(amount, address(this));
 
-        // // deposit USDC with Maple LP and send Maple shares to this contract
-        // uint shares = i_pool.deposit(amount, address(this));
+        // then transfer stablecoin to STBT Issuer
+        i_usdc.transfer(i_issuer, amount);
 
-        // // deposit Maple LP tokens into MapleUNO vault
-        // IERC4626(i_vault).deposit(shares, msg.sender);
-
-        // // to ensure mUNO was sent to user we check the user's balance after deposit
-        // uint postBal = IERC20(i_vault).balanceOf(msg.sender);
-
-        // // revert if shares weren't received correctly
-        // if(bal >= postBal) {
-        //     revert Hades__SharesNotReceived();
-        // }
-
-        // // emit deposit with amount deposited and amount of shares sent to msg.sender
-        // emit HadesDeposit(amount, postBal - bal);
-
-        // // return sharesReceived
-        // return postBal - bal;
+        // from here we are waiting for the STBT to be received from the Issuer contract
+        // xUNO is earning yield from UNO by being held inside Loki pool but at the same time earning STBT yield since the user's 
+        // stablecoin investment was transferred for STBT with issuer. 
     }
 
 
