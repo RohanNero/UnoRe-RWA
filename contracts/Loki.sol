@@ -10,9 +10,30 @@ contract Loki {
     
     mapping(address => uint) public balances;
 
+
+    //MapleUNO private immutable i_vault;
+    IERC20 private immutable i_usdc;
+
+    /**@notice the MatrixUNO vault */
+    address private immutable i_vault;
+
+    event HadesDeposit(uint depositAmount, uint sharesReceived);
+
+
+    /**@notice this contract needs to interact with the MatrixUNO vault as well as the Matrixdock STBT contracts
+      *@param vault this is the MatrixUNO vault that stores STBT and issues xUNO
+      *@param usdc this is the USDC contract address
+      *@param issuer this is the Matrixdock Issuer that handles deposits and withdrawals
+       */
+    constructor(address vault, address usdc, address issuer) {
+        //i_vault = MapleUNO(vault);
+        i_usdc = IERC20(usdc);
+        i_vault = vault;
+    }
+
      /**@notice users use this function to deposit USDC in return for mUNO 
       *@dev must approve before this function can transferFrom */
-    function enterPool(uint amount) public payable returns(uint sharesReceived) {
+      function enterPool(uint amount) public payable returns(uint sharesReceived) {
 
         // // to ensure mUNO was sent to user we check the user's balance before deposit
         // uint bal = IERC20(i_vault).balanceOf(msg.sender);
