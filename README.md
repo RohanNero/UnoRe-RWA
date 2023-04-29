@@ -17,3 +17,4 @@ The `Hades` pool interacts with the Maple Finance RWA pools
 The `Loki` pool interacts with the Matrixdock RWA pool
 
 - [Matrixdock GitHub](https://github.com/Matrixdock-STBT/STBT-contracts)
+- [STBT/3CRV](https://curve.fi/#/ethereum/pools/factory-v2-279/deposit)
