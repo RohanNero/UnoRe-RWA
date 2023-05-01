@@ -2,6 +2,7 @@ require("@nomiclabs/hardhat-etherscan")
 require("hardhat-deploy")
 require("@nomicfoundation/hardhat-chai-matchers")
 require("@nomiclabs/hardhat-ethers")
+require("@nomiclabs/hardhat-vyper")
 require("dotenv").config()
 require("hardhat-contract-sizer")
 require("hardhat-gas-reporter")
@@ -19,6 +20,9 @@ const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
+  vyper: {
+    compilers: [{ version: "0.2.15" }, { version: "0.3.0" }],
+  },
   solidity: "0.8.7",
   namedAccounts: {
     deployer: 0,

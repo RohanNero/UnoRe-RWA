@@ -10,31 +10,21 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   const { deploy, log } = deployments
   const chainId = await getChainId()
   //log(chainId)
-  let asset
 
   if (developmentChains.includes(network.name)) {
-    asset
   } else {
   }
 
-  args = [
-    vrfCoordinatorAddress,
-    networkConfig[chainId]["keyHash"],
-    subscriptionId,
-    networkConfig[chainId]["callbackGaslimit"],
-  ]
-
-  mapleUNO = await deploy("MapleUNO", {
+  mapleUNO = await deploy("deposit", {
     from: deployer,
-    args: args,
     log: true,
     waitConfirmations: networkConfig[chainId].blockConfirmations,
   })
 
   if (!developmentChains.includes(network.name)) {
     log("Verifying contract...")
-    await verify(jury.address, args)
+    await verify(mapleUNO.address, args)
   }
 }
 
-module.exports.tags = ["all", "main", "uno"]
+module.exports.tags = ["all", "mock", "curve"]
