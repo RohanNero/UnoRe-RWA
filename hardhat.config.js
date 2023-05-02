@@ -33,6 +33,9 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337,
+      forking: {
+        url: "https://eth-mainnet.g.alchemy.com/v2/zxf4IHLd4vVOY3sSc3DqZZSp-hhPpcU9",
+      },
     },
     goerli: {
       chainId: 5,

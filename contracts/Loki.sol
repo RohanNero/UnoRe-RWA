@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
 /**@title UNO Loki staking pool
   *@author Rohan Nero
-  *@notice this contract stakes not only with UNO SSIP but with a Matrixdock RWA pool
-  *@dev interacts with the MatrixUNO ERC4626 vault */
+  *@notice this contract stakes with UNO, Curve, and Matrixdock
+  *@dev interacts with the MatrixUNO ERC4626 vault and Curve STBT/3CRV pool */
 contract Loki {
     
     mapping(address => uint) public balances;
