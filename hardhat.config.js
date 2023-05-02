@@ -32,7 +32,9 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 1337,
+      // blockGasLimit: 10000000000077000000,
+      // gas: 8000000000770000,
+      chainId: 31337,
       forking: {
         url: "https://eth-mainnet.g.alchemy.com/v2/zxf4IHLd4vVOY3sSc3DqZZSp-hhPpcU9",
       },

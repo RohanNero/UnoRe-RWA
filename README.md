@@ -18,3 +18,9 @@ The `Loki` pool interacts with the STBT/3CRV Curve pool
 
 - [Matrixdock GitHub](https://github.com/Matrixdock-STBT/STBT-contracts)
 - [STBT/3CRV](https://curve.fi/#/ethereum/pools/factory-v2-279/deposit)
+- [STBT/3CRV pool proxy](https://etherscan.io/address/0x892D701d94a43bDBCB5eA28891DaCA2Fa22A690b#code)
+- [STBT/3CRV pool implementation](https://etherscan.io/address/0x55aa9bf126bcabf0bdc17fa9e39ec9239e1ce7a9#code)
+- [STBT/3CRV LP token](https://etherscan.io/token/0x892d701d94a43bdbcb5ea28891daca2fa22a690b?a=0x4b6911e1ae9519640d417ace509b9928d2f8377b)
+- [Curve Gauge Proxy](https://etherscan.io/address/0x4b6911e1ae9519640d417ace509b9928d2f8377b#code)
+- [Curve Gauge Implementation](https://etherscan.io/address/0x5ae854b098727a9f1603a1e21c50d52dc834d846#code)
+- []()
