@@ -24,3 +24,9 @@ The `Loki` pool interacts with the STBT/3CRV Curve pool
 - [Curve Gauge Proxy](https://etherscan.io/address/0x4b6911e1ae9519640d417ace509b9928d2f8377b#code)
 - [Curve Gauge Implementation](https://etherscan.io/address/0x5ae854b098727a9f1603a1e21c50d52dc834d846#code)
 - []()
+
+### Current Developer Quickstart
+
+`yarn hardhat node --tags curve`
+
+`yarn hardhat test --network localhost`
