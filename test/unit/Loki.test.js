@@ -62,7 +62,7 @@ describe("Loki unit tests", function () {
   })
   describe("PRELIMINARY TESTS", function () {
     it("whale should have large USDC balance", async function () {
-      const bal = await usdc.balanceOf(whale.address)
+      const bal = await usdc.balanceOf(whale._address)
       //console.log(bal.toString())
       assert.isAbove(bal, 1000000000)
     })
@@ -77,17 +77,16 @@ describe("Loki unit tests", function () {
       const symbol = await lpToken.symbol()
       const bal = await lpToken.balanceOf(gauge.address, { gasLimit: 300000 })
       const balances = await lpToken.get_balances({ gasLimit: 300000 })
-      console.log(balances.toString())
-      //console.log(decimals.toString())
-      //console.log(bal.toString())
-      //console.log(name)
-      //console.log(symbol)
-      //console.log(bal.toString())
+      // console.log("balances:", balances.toString())
+      // console.log("decimals:", decimals.toString())
+      // console.log("gauge lpToken bal:", bal.toString())
+      // console.log("pool name:", name)
+      // console.log("pool symbol:", symbol)
       assert.equal(decimals.toString(), "18")
       assert.isAbove(bal, 1000000000)
     })
     it("should allow whale to swap USDC for 3CRV", async function () {
-      const oldbal = await threeCRV.balanceOf(whale.address, {
+      const oldbal = await threeCRV.balanceOf(whale._address, {
         gasLimit: 300000,
       })
       //console.log(whale)
@@ -97,7 +96,7 @@ describe("Loki unit tests", function () {
       await stableSwap.connect(whale).add_liquidity(amounts, 1000000, {
         gasLimit: 30000000,
       })
-      const newBal = await threeCRV.balanceOf(whale.address, {
+      const newBal = await threeCRV.balanceOf(whale._address, {
         gasLimit: 300000,
       })
       const calcAmount = await stableSwap.calc_token_amount(
@@ -122,16 +121,15 @@ describe("Loki unit tests", function () {
       //console.log(stableSwap)
       //console.log(threeCRV)
     })
-
-    it.only("should transfer LP tokens to whale after 3CRV deposit", async function () {
+    it("should transfer LP tokens to whale after 3CRV deposit", async function () {
       const usdcBal = await usdc.balanceOf(whale._address)
       const crvAllowance = await threeCRV.allowance(
         whale._address,
         lpToken.address
       )
-      console.log("old 3CRV allowance:", crvAllowance.toString())
-      console.log("whale USDC balance:", usdcBal.toString())
-      console.log("whale address:", whale._address)
+      // console.log("old 3CRV allowance:", crvAllowance.toString())
+      // console.log("whale USDC balance:", usdcBal.toString())
+      // console.log("whale address:", whale._address)
       //console.log(lpToken.functions)
       const oldLpBal = await lpToken.balanceOf(whale._address, {
         gasLimit: 300000,
@@ -172,12 +170,13 @@ describe("Loki unit tests", function () {
         whale._address,
         lpToken.address
       )
-      console.log("new 3CRV allownace:", newCrvAllowance.toString())
-      console.log("lpToken address:", lpToken.address)
-      console.log("old 3CRV balance:", oldCrvBal.toString())
-      console.log("new 3CRV balance:", newCrvBal.toString())
-      console.log("old LP token balance:", oldLpBal.toString())
-      console.log("new LP token balance:", newLpBal.toString())
+      // console.log("new 3CRV allownace:", newCrvAllowance.toString())
+      // console.log("lpToken address:", lpToken.address)
+      // console.log("old 3CRV balance:", oldCrvBal.toString())
+      // console.log("new 3CRV balance:", newCrvBal.toString())
+      // console.log("old LP token balance:", oldLpBal.toString())
+      // console.log("new LP token balance:", newLpBal.toString())
+      assert.isAbove(newLpBal, oldLpBal)
     })
   })
   describe("enterPool", function () {})
