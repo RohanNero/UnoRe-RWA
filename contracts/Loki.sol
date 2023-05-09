@@ -56,5 +56,7 @@ contract Loki {
         // stablecoin investment was transferred for STBT with issuer. 
     }
 
+    
+
 
 }
