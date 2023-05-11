@@ -18,7 +18,7 @@
 2. create Loki contract logic that follows preliminary tests flow
 3. calculate exact yield
 4. create redemption and withdrawal flows
-5. create withdrawal tests to follow preiliminary deposit test flow
+5. create withdrawal tests to follow preliminary deposit test flow
 
 ### EXTRA
 
