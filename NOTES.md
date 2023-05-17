@@ -25,9 +25,9 @@
 #### Preliminary steps
 
 1. UNO mints $200,000 worth of STBT
-2. UNO deposits STBT into STBT/3CRV pool
-3. UNO deposits STBT/3CRV LP token into Liquidity Gauge
-4. UNO does X, Y, or Z with the CRV
+2. UNO receives STBT
+3. UNO deposits STBT with MatrixUno vault
+4. UNO holds xUNO
 
 #### User flow
 
@@ -38,5 +38,4 @@ User may
 
 1. user deposits stablecoin into Loki pool
 2. user receieves xUNO
-   Optional
-3. user stakes xUNO
+3. Optional: user stakes xUNO
