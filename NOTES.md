@@ -43,3 +43,19 @@ User may
 1. user deposits stablecoin into Loki pool
 2. user receieves xUNO
 3. Optional: user stakes xUNO
+
+### Matrix Uno Revised testing
+
+1. Will need to find STBT whale to begin testing
+2. Next will deposit STBT into MatrixUno vault
+3. ensure that xUNO is handled correctly (minted and then held by vault)
+4. then test user calling `stake` (sending stablecoins for xUNO in return)
+5. once users have xUNO we will need to test staking xUNO with Loki pool
+
+Once users have staked xUNO we have finished the deposit/staking flow.
+
+1. user will need to leave from SSIP
+2. once user has xUNO, they need to call `claim` on the MatrixUno vault
+3. after calling claim, xUNO is sent to the vault and now the vault needs to send STBT to the STBT/3CRV pool to exchange it for 3CRV
+4. after getting the 3CRV, the vault needs to exchange 3CRV for a stablecoin
+5. once the vault gets the stablecoin it can be sent, along with the initial deposit, to the user
