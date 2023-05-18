@@ -4,7 +4,7 @@ pragma solidity 0.8.7;
 
 //import "./vaults/MapleUNO.sol";
 //import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./Maple/interfaces/IPool.sol";
+import "../Maple/interfaces/IPool.sol";
 
 error Hades__DepositTooLow(uint msgvalue);
 error Hades__SharesNotReceived();

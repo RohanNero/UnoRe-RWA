@@ -23,6 +23,20 @@ contract MapleUNO is ERC4626 {
     }
 
 
+    // need function to stake stablecoins and function to return/withdrawal stablecoins
+
+    /**@notice this function allows users to stake stablecoins for xUNO
+      *@dev this contract holds the stablecoins and transfers xUNO from its balance
+      *@param amount - the amount of stablecoin to deposit
+      *@param token - the stablecoin to deposit (DAI = 0, USDC = 1, USDT = 2) 
+    */
+    function stake(uint amount, uint token) public payable returns(uint shares) {
+    }
+
+
+    function claim() public returns(uint claimed) {
+
+    }
 
   
 }
