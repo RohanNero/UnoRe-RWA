@@ -6,6 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error MatrixUno__ZeroAmountGiven();
+/**@param tokenId - corresponds to the `stables` indices */
+error MatrixUno__InvalidTokenId(uint tokenId);
+/**@param vaultBalance - the amount of shares the vault currently has
+   @param transferAmount - the amount of shares that would be transferred to the user */
+error MatrixUno__NotEnoughShares(uint vaultBalance, uint transferAmount);
 
 /**@title MatrixUno
   *@author Rohan Nero
@@ -51,8 +56,24 @@ contract MatrixUno is ERC4626 {
       if(amount == 0) {
         revert MatrixUno__ZeroAmountGiven();
       }
+      if(token > 2) {
+        revert MatrixUno__InvalidTokenId(token);
+      }
       IERC20(stables[token]).transferFrom(msg.sender, address(this), amount);
       balances[msg.sender][token] += amount;
+      /**@notice Transfer xUNO from the vault to the user
+         @dev Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
+         DAI = 18 decimals, USDT/USDC = 6 decimals
+         100 DAI  = 100000000000000000000
+         100 USDC = 100000000 */
+      uint transferAmount = amount;
+      if(token > 0) {
+        transferAmount = transferAmount * 10 ** 12;
+      }
+      if(this.balanceOf(address(this)) < transferAmount) {
+        revert MatrixUno__NotEnoughShares(this.balanceOf(address(this)), transferAmount);
+      }
+      this.transfer(msg.sender, transferAmount);
     }
 
     
