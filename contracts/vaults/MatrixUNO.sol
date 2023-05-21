@@ -53,26 +53,34 @@ contract MatrixUno is ERC4626 {
       *@param token - the stablecoin to deposit (DAI = 0, USDC = 1, USDT = 2) 
     */
     function stake(uint amount, uint token) public returns(uint shares) {
+      /**@notice all the logic checks come before actually moving the tokens */
       if(amount == 0) {
         revert MatrixUno__ZeroAmountGiven();
       }
       if(token > 2) {
         revert MatrixUno__InvalidTokenId(token);
       }
-      IERC20(stables[token]).transferFrom(msg.sender, address(this), amount);
-      balances[msg.sender][token] += amount;
       /**@notice Transfer xUNO from the vault to the user
          @dev Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
          DAI = 18 decimals, USDT/USDC = 6 decimals
          100 DAI  = 100000000000000000000
          100 USDC = 100000000 */
-      uint transferAmount = amount;
+      uint transferAmount;
       if(token > 0) {
         transferAmount = transferAmount * 10 ** 12;
+      } else {
+        transferAmount = amount;
       }
+      /**@notice if there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
+      uint transferFromAmount;
       if(this.balanceOf(address(this)) < transferAmount) {
-        revert MatrixUno__NotEnoughShares(this.balanceOf(address(this)), transferAmount);
+        transferFromAmount = this.balanceOf(address(this));
+      } else {
+        transferFromAmount = amount; 
       }
+      /**@notice actually moving the tokens and updating balance */
+      IERC20(stables[token]).transferFrom(msg.sender, address(this), transferFromAmount);
+      balances[msg.sender][token] += amount;
       this.transfer(msg.sender, transferAmount);
     }
 

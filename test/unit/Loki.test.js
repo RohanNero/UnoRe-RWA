@@ -72,188 +72,189 @@ describe("Loki unit tests", function () {
     //matrixUNO = await ethers.getContract("MatrixUNO")
     //loki = await ethers.getContract("Loki")
   })
+  /* This describe flow has been depreciated and replaced with a revised version */
   /* MUST BE ON MAININET FORK TO TEST THIS DESCRIBE */
-  describe("PRELIMINARY TESTS |-- DEPOSITING STABLECOIN --> 3CRV --> STBT/3CRV LP Token --> CRV |", function () {
-    it("whale should have large USDC balance", async function () {
-      const bal = await usdc.balanceOf(whale._address)
-      //console.log("whale USDC bal:", bal.toString())
-      assert.isAbove(bal, 1000000000)
-    })
-    it("first hardhat account should have zero USDC", async function () {
-      const bal = await usdc.balanceOf(deployer.address)
-      //console.log("deployer USDC bal:", bal.toString())
-      assert.equal(bal.toString(), "0")
-    })
-    it("gauge should hold big portion of LP tokens", async function () {
-      const bal = await lpToken.balanceOf(gauge.address, { gasLimit: 300000 })
-      // console.log("gauge lpToken bal:", bal.toString())
-      assert.isAbove(bal, 1000000000)
-    })
-    it("STBT/3CRV pool should return expected values", async function () {
-      const decimals = await lpToken.decimals({ gasLimit: 300000 })
-      const name = await lpToken.name()
-      const symbol = await lpToken.symbol()
-      const balances = await lpToken.get_balances({ gasLimit: 300000 })
-      // console.log("balances:", balances.toString())
-      // console.log("decimals:", decimals.toString())
-      // console.log("pool name:", name)
-      // console.log("pool symbol:", symbol)
-      assert.equal(decimals.toString(), "18")
-    })
-    it("whale should be able to swap USDC for 3CRV", async function () {
-      // Deposit USDC for 3CRV
-      const usdcBal = await usdc.balanceOf(whale._address)
-      const usdcAllowance = await usdc.allowance(
-        whale._address,
-        lpToken.address
-      )
-      const old3CrvBal = await threeCRV.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
+  // describe("PRELIMINARY TESTS |-- DEPOSITING STABLECOIN --> 3CRV --> STBT/3CRV LP Token --> CRV |", function () {
+  //   it("whale should have large USDC balance", async function () {
+  //     const bal = await usdc.balanceOf(whale._address)
+  //     //console.log("whale USDC bal:", bal.toString())
+  //     assert.isAbove(bal, 1000000000)
+  //   })
+  //   it("first hardhat account should have zero USDC", async function () {
+  //     const bal = await usdc.balanceOf(deployer.address)
+  //     //console.log("deployer USDC bal:", bal.toString())
+  //     assert.equal(bal.toString(), "0")
+  //   })
+  //   it("gauge should hold big portion of LP tokens", async function () {
+  //     const bal = await lpToken.balanceOf(gauge.address, { gasLimit: 300000 })
+  //     // console.log("gauge lpToken bal:", bal.toString())
+  //     assert.isAbove(bal, 1000000000)
+  //   })
+  //   it("STBT/3CRV pool should return expected values", async function () {
+  //     const decimals = await lpToken.decimals({ gasLimit: 300000 })
+  //     const name = await lpToken.name()
+  //     const symbol = await lpToken.symbol()
+  //     const balances = await lpToken.get_balances({ gasLimit: 300000 })
+  //     // console.log("balances:", balances.toString())
+  //     // console.log("decimals:", decimals.toString())
+  //     // console.log("pool name:", name)
+  //     // console.log("pool symbol:", symbol)
+  //     assert.equal(decimals.toString(), "18")
+  //   })
+  //   it("whale should be able to swap USDC for 3CRV", async function () {
+  //     // Deposit USDC for 3CRV
+  //     const usdcBal = await usdc.balanceOf(whale._address)
+  //     const usdcAllowance = await usdc.allowance(
+  //       whale._address,
+  //       lpToken.address
+  //     )
+  //     const old3CrvBal = await threeCRV.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
 
-      const usdcAmount = Math.floor(usdcBal / 10000)
-      const crvAmounts = [0, usdcAmount.toString(), 0]
+  //     const usdcAmount = Math.floor(usdcBal / 10000)
+  //     const crvAmounts = [0, usdcAmount.toString(), 0]
 
-      // console.log("whale USDC balance:", usdcBal.toString())
-      // console.log("whale address:", whale._address)
-      // console.log("old 3CRV balance:", old3CrvBal.toString())
+  //     // console.log("whale USDC balance:", usdcBal.toString())
+  //     // console.log("whale address:", whale._address)
+  //     // console.log("old 3CRV balance:", old3CrvBal.toString())
 
-      // console.log("usdc to be deposited:", usdcAmount.toString())
-      if (usdcAllowance < usdcAmount) {
-        await usdc
-          .connect(whale)
-          .approve(stableSwap.address, usdcAmount - usdcAllowance, {
-            gasLimit: 300000,
-          })
-      }
-      //console.log("USDC allowance:", usdcAllowance.toString())
+  //     // console.log("usdc to be deposited:", usdcAmount.toString())
+  //     if (usdcAllowance < usdcAmount) {
+  //       await usdc
+  //         .connect(whale)
+  //         .approve(stableSwap.address, usdcAmount - usdcAllowance, {
+  //           gasLimit: 300000,
+  //         })
+  //     }
+  //     //console.log("USDC allowance:", usdcAllowance.toString())
 
-      await stableSwap.connect(whale).add_liquidity(crvAmounts, 1000000, {
-        gasLimit: 30000000,
-      })
-      console.log(usdcAmount.toString(), "USDC Deposited!")
+  //     await stableSwap.connect(whale).add_liquidity(crvAmounts, 1000000, {
+  //       gasLimit: 30000000,
+  //     })
+  //     console.log(usdcAmount.toString(), "USDC Deposited!")
 
-      const new3CrvBal = await threeCRV.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
-      //console.log("new 3CRV balance:", new3CrvBal.toString())
-    })
-    it("whale should be able to swap 3CRV for LP tokens", async function () {
-      const new3CrvBal = await threeCRV.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
-      const crvAllowance = await threeCRV.allowance(
-        whale._address,
-        lpToken.address
-      )
-      const oldLpBal = await lpToken.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
+  //     const new3CrvBal = await threeCRV.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
+  //     //console.log("new 3CRV balance:", new3CrvBal.toString())
+  //   })
+  //   it("whale should be able to swap 3CRV for LP tokens", async function () {
+  //     const new3CrvBal = await threeCRV.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
+  //     const crvAllowance = await threeCRV.allowance(
+  //       whale._address,
+  //       lpToken.address
+  //     )
+  //     const oldLpBal = await lpToken.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
 
-      // console.log(lpToken.functions)
-      // console.log(gauge.functions)
-      // console.log(minter.functions)
-      // console.log("lpToken address:", lpToken.address)
+  //     // console.log(lpToken.functions)
+  //     // console.log(gauge.functions)
+  //     // console.log(minter.functions)
+  //     // console.log("lpToken address:", lpToken.address)
 
-      // console.log("old 3CRV allowance:", crvAllowance.toString())
-      // console.log("old LP token balance:", oldLpBal.toString())
+  //     // console.log("old 3CRV allowance:", crvAllowance.toString())
+  //     // console.log("old LP token balance:", oldLpBal.toString())
 
-      // Deposit 3CRV for LP tokens
-      // deposit tx takes: (uint256[2], uint256) or (uint256[2], uint256, address)
-      const crvAmount = Math.floor(new3CrvBal / 10000000000)
-      const amounts = [0, crvAmount.toString()]
-      //console.log("3CRV to be deposited:", crvAmount.toString())
-      if (crvAmount > crvAllowance) {
-        await threeCRV
-          .connect(whale)
-          .approve(lpToken.address, (crvAmount - crvAllowance).toString(), {
-            gasLimit: 30000000,
-          })
-      }
-      const newCrvAllowance = await threeCRV.allowance(
-        whale._address,
-        lpToken.address
-      )
-      //console.log("new 3CRV allowance:", newCrvAllowance.toString())
+  //     // Deposit 3CRV for LP tokens
+  //     // deposit tx takes: (uint256[2], uint256) or (uint256[2], uint256, address)
+  //     const crvAmount = Math.floor(new3CrvBal / 10000000000)
+  //     const amounts = [0, crvAmount.toString()]
+  //     //console.log("3CRV to be deposited:", crvAmount.toString())
+  //     if (crvAmount > crvAllowance) {
+  //       await threeCRV
+  //         .connect(whale)
+  //         .approve(lpToken.address, (crvAmount - crvAllowance).toString(), {
+  //           gasLimit: 30000000,
+  //         })
+  //     }
+  //     const newCrvAllowance = await threeCRV.allowance(
+  //       whale._address,
+  //       lpToken.address
+  //     )
+  //     //console.log("new 3CRV allowance:", newCrvAllowance.toString())
 
-      await lpToken
-        .connect(whale)
-        ["add_liquidity(uint256[2],uint256)"](amounts, 1000000, {
-          gasLimit: 30000000,
-        })
-      console.log(crvAmount.toString(), "3CRV Deposited!")
+  //     await lpToken
+  //       .connect(whale)
+  //       ["add_liquidity(uint256[2],uint256)"](amounts, 1000000, {
+  //         gasLimit: 30000000,
+  //       })
+  //     console.log(crvAmount.toString(), "3CRV Deposited!")
 
-      const newLpBal = await lpToken.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
-      const finalCrvAllowance = await threeCRV.allowance(
-        whale._address,
-        lpToken.address
-      )
+  //     const newLpBal = await lpToken.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
+  //     const finalCrvAllowance = await threeCRV.allowance(
+  //       whale._address,
+  //       lpToken.address
+  //     )
 
-      // console.log("final 3CRV allowance:", finalCrvAllowance.toString())
-      // console.log("new LP token balance:", newLpBal.toString())
-    })
-    it("Liquidity gauge should transfer CRV to whale after LP token deposit", async function () {
-      const newLpBal = await lpToken.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
-      // Deposit LP tokens for CRV
-      const lpTokenAllowance = await lpToken.allowance(
-        whale._address,
-        gauge.address,
-        { gasLimit: 300000 }
-      )
-      //console.log("Lp token allowance", lpTokenAllowance.toString())
+  //     // console.log("final 3CRV allowance:", finalCrvAllowance.toString())
+  //     // console.log("new LP token balance:", newLpBal.toString())
+  //   })
+  //   it("Liquidity gauge should transfer CRV to whale after LP token deposit", async function () {
+  //     const newLpBal = await lpToken.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
+  //     // Deposit LP tokens for CRV
+  //     const lpTokenAllowance = await lpToken.allowance(
+  //       whale._address,
+  //       gauge.address,
+  //       { gasLimit: 300000 }
+  //     )
+  //     //console.log("Lp token allowance", lpTokenAllowance.toString())
 
-      const oldCrvBal = await crv.balanceOf(whale._address)
-      const lpDeposit = Math.floor(newLpBal / 10000)
-      if (lpTokenAllowance < lpDeposit) {
-        await lpToken
-          .connect(whale)
-          .approve(gauge.address, (lpDeposit - lpTokenAllowance).toString(), {
-            gasLimit: 300000,
-          })
-      }
+  //     const oldCrvBal = await crv.balanceOf(whale._address)
+  //     const lpDeposit = Math.floor(newLpBal / 10000)
+  //     if (lpTokenAllowance < lpDeposit) {
+  //       await lpToken
+  //         .connect(whale)
+  //         .approve(gauge.address, (lpDeposit - lpTokenAllowance).toString(), {
+  //           gasLimit: 300000,
+  //         })
+  //     }
 
-      await gauge
-        .connect(whale)
-        ["deposit(uint256)"](lpDeposit.toString(), { gasLimit: 3000000 })
-      console.log(lpDeposit.toString(), "LP Tokens Deposited!")
-      const claimableCrv = await gauge.callStatic.claimable_tokens(
-        whale._address,
-        {
-          gasLimit: 3000000,
-        }
-      )
-      // Calling "mint" on Minter is how you get your CRV
-      // await gauge
-      //   .connect(whale)
-      //   ["claim_rewards(address,address)"](whale._address, whale._address, {
-      //     gasLimit: 3000000,
-      //   })
-      await minter.connect(whale).mint(gauge.address, { gasLimit: 3000000 })
+  //     await gauge
+  //       .connect(whale)
+  //       ["deposit(uint256)"](lpDeposit.toString(), { gasLimit: 3000000 })
+  //     console.log(lpDeposit.toString(), "LP Tokens Deposited!")
+  //     const claimableCrv = await gauge.callStatic.claimable_tokens(
+  //       whale._address,
+  //       {
+  //         gasLimit: 3000000,
+  //       }
+  //     )
+  //     // Calling "mint" on Minter is how you get your CRV
+  //     // await gauge
+  //     //   .connect(whale)
+  //     //   ["claim_rewards(address,address)"](whale._address, whale._address, {
+  //     //     gasLimit: 3000000,
+  //     //   })
+  //     await minter.connect(whale).mint(gauge.address, { gasLimit: 3000000 })
 
-      const finalLpBal = await lpToken.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
-      const LpDeposited = await gauge.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
-      const newCrvBal = await crv.balanceOf(whale._address, {
-        gasLimit: 300000,
-      })
+  //     const finalLpBal = await lpToken.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
+  //     const LpDeposited = await gauge.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
+  //     const newCrvBal = await crv.balanceOf(whale._address, {
+  //       gasLimit: 300000,
+  //     })
 
-      // const claimableReceipt = await claimableCrv.wait(1)
-      // console.log("claimable CRV:", claimableCrv.toString())
-      // console.log("old CRV balance:", oldCrvBal.toString())
-      // console.log("new CRV balance:", newCrvBal.toString())
-      // console.log("final LP token Balance:", finalLpBal.toString())
-      // console.log("Total LP tokens deposited:", LpDeposited.toString())
-      //console.log(claimableCrv)
-      //assert.isAbove(newCrvBal, oldCrvBal)
-    })
-  })
+  //     // const claimableReceipt = await claimableCrv.wait(1)
+  //     // console.log("claimable CRV:", claimableCrv.toString())
+  //     // console.log("old CRV balance:", oldCrvBal.toString())
+  //     // console.log("new CRV balance:", newCrvBal.toString())
+  //     // console.log("final LP token Balance:", finalLpBal.toString())
+  //     // console.log("Total LP tokens deposited:", LpDeposited.toString())
+  //     //console.log(claimableCrv)
+  //     //assert.isAbove(newCrvBal, oldCrvBal)
+  //   })
+  // })
   /* MUST BE ON MAINNET FORK TO TEST THIS DESCRIBE */
   /* THIS DESCRIBE SIMULATES RECEIVING STBT FROM ISSUER BY EXCHANGING 3CRV FOR STBT,
   NEED TO FIGURE OUT HOW I WILL DO THIS SINCE STBT ADDRESS NEEDS TO BE WHITELISTED
@@ -530,8 +531,17 @@ describe("Loki unit tests", function () {
   //   // })
   // })
   /** MUST BE ON MAINNET FORK TO TEST THIS DESCRIBE */
-  describe("PRELIMINARY TESTS | Depositing STBT into the vault", function () {
-    it("STBT whale should be able to deposit STBT")
+  describe("stake", function () {
+    it("STBT whale should have a high STBT balance", async function () {})
+    it("allow moderator to upate the vault's STBT permissions", async function () {})
+    it("STBT whale should be able to deposit STBT", async function () {})
+    it("vault should mint and hold xUNO after the STBT deposit", async function () {})
+    it("reverts if `amount` input is zero", async function () {})
+    it("reverts if `token` input is more than two", async function () {})
+    it("transfers the stablecoins from user to vault", async function () {})
+    it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
+    it("updates the user's balance for the staked stablecoin", async function () {})
+    it("transfers xUNO to the user", async function () {})
   })
   describe("enterPool", function () {})
 })
