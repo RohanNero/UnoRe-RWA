@@ -544,9 +544,13 @@ describe("Loki unit tests", function () {
       const initialBal = await stbt.balanceOf(sWhale._address, {
         gasLimit: 300000,
       })
-      console.log("STBT whale address:", sWhale._address)
-      //console.log(stbt)
-      console.log("STBT balance:", initialBal.toString())
+      const string = initialBal.toString()
+      const bal = string.slice(0, -18)
+      // console.log("STBT whale address:", sWhale._address)
+      // //console.log(stbt)
+      // console.log("STBT balance:", initialBal.toString())
+      // console.log("truncated balance:", bal)
+      assert.isTrue(bal > 100000)
     })
     it("allow moderator to upate the vault's STBT permissions", async function () {})
     it("STBT whale should be able to deposit STBT", async function () {})
