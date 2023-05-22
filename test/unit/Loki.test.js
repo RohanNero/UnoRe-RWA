@@ -9,6 +9,7 @@ const {
   stableSwapAbi,
   crvAbi,
   minterAbi,
+  stbtAbi,
 } = require("../../helper-hardhat-config.js")
 const { assert, expect } = require("chai")
 
@@ -23,7 +24,9 @@ describe("Loki unit tests", function () {
     threeCRV,
     stableSwap,
     crv,
-    minter
+    minter,
+    sWhale,
+    stbt
   beforeEach(async function () {
     ;[deployer] = await ethers.getSigners()
     //console.log(network)
@@ -39,6 +42,7 @@ describe("Loki unit tests", function () {
     // This method kept throwing error messages from time to time so now he is green :p
     //whale = await ethers.getSigner("0x171cda359aa49E46Dec45F375ad6c256fdFBD420")
     //console.log(whale)
+    sWhale = provider.getSigner("0x51250e5292006aF94Ff286d52729b58aB78A0465")
 
     usdc = await ethers.getContractAt(
       abi,
@@ -67,6 +71,10 @@ describe("Loki unit tests", function () {
     minter = await ethers.getContractAt(
       minterAbi,
       "0xd061d61a4d941c39e5453435b6345dc261c2fce0"
+    )
+    stbt = await ethers.getContractAt(
+      stbtAbi,
+      "0x530824DA86689C9C17CdC2871Ff29B058345b44a"
     )
     // deposit = await ethers.getContract("deposit")
     //matrixUNO = await ethers.getContract("MatrixUNO")
@@ -532,7 +540,14 @@ describe("Loki unit tests", function () {
   // })
   /** MUST BE ON MAINNET FORK TO TEST THIS DESCRIBE */
   describe("stake", function () {
-    it("STBT whale should have a high STBT balance", async function () {})
+    it("STBT whale should have a high STBT balance", async function () {
+      const initialBal = await stbt.balanceOf(sWhale._address, {
+        gasLimit: 300000,
+      })
+      console.log("STBT whale address:", sWhale._address)
+      //console.log(stbt)
+      console.log("STBT balance:", initialBal.toString())
+    })
     it("allow moderator to upate the vault's STBT permissions", async function () {})
     it("STBT whale should be able to deposit STBT", async function () {})
     it("vault should mint and hold xUNO after the STBT deposit", async function () {})
