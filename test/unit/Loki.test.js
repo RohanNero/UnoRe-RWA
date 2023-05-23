@@ -1,4 +1,6 @@
 const { network, ethers } = require("hardhat")
+const hre = require("hardhat")
+const { setCode } = require("@nomicfoundation/hardhat-network-helpers")
 const {
   developmentChains,
   networkConfig,
@@ -10,6 +12,7 @@ const {
   crvAbi,
   minterAbi,
   stbtAbi,
+  stbtModeratorAbi,
 } = require("../../helper-hardhat-config.js")
 const { assert, expect } = require("chai")
 
@@ -26,7 +29,11 @@ describe("Loki unit tests", function () {
     crv,
     minter,
     sWhale,
-    stbt
+    stbt,
+    stbtModerator,
+    vault,
+    stbtModeratorExecutor,
+    stbtModeratorProposer
   beforeEach(async function () {
     ;[deployer] = await ethers.getSigners()
     //console.log(network)
@@ -35,15 +42,23 @@ describe("Loki unit tests", function () {
     const provider = new ethers.providers.JsonRpcProvider(
       "http://localhost:8545"
     )
-    await provider.send("hardhat_impersonateAccount", [
-      "0x171cda359aa49E46Dec45F375ad6c256fdFBD420",
-    ])
+    // await provider.send("hardhat_impersonateAccount", [
+    //   "0x171cda359aa49E46Dec45F375ad6c256fdFBD420",
+    // ])
     whale = provider.getSigner("0x171cda359aa49E46Dec45F375ad6c256fdFBD420")
     // This method kept throwing error messages from time to time so now he is green :p
     //whale = await ethers.getSigner("0x171cda359aa49E46Dec45F375ad6c256fdFBD420")
     //console.log(whale)
     sWhale = provider.getSigner("0x51250e5292006aF94Ff286d52729b58aB78A0465")
-
+    // stbtModerator = provider.getSigner(
+    //   "0x22276A1BD16bc3052b362C2e0f65aacE04ed6F99"
+    // )
+    stbtModeratorExecutor = provider.getSigner(
+      "0xd32a1441872774f30EC9C453983cf5C95a720123"
+    )
+    stbtModeratorProposer = provider.getSigner(
+      "0x65FF5a67D8d7292Bd4Ea7B6CD863D9F3ca14f046"
+    )
     usdc = await ethers.getContractAt(
       abi,
       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -75,6 +90,11 @@ describe("Loki unit tests", function () {
     stbt = await ethers.getContractAt(
       stbtAbi,
       "0x530824DA86689C9C17CdC2871Ff29B058345b44a"
+    )
+    vault = await ethers.getContract("MatrixUno")
+    stbtModerator = await ethers.getContractAt(
+      stbtModeratorAbi,
+      "0x22276A1BD16bc3052b362C2e0f65aacE04ed6F99"
     )
     // deposit = await ethers.getContract("deposit")
     //matrixUNO = await ethers.getContract("MatrixUNO")
@@ -552,7 +572,66 @@ describe("Loki unit tests", function () {
       // console.log("truncated balance:", bal)
       assert.isTrue(bal > 100000)
     })
-    it("allow moderator to upate the vault's STBT permissions", async function () {})
+    it("allow moderator to update the vault's STBT permissions", async function () {
+      const prePermissions = await stbt.permissions(vault.address)
+
+      // going to have to setPermission through `execute` function call...
+      // await setCode(
+      //   stbtModerator.address,
+      //   "0x608060405234801561001057600080fd5b50610372806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063d8a8ab2514610030575b600080fd5b61004a600480360381019061004591906101d2565b61004c565b005b6000808473ffffffffffffffffffffffffffffffffffffffff168484604051610076929190610271565b6000604051808303816000865af19150503d80600081146100b3576040519150601f19603f3d011682016040523d82523d6000602084013e6100b8565b606091505b5091509150816100c757600080fd5b7f30f9fb0901262acb38d8b44b67a477c64631865c967e8d3dbd8ad1273432981d816040516100f6919061031a565b60405180910390a15050505050565b600080fd5b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b600061013a8261010f565b9050919050565b61014a8161012f565b811461015557600080fd5b50565b60008135905061016781610141565b92915050565b600080fd5b600080fd5b600080fd5b60008083601f8401126101925761019161016d565b5b8235905067ffffffffffffffff8111156101af576101ae610172565b5b6020830191508360018202830111156101cb576101ca610177565b5b9250929050565b6000806000604084860312156101eb576101ea610105565b5b60006101f986828701610158565b935050602084013567ffffffffffffffff81111561021a5761021961010a565b5b6102268682870161017c565b92509250509250925092565b600081905092915050565b82818337600083830152505050565b60006102588385610232565b935061026583858461023d565b82840190509392505050565b600061027e82848661024c565b91508190509392505050565b600081519050919050565b600082825260208201905092915050565b60005b838110156102c45780820151818401526020810190506102a9565b60008484015250505050565b6000601f19601f8301169050919050565b60006102ec8261028a565b6102f68185610295565b93506103068185602086016102a6565b61030f816102d0565b840191505092915050565b6000602082019050818103600083015261033481846102e1565b90509291505056fea26469706673582212204acf0e1b8d45b284956a8ddbd9db87ef90d565d7cb41cff807253b75ce82018064736f6c63430008120033"
+      // )
+
+      // const provider = new ethers.providers.JsonRpcProvider(
+      //   "http://localhost:8545"
+      // )
+      if (prePermissions[0] == false) {
+        await hre.network.provider.request({
+          method: "hardhat_impersonateAccount",
+          params: [stbtModeratorProposer._address],
+        })
+        // Moderator arguments: address target,uint256 value,bytes calldata data,bytes32 predecessor,bytes32 salt,uint256 delay
+        await stbtModerator
+          .connect(stbtModeratorProposer)
+          .schedule(
+            stbt.address,
+            0,
+            "0x47e640c00000000000000000000000005e5713a0d915701f464debb66015add62b2e6ae9000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x3235363030376561343437613862653633303530396531623764396132326335",
+            700,
+            { gasLimit: 300000 }
+          )
+        await hre.network.provider.request({
+          method: "hardhat_impersonateAccount",
+          params: [stbtModeratorExecutor._address],
+        })
+        await stbtModerator
+          .connect(stbtModeratorExecutor)
+          .execute(
+            stbt.address,
+            0,
+            "0x47e640c00000000000000000000000005e5713a0d915701f464debb66015add62b2e6ae9000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x3235363030376561343437613862653633303530396531623764396132326335"
+          )
+      }
+
+      //console.log(stbtModerator.functions)
+      //await stbtModerator.eggs(vault.address, [true, true, 0])
+      // original function call
+      // await stbt
+      //   .connect(stbtModerator)
+      //   .setPermission(vault.address, [true, true, 0])
+      const postPermissions = await stbt.permissions(vault.address)
+      const moderator = await stbt.moderator()
+      // console.log(prePermissions.toString())
+      // console.log(postPermissions.toString())
+      // console.log("vault address:", vault.address)
+      // console.log("moderator:", moderator)
+      // console.log("impersona:", stbtModerator.address)
+      //console.log(stbt.functions)
+      assert.isTrue(postPermissions[1])
+    })
     it("STBT whale should be able to deposit STBT", async function () {})
     it("vault should mint and hold xUNO after the STBT deposit", async function () {})
     it("reverts if `amount` input is zero", async function () {})
