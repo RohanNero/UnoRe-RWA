@@ -4,6 +4,20 @@ These are designs for new UNO RE staking pools that allow users to invest in rea
 
 - [OpenZeppelin ERC4626](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/extensions/ERC4626.sol)
 
+### Begin testing Matrix - Uno Re flow
+
+    The first thing you must do to test the MatrixUno flow is put your mainnet RPC_URL in the .env file like shown in the `.env.example`
+
+    `FORKING_URL=https://eth-mainnet.g.alchemy.com/v2/<YOUR_KEY>`
+
+    Now we can start a mainnet fork on your local hardhat blockchain
+
+    `yarn hardhat node --tags matrixUno`
+
+    After the fork has started running, and your vault contract has been deployed, you're ready to run the tests
+
+    `yarn hardhat test --network localhost`
+
 ### Maple UNO
 
 The `Hades` pool interacts with the Maple Finance RWA pools
