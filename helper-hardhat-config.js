@@ -2,6 +2,8 @@ const networkConfig = {
   1337: {
     name: "localhost",
     blockConfirmations: "1",
+    stbtAddress: "0x530824da86689c9c17cdc2871ff29b058345b44a",
+    poolAddress: "0x892d701d94a43bdbcb5ea28891daca2fa22a690b",
   },
   5: {
     name: "goerli",
