@@ -73,3 +73,6 @@ Once users have staked xUNO we have finished the deposit/staking flow.
 
 1. If a user tries to stake an amount that requires the vault sending more shares than it currently has, should we revert the entire transaction and display the current balance next to the amount requested? Or should we send them all the xUNO we have left and only transferFrom part of the stablecoin amount they approved to cover the amouunt of xUNO we send to them?
 2. What will we do about users that hold STBT and want to `deposit` into the vault and mint new xUNO?
+3. What if Uno Re wants to withdrawal the STBT and burn it for the initial stablecoin deposit?
+
+- should Uno always be allowed to withdraw? Or should they only be allowed if they have the xUNO amount that was minted.

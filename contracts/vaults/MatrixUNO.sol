@@ -33,7 +33,7 @@ contract MatrixUno is ERC4626 {
     /**@notice User stablecoin balances 
       *@dev The middle uint correlates to the stables indices 
       *@dev For example: balances[0x77][0] = DAI balance of address 0x77 */
-    mapping(address => mapping(uint => uint)) private balances;
+    mapping(address => mapping(uint8 => uint)) private balances;
     
 
     /**@notice need to provide the asset that is used in this vault 
@@ -88,9 +88,33 @@ contract MatrixUno is ERC4626 {
     /**@notice this function allows users to claim their stablecoins plus accrued rewards
       *@dev requires approving this contract to take the xUNO first
       *@param amount - the amount of xUNO you want to return to the vault
-      *@param token - the stablecoin you want your interest to be in */
+      *@param token - the stablecoin you want your interest to be in 
+      *@dev (currently must match the deposited stable)*/
     function claim(uint amount, uint token) public returns(uint claimed) {
+      /** Steps to claim
+      1. approve xUNO
+      2. xUNO transferFrom to vault
+      3. user balance updated
+      4. STBT earned by user will be exchaned for 3CRV
+      5. 3CRV will be exchanged for the stablecoin user deposited
+      6. stablecoin deposit and stablecoin interest are transferred to user
+     */
+     this.transferFrom(msg.sender, address(this), amount);
+     uint subtractAmount = amount;
+     uint stableBalance = balances[msg.sender][token];
+     uint rewards;
+     if(token > 0) {
+      subtractAmount / 1e12;
+     }
+     balances[msg.sender][token] -= subtractAmount;
+     // calculate rewards earned by user
+     
+     // transfer earned STBT to STBT/3CRV pool
+     
+     // transfer 3CRV to tripool
 
+     // finally transfer stablecoins to user
+     IERC(stables[token]).transfer(msg.sender, stableBalance + rewards);
     }
 
   
