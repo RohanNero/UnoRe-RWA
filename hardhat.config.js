@@ -21,9 +21,15 @@ const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   vyper: {
-    compilers: [{ version: "0.2.15" }, { version: "0.3.0" }],
+    compilers: [
+      { version: "0.2.15" },
+      { version: "0.3.0" },
+      { version: "0.3.7" },
+    ],
   },
-  solidity: "0.8.7",
+  solidity: {
+    compilers: [{ version: "0.8.7" }, { version: "0.7.7" }],
+  },
   namedAccounts: {
     deployer: 0,
   },
