@@ -42,6 +42,6 @@ The `Loki` pool interacts with the STBT/3CRV Curve pool
 
 ### Current Developer Quickstart
 
-`yarn hardhat node --tags curve`
+`yarn hardhat node --tags matrixUno`
 
 `yarn hardhat test --network localhost`
