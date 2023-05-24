@@ -5,6 +5,7 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Curve/interfaces/IStableSwap.sol";
+import "hardhat/console.sol";
 
 error MatrixUno__ZeroAmountGiven();
 /**@param tokenId - corresponds to the `stables` indices */
@@ -64,7 +65,7 @@ contract MatrixUno is ERC4626 {
     /**@notice need to provide the asset that is used in this vault 
       *@dev vault shares are an ERC20 called "Matrix UNO"/"xUNO", these represent a user's stablecoin stake into an UNO-RWA pool
       *@param asset - the IERC contract you wish to use as the vault asset, in this case STBT*/
-    constructor(address asset, address poolAddress) ERC4626(IERC20(asset)) ERC20("Maple UNO","mUNO") {
+    constructor(address asset, address poolAddress) ERC4626(IERC20(asset)) ERC20("Matrix UNO","xUNO") {
       stbt = IERC20(asset);
       pool = IStableSwap(poolAddress);
       stables = [0x6B175474E89094C44Da98b954EedeAC495271d0F,0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,0xdAC17F958D2ee523a2206206994597C13D831ec7];
@@ -93,20 +94,24 @@ contract MatrixUno is ERC4626 {
          100 USDC = 100000000 */
       uint transferAmount;
       if(token > 0) {
-        transferAmount = transferAmount * 10 ** 12;
+        transferAmount = amount * 1e12;
       } else {
         transferAmount = amount;
       }
       /**@notice if there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
       uint transferFromAmount;
+      console.log("balanceOf:", this.balanceOf(address(this)));
       if(this.balanceOf(address(this)) < transferAmount) {
         transferFromAmount = this.balanceOf(address(this));
       } else {
         transferFromAmount = amount; 
       }
+      console.log("transferFrom:",transferFromAmount);
       /**@notice actually moving the tokens and updating balance */
       IERC20(stables[token]).transferFrom(msg.sender, address(this), transferFromAmount);
-      balances[msg.sender][token] += amount;
+      balances[msg.sender][token] += transferFromAmount;
+      console.log("transferAmount:", transferAmount);
+      console.log("msg.sender:", msg.sender);
       this.transfer(msg.sender, transferAmount);
       shares = transferAmount;
     }
@@ -176,6 +181,12 @@ contract MatrixUno is ERC4626 {
 
 
     /** View / Pure functions */
+
+
+    /**@notice this function lets you view the stablecoin balances of users */
+    function viewBalance(uint8 token) public view returns(uint256 balance) {
+      balance = balances[msg.sender][token];
+    }
 
   
     /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins */

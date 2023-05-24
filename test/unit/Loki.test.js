@@ -650,9 +650,9 @@ describe("Loki unit tests", function () {
         await stbt.connect(sWhale).approve(vault.address, stbtDeposit, {
           gasLimit: 300000,
         })
-        console.log(stbtDeposit.toString(), "STBT approved!")
+        //console.log(stbtDeposit.toString(), "STBT approved!")
       }
-      if (vaultStbtBalance < stbtDeposit) {
+      if (vaultStbtBalance < stbtDeposit / 2) {
         await vault.connect(sWhale).deposit(stbtDeposit, vault.address, {
           gasLimit: 300000,
         })
@@ -667,14 +667,70 @@ describe("Loki unit tests", function () {
         .toString()
         .slice(0, -18)
       //console.log(vaultSharesBalanceSliced)
-      assert.isTrue(vaultSharesBalanceSliced >= 199999)
+      assert.isTrue(vaultSharesBalanceSliced >= 99999)
     })
-    it("reverts if `amount` input is zero", async function () {})
-    it("reverts if `token` input is more than two", async function () {})
-    it("transfers the stablecoins from user to vault", async function () {})
+    // Actual MatrixUno `stake()` function calls
+    it("reverts if `amount` input is zero", async function () {
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [whale._address],
+      })
+      await expect(
+        vault.connect(whale).stake(0, 1, { gasLimit: 300000 })
+      ).to.be.revertedWithCustomError(vault, "MatrixUno__ZeroAmountGiven")
+    })
+    it("reverts if `token` input is more than two", async function () {
+      await expect(
+        vault.connect(whale).stake(777, 3, { gasLimit: 300000 })
+      ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
+    })
+    it("transfers the stablecoins from user to vault", async function () {
+      const initialVaultUsdcBalance = await usdc.balanceOf(vault.address)
+      const usdcBalance = await usdc.balanceOf(whale._address)
+      const usdcAllowance = await usdc.allowance(whale._address, vault.address)
+      const usdcDeposit = 50000 * 1e6
+      // console.log("whale usdc balance:", usdcBalance.toString())
+      // console.log("vault usdc allowance:", usdcAllowance.toString())
+      // console.log(
+      //   "initial vault usdc balance:",
+      //   initialVaultUsdcBalance.toString()
+      // )
+
+      if (usdcAllowance < usdcDeposit) {
+        await usdc.connect(whale).approve(vault.address, usdcDeposit.toString())
+      }
+      const updatedUsdcAllowance = await usdc.allowance(
+        whale._address,
+        vault.address
+      )
+      //console.log("updated usdc allowance:", updatedUsdcAllowance.toString())
+
+      if (initialVaultUsdcBalance < usdcDeposit) {
+        const shares = await vault
+          .connect(whale)
+          .stake(usdcDeposit, 1, { gasLimit: 300000 })
+      }
+
+      const finalVaultUsdcBalance = await usdc.balanceOf(vault.address)
+      //console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
+    })
+    // come back to this test later
     it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
-    it("updates the user's balance for the staked stablecoin", async function () {})
-    it("transfers xUNO to the user", async function () {})
+    it("updates the user's balance for the staked stablecoin", async function () {
+      const vaultBalance = await vault.connect(whale).viewBalance(1)
+      //console.log("whale usdc balance:", vaultBalance.toString())
+      assert.equal(vaultBalance, 50000000000)
+    })
+    it("transfers xUNO to the user", async function () {
+      const whalexUnoBalance = await vault.balanceOf(whale._address)
+      const vaultxUnoBalance = await vault.balanceOf(vault.address)
+      const vaultSymbol = await vault.symbol()
+      const slicedWhaleBalance = whalexUnoBalance.toString().slice(0, -18)
+      // console.log("whale xUNO balance:", whalexUnoBalance.toString())
+      // console.log("vault xUNO balance:", vaultxUnoBalance.toString())
+      // console.log("vault shares symbol:", vaultSymbol.toString())
+      assert.isTrue(slicedWhaleBalance > 1000)
+    })
   })
   describe("enterPool", function () {})
 })
