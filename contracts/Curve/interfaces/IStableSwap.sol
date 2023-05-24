@@ -13,7 +13,7 @@ interface IStableSwap {
     function coins(uint256) external view returns(address);
     function get_virtual_price() external view returns(uint256);
     function calc_token_amount(uint256[] calldata,bool) external view returns(uint256);
-    function exchange_underlying(uint128,uint128,uint256,uint256) external returns(uint);
+    function exchange_underlying(int128,int128,uint256,uint256) external returns(uint);
     function fee() external view returns(uint256);
 
 // interface Curve:

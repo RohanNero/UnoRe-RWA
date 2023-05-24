@@ -50,14 +50,14 @@ contract MatrixUno is ERC4626 {
     mapping(address => uint) private claimed;
 
     /**@notice tracks the total amount of STBT claimed by users */
-    uint totalClaimed;
+    uint private totalClaimed;
 
     /**@notice the amount of STBT deposited by Uno Re */
-    uint initialAmount;
+    uint private initialAmount;
 
 
     /**@notice Uno Re's address used for depositing STBT */
-    address uno;
+    address private immutable uno;
     
 
     
@@ -65,9 +65,10 @@ contract MatrixUno is ERC4626 {
     /**@notice need to provide the asset that is used in this vault 
       *@dev vault shares are an ERC20 called "Matrix UNO"/"xUNO", these represent a user's stablecoin stake into an UNO-RWA pool
       *@param asset - the IERC contract you wish to use as the vault asset, in this case STBT*/
-    constructor(address asset, address poolAddress) ERC4626(IERC20(asset)) ERC20("Matrix UNO","xUNO") {
+    constructor(address asset, address poolAddress, address unoAddress) ERC4626(IERC20(asset)) ERC20("Matrix UNO","xUNO") {
       stbt = IERC20(asset);
       pool = IStableSwap(poolAddress);
+      uno = unoAddress;
       stables = [0x6B175474E89094C44Da98b954EedeAC495271d0F,0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,0xdAC17F958D2ee523a2206206994597C13D831ec7];
     }
 
@@ -138,33 +139,39 @@ contract MatrixUno is ERC4626 {
         revert MatrixUno__InvalidTokenId(token);
       }
      this.transferFrom(msg.sender, address(this), amount);
-     uint subtractAmount = amount;
      uint stableBalance = balances[msg.sender][token];
-     uint rewards;
-     if(token > 0) {
-      subtractAmount / 1e12;
-     }
-     balances[msg.sender][token] -= subtractAmount;
+     //uint rewards; // minimumRecieved used instead
+    //  if(token > 0) {
+    //   balances[msg.sender][token] -= (amount / 1e12);
+    //  } else {
+    //   balances[msg.sender][token] -= amount;
+    //  }
+    
+     //console.log("subtractAmount:", subtractAmount);
+     
      // calculate rewards earned by user
      uint claimedByOthers = totalClaimed - claimed[msg.sender];
      uint pot = viewRedeemable() + claimedByOthers;
      uint earned = pot / viewPortion();
+     // updating global variables
+     balances[msg.sender][token] -= amount;
      totalClaimed += earned;
      claimed[msg.sender] += earned;
      // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
-     uint minimumReceive = earned;
-     // 1/10000th of the earned amount (.0001)
-     uint slippage = minimumReceive / 10000;
+     uint minimumReceive = earned * (99e16);
+     // 99% of the earned amount (.01)
      if(token > 0) {
-      (minimumReceive - slippage) / 1e12;
+      minimumReceive /= 1e30;
      } else {
-      minimumReceive - slippage;
+      minimumReceive /= 1e18;
      }
+     console.log("earned:", earned);
+     console.log("minimumReceive:", minimumReceive);
      stbt.approve(address(pool), earned);
-     pool.exchange_underlying(0,(token + 1), earned, minimumReceive);
+     pool.exchange_underlying(int128(0),int128(uint128(token + 1)), earned, minimumReceive); //
      // finally transfer stablecoins to user
-     IERC20(stables[token]).transfer(msg.sender, stableBalance + rewards);
-     return stableBalance + rewards;
+     IERC20(stables[token]).transfer(msg.sender, stableBalance + minimumReceive);
+     return stableBalance + minimumReceive;
     }
 
     /** Native ERC-4626 Vault functions */
@@ -194,6 +201,11 @@ contract MatrixUno is ERC4626 {
       balance = balances[msg.sender][token];
     }
 
+    /**@notice this function returns the totalClaimed variable */
+    function viewTotalClaimed() public view returns(uint _totalClaimed) {
+      _totalClaimed = totalClaimed;
+    }
+
   
     /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins */
     function viewRedeemable() public view returns(uint redeemable) {
@@ -208,7 +220,17 @@ contract MatrixUno is ERC4626 {
         uint usdcStaked = (balances[tx.origin][1]) * 1e12;
         uint usdtStaked = (balances[tx.origin][2]) * 1e12;
         uint totalStaked = daiStaked + usdcStaked + usdtStaked;
-        portion = initialAmount / totalStaked;
+        console.log("dai staked:", daiStaked);
+        console.log("usdc staked:", usdcStaked);
+        console.log("usdt staked:", usdtStaked);
+        console.log("total staked:", totalStaked);
+        console.log("initialAmount", initialAmount);
+        if(totalStaked > 0) {
+          portion = initialAmount / totalStaked;
+        } else {
+          portion = 0;
+        }
+        console.log("portion:", portion);
       }
 
   

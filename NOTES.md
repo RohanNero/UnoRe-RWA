@@ -76,3 +76,10 @@ Once users have staked xUNO we have finished the deposit/staking flow.
 3. What if Uno Re wants to withdrawal the STBT and burn it for the initial stablecoin deposit?
 
 - should Uno always be allowed to withdraw? Or should they only be allowed if they have the xUNO amount that was minted.
+
+### Additional
+
+changing withdrawal slippage caluclation to
+
+1. multiply by .99, which is 99 followed by 16 zeros
+2. divie by 1e18 if stable is dai OR divide by 1e30 if stable is usdc or usdt

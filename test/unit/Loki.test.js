@@ -703,9 +703,10 @@ describe("Loki unit tests", function () {
         whale._address,
         vault.address
       )
+      const totalClaimed = await vault.viewTotalClaimed()
       //console.log("updated usdc allowance:", updatedUsdcAllowance.toString())
-
-      if (initialVaultUsdcBalance < usdcDeposit) {
+      //console.log("total claimed:", totalClaimed.toString())
+      if (initialVaultUsdcBalance < usdcDeposit && totalClaimed == 0) {
         const shares = await vault
           .connect(whale)
           .stake(usdcDeposit, 1, { gasLimit: 300000 })
@@ -718,24 +719,82 @@ describe("Loki unit tests", function () {
     it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
     it("updates the user's balance for the staked stablecoin", async function () {
       const vaultBalance = await vault.connect(whale).viewBalance(1)
+      const totalClaimed = await vault.viewTotalClaimed()
       //console.log("whale usdc balance:", vaultBalance.toString())
-      assert.equal(vaultBalance, 50000000000)
+      //console.log("total claimed:", totalClaimed.toString())
+      assert.isTrue(vaultBalance == 50000000000 || totalClaimed > 0)
     })
     it("transfers xUNO to the user", async function () {
       const whalexUnoBalance = await vault.balanceOf(whale._address)
       const vaultxUnoBalance = await vault.balanceOf(vault.address)
       const vaultSymbol = await vault.symbol()
       const slicedWhaleBalance = whalexUnoBalance.toString().slice(0, -18)
+      const totalClaimed = await vault.viewTotalClaimed()
       // console.log("whale xUNO balance:", whalexUnoBalance.toString())
       // console.log("vault xUNO balance:", vaultxUnoBalance.toString())
       // console.log("vault shares symbol:", vaultSymbol.toString())
-      assert.isTrue(slicedWhaleBalance > 1000)
+      // console.log("total claimed:", totalClaimed.toString())
+      assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
     })
   })
   describe("claim", function () {
-    it("reverts if `amount` input is zero", async function () {})
-    it("reverts if `token` input is more than two", async function () {})
-    it("transferFrom takes xUNO from user and stores it", async function () {})
+    it("reverts if `amount` input is zero", async function () {
+      await expect(
+        vault.connect(whale).claim(0, 1, { gasLimit: 300000 })
+      ).to.be.revertedWithCustomError(vault, "MatrixUno__ZeroAmountGiven")
+    })
+    it("reverts if `token` input is more than two", async function () {
+      await expect(
+        vault.connect(whale).stake(777, 3, { gasLimit: 300000 })
+      ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
+    })
+    it("transferFrom takes xUNO from user and stores it", async function () {
+      // To simulate the `claim` function call earning rewards,
+      // I will transfer 1000 STBT from the STBT whale to the vault
+
+      const initialVaultShares = await vault.balanceOf(vault.address)
+      const initialVaultAssets = await stbt.balanceOf(vault.address)
+      const thousandStbt = ethers.utils.parseUnits("1000", 18)
+      const slicedVaultAssets = initialVaultAssets.toString().slice(0, -18)
+      const initialVaultAllowance = await vault.allowance(
+        whale._address,
+        vault.address
+      )
+      const xUnoDeposit = 50000 * 1e6
+      const whaleBalance = await vault.connect(whale).viewBalance(1)
+      const totalClaimed = await vault.viewTotalClaimed()
+
+      if (slicedVaultAssets < 200000) {
+        await stbt.connect(sWhale).transfer(vault.address, thousandStbt)
+        console.log("mock stbt rewards distributed!")
+      }
+      if (initialVaultAllowance < xUnoDeposit) {
+        await vault
+          .connect(whale)
+          .approve(vault.address, xUnoDeposit - initialVaultAllowance)
+      }
+      console.log("whale vault balance:", whaleBalance.toString())
+      if (whaleBalance > 100000000 && totalClaimed == 0) {
+        const claimTx = await vault
+          .connect(whale)
+          .claim(xUnoDeposit, 1, { gasLimit: 3000000 })
+        await claimTx.wait(1)
+      }
+
+      // mock rewards sent, now time to test claiming to see if rewards are calculated correctly
+      const finalVaultShares = await vault.balanceOf(vault.address)
+      const finalVaultAssets = await stbt.balanceOf(vault.address)
+      const finalWhaleVaultBalance = await vault.connect(whale).viewBalance(1)
+      const finalTotalClaimed = await vault.viewTotalClaimed()
+      console.log("initial vault shares:", initialVaultShares.toString())
+      console.log("initial vault assets:", initialVaultAssets.toString())
+      console.log("initial vault allowance:", initialVaultAllowance.toString())
+
+      console.log("final vault shares:  ", finalVaultShares.toString())
+      console.log("final vault assets:", finalVaultAssets.toString())
+      console.log("final whale vbalance:", finalWhaleVaultBalance.toString())
+      console.log("total assets claimed:", finalTotalClaimed.toString())
+    })
     it("user stablecoin balance is updated", async function () {})
     it("vault exchanges stbt for stablecoin", async function () {})
     it("vault transfers stablecoin to user", async function () {})

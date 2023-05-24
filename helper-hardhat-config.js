@@ -4,6 +4,7 @@ const networkConfig = {
     blockConfirmations: "1",
     stbtAddress: "0x530824da86689c9c17cdc2871ff29b058345b44a",
     poolAddress: "0x892d701d94a43bdbcb5ea28891daca2fa22a690b",
+    unoAddress: "0x81BD585940501b583fD092BC8397F2119A96E5ba",
   },
   5: {
     name: "goerli",
