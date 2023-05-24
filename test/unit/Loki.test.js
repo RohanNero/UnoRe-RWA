@@ -559,7 +559,7 @@ describe("Loki unit tests", function () {
   //   //   //assert.isAbove(newCrvBal, oldCrvBal)
   //   // })
   // })
-  /** MUST BE ON MAINNET FORK TO TEST THIS DESCRIBE */
+  /** MUST BE ON MAINNET FORK TO TEST THESE DESCRIBES */
   describe("stake", function () {
     it("STBT whale should have a high STBT balance", async function () {
       const initialBal = await stbt.balanceOf(sWhale._address, {
@@ -731,6 +731,15 @@ describe("Loki unit tests", function () {
       // console.log("vault shares symbol:", vaultSymbol.toString())
       assert.isTrue(slicedWhaleBalance > 1000)
     })
+  })
+  describe("claim", function () {
+    it("reverts if `amount` input is zero", async function () {})
+    it("reverts if `token` input is more than two", async function () {})
+    it("transferFrom takes xUNO from user and stores it", async function () {})
+    it("user stablecoin balance is updated", async function () {})
+    it("vault exchanges stbt for stablecoin", async function () {})
+    it("vault transfers stablecoin to user", async function () {})
+    it("emits the `stablesClaimed` event", async function () {})
   })
   describe("enterPool", function () {})
 })

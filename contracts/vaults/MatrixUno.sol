@@ -131,6 +131,12 @@ contract MatrixUno is ERC4626 {
       5. 3CRV will be exchanged for the stablecoin user deposited
       6. stablecoin deposit and stablecoin interest are transferred to user
      */
+     if(amount == 0) {
+        revert MatrixUno__ZeroAmountGiven();
+      }
+      if(token > 2) {
+        revert MatrixUno__InvalidTokenId(token);
+      }
      this.transferFrom(msg.sender, address(this), amount);
      uint subtractAmount = amount;
      uint stableBalance = balances[msg.sender][token];
