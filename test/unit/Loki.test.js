@@ -661,7 +661,14 @@ describe("Loki unit tests", function () {
       //console.log(endingVaultStbtBalance.toString())
       assert.isTrue(endingVaultStbtBalance >= stbtDeposit / 2)
     })
-    it("vault should mint and hold xUNO after the STBT deposit", async function () {})
+    it("vault should mint and hold xUNO after the STBT deposit", async function () {
+      const vaultSharesBalance = await vault.balanceOf(vault.address)
+      const vaultSharesBalanceSliced = vaultSharesBalance
+        .toString()
+        .slice(0, -18)
+      //console.log(vaultSharesBalanceSliced)
+      assert.isTrue(vaultSharesBalanceSliced >= 199999)
+    })
     it("reverts if `amount` input is zero", async function () {})
     it("reverts if `token` input is more than two", async function () {})
     it("transfers the stablecoins from user to vault", async function () {})
