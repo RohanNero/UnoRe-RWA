@@ -49,7 +49,8 @@ describe("Loki unit tests", function () {
     // This method kept throwing error messages from time to time so now he is green :p
     //whale = await ethers.getSigner("0x171cda359aa49E46Dec45F375ad6c256fdFBD420")
     //console.log(whale)
-    sWhale = provider.getSigner("0x51250e5292006aF94Ff286d52729b58aB78A0465")
+    // 0x51250e5292006aF94Ff286d52729b58aB78A0465 - alot of STBT but no ETH for tx gas
+    sWhale = provider.getSigner("0x81BD585940501b583fD092BC8397F2119A96E5ba")
     // stbtModerator = provider.getSigner(
     //   "0x22276A1BD16bc3052b362C2e0f65aacE04ed6F99"
     // )
@@ -632,7 +633,32 @@ describe("Loki unit tests", function () {
       //console.log(stbt.functions)
       assert.isTrue(postPermissions[1])
     })
-    it("STBT whale should be able to deposit STBT", async function () {})
+    it("STBT whale should be able to deposit STBT", async function () {
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [sWhale._address],
+      })
+      const stbtBalance = await stbt.balanceOf(sWhale._address)
+      const stbtAllowance = await stbt.allowance(sWhale._address, vault.address)
+      const stbtDeposit = ethers.utils.parseUnits("200000", 18)
+      const vaultStbtBalance = await stbt.balanceOf(vault.address)
+      // console.log("stbt Balance:", stbtBalance.toString())
+      // console.log("stbt Deposit:", stbtDeposit.toString())
+      // console.log("stbt Allowance:", stbtAllowance.toString())
+      // console.log("vault stbt balance:", vaultStbtBalance.toString())
+      if (stbtAllowance.toString() < stbtDeposit.toString()) {
+        await stbt.connect(sWhale).approve(vault.address, stbtDeposit, {
+          gasLimit: 300000,
+        })
+        console.log(stbtDeposit.toString(), "STBT approved!")
+      }
+      if (vaultStbtBalance < stbtDeposit) {
+        await vault.connect(sWhale).deposit(stbtDeposit, vault.address, {
+          gasLimit: 300000,
+        })
+      }
+      assert.isTrue(vaultStbtBalance >= stbtDeposit)
+    })
     it("vault should mint and hold xUNO after the STBT deposit", async function () {})
     it("reverts if `amount` input is zero", async function () {})
     it("reverts if `token` input is more than two", async function () {})
