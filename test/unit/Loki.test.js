@@ -768,14 +768,14 @@ describe("Loki unit tests", function () {
 
       if (slicedVaultAssets < 200000) {
         await stbt.connect(sWhale).transfer(vault.address, thousandStbt)
-        console.log("mock stbt rewards distributed!")
+        //console.log("mock stbt rewards distributed!")
       }
       if (initialVaultAllowance < xUnoDeposit) {
         await vault
           .connect(whale)
           .approve(vault.address, xUnoDeposit - initialVaultAllowance)
       }
-      console.log("whale vault balance:", whaleBalance.toString())
+      //console.log("whale vault balance:", whaleBalance.toString())
       if (whaleBalance > 100000000 && totalClaimed == 0) {
         const claimTx = await vault
           .connect(whale)
@@ -788,14 +788,13 @@ describe("Loki unit tests", function () {
       const finalVaultAssets = await stbt.balanceOf(vault.address)
       const finalWhaleVaultBalance = await vault.connect(whale).viewBalance(1)
       const finalTotalClaimed = await vault.viewTotalClaimed()
-      console.log("initial vault shares:", initialVaultShares.toString())
-      console.log("initial vault assets:", initialVaultAssets.toString())
-      console.log("initial vault allowance:", initialVaultAllowance.toString())
-
-      console.log("final vault shares:  ", finalVaultShares.toString())
-      console.log("final vault assets:", finalVaultAssets.toString())
-      console.log("final whale vbalance:", finalWhaleVaultBalance.toString())
-      console.log("total assets claimed:", finalTotalClaimed.toString())
+      // console.log("initial vault shares:", initialVaultShares.toString())
+      // console.log("initial vault assets:", initialVaultAssets.toString())
+      // console.log("initial vault allowance:", initialVaultAllowance.toString())
+      // console.log("final vault shares:  ", finalVaultShares.toString())
+      // console.log("final vault assets:", finalVaultAssets.toString())
+      // console.log("final whale vbalance:", finalWhaleVaultBalance.toString())
+      // console.log("total assets claimed:", finalTotalClaimed.toString())
     })
     it("user stablecoin balance is updated", async function () {
       // console.log("initial usdc bal:", initialUsdcBal.toString())

@@ -85,3 +85,16 @@ Changing withdrawal slippage caluclation to:
 2. divie by 1e18 if stable is dai OR divide by 1e30 if stable is usdc or usdt
 
 This means that the maximum amount you could ever lose is 1% of your rewards
+
+### Test explaination / walkthrough
+
+The `MatrixUno` tests start with setting up the vault by depositing the initial $200,000 worth of STBT into it.
+Once the xUNO has been minted and stored into the vault, users are ready to `stake`.
+We test `stake` by letting a USDC whale stake $50,000, which is 1/4 of the initial amount.
+Now that the user has the xUNO, we want to test the `claim` function.
+But before we can, we must send a transaction that mocks STBT's `distributeRewards` function call.
+I sent $1000 STBT to the vault so now the total vault STBT balance is $201,000.
+Now when we call `claim`, and transfer the xUNO back to the vault.
+Now the vault swaps $250 STBT into USDC as the user's rewards since he owned 25% of initial amount.
+The vault finally transfers the $50,250 to the user.
+The vault's final STBT balance is $200,750.
