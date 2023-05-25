@@ -98,3 +98,45 @@ Now when we call `claim`, and transfer the xUNO back to the vault.
 Now the vault swaps $250 STBT into USDC as the user's rewards since he owned 25% of initial amount.
 The vault finally transfers the $50,250 to the user.
 The vault's final STBT balance is $200,750.
+
+### Possible upgrades
+
+1. instead of using `stableBalance` + `minimumReceive` as the rewards to send to users when they `claim()`, we could just increment the
+   user's balance with the `minimumReceive` and then transfer the balance
+2. total STBT earned by the vault as rewards can be calculated by `totalClaimed` + `viewRedeemable()`, then using this number you can caluclate the amount of rewards a user should receieve. This way users can't repeatedly `stake` and `claim` to keep receiving rewards proportional to
+   the amount they staked.
+
+For example:
+
+User `stake`s 25% / $50,000 of `initialAmount` ($200,000).
+Then `claim`s $250 out of $1000 rewards earned by the vault.
+Then the user `stake`s again and now has 25% of the `initialAmount` again.
+The user calls `claim` to try and get 25% of the remaining $750 that is redeemable, currently the user can do this.
+To correct this, we need to somehow calculate his rewards and end up with 0 as the answer.
+
+currently we get his rewards with the formula:
+
+r = (t - i) / (i / u)
+r = d / p
+
+rewards = (totalAssets - initialAssets) / (initialAssets / userStake)
+rewards = totalRedeemable / portion
+
+But a revised formula that accounts for the amount that the user has already claimed could be:
+
+rewards = ((t - i) - (e - c)) / (i / u) <---------- WORK IN PROGRESS, THIS DOESN'T WORK
+
+**where**:
+
+t/totalAssets = total amount of STBT in the vault
+i/initialAssets = initial amount of STBT in the vault
+e/totalEarned = total amount of stbt sent to the vault (totalRedeemable + totalClaimed)
+c/claimed = total amount the user has claimed
+u/userStake = total amount of stablecoins the user staked
+
+**variables:**
+
+- totalClaimed - total stbt rewards claiemd
+- totalEarned - total stbt rewards sent to vault (this is totalRedeemable + totalClaimed)
+- claimed[msg.sender] - how much the user has claimed
+-
