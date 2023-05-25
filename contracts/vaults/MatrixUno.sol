@@ -168,7 +168,7 @@ contract MatrixUno is ERC4626 {
      console.log("earned:", earned);
      console.log("minimumReceive:", minimumReceive);
      stbt.approve(address(pool), earned);
-     pool.exchange_underlying(int128(0),int128(uint128(token + 1)), earned, minimumReceive); //
+     pool.exchange_underlying(int128(0),int128(uint128(token + 1)), earned, minimumReceive); 
      // finally transfer stablecoins to user
      IERC20(stables[token]).transfer(msg.sender, stableBalance + minimumReceive);
      return stableBalance + minimumReceive;

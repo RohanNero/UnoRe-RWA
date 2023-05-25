@@ -34,6 +34,7 @@ describe("Loki unit tests", function () {
     vault,
     stbtModeratorExecutor,
     stbtModeratorProposer
+  //initialUsdcBal
   beforeEach(async function () {
     ;[deployer] = await ethers.getSigners()
     //console.log(network)
@@ -97,6 +98,7 @@ describe("Loki unit tests", function () {
       stbtModeratorAbi,
       "0x22276A1BD16bc3052b362C2e0f65aacE04ed6F99"
     )
+    //initialUsdcBal = await usdc.balanceOf(whale._address)
     // deposit = await ethers.getContract("deposit")
     //matrixUNO = await ethers.getContract("MatrixUNO")
     //loki = await ethers.getContract("Loki")
@@ -795,7 +797,11 @@ describe("Loki unit tests", function () {
       console.log("final whale vbalance:", finalWhaleVaultBalance.toString())
       console.log("total assets claimed:", finalTotalClaimed.toString())
     })
-    it("user stablecoin balance is updated", async function () {})
+    it("user stablecoin balance is updated", async function () {
+      // console.log("initial usdc bal:", initialUsdcBal.toString())
+      // const updatedUsdcBal = await usdc.balanceOf(whale._address)
+      // console.log("updated usdc bal:", updatedUsdcBal.toString())
+    })
     it("vault exchanges stbt for stablecoin", async function () {})
     it("vault transfers stablecoin to user", async function () {})
     it("emits the `stablesClaimed` event", async function () {})

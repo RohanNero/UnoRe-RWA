@@ -79,7 +79,9 @@ Once users have staked xUNO we have finished the deposit/staking flow.
 
 ### Additional
 
-changing withdrawal slippage caluclation to
+Changing withdrawal slippage caluclation to:
 
 1. multiply by .99, which is 99 followed by 16 zeros
 2. divie by 1e18 if stable is dai OR divide by 1e30 if stable is usdc or usdt
+
+This means that the maximum amount you could ever lose is 1% of your rewards
