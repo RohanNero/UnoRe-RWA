@@ -140,3 +140,22 @@ u/userStake = total amount of stablecoins the user staked
 - totalEarned - total stbt rewards sent to vault (this is totalRedeemable + totalClaimed)
 - claimed[msg.sender] - how much the user has claimed
 -
+
+### Possible reward calculation function
+
+```js
+function calculateRewards(address user) public view returns (uint) {
+  uint lastClaimWeek = lastClaim[user];
+  uint currentWeek = (block.timestamp - startingTimestamp) / SECONDS_IN_WEEK;
+  uint totalRewards = 0;
+
+  for (uint i = lastClaimWeek; i < currentWeek; i++) {
+    totalRewards += rewardsPerWeek[i];
+  }
+
+  uint stakedPortion = initialVaultBalance / userStakes[user];
+  uint userRewards = (totalRewards / stakedPortion);
+
+  return userRewards;
+}
+```
