@@ -69,8 +69,13 @@ Once users have staked xUNO we have finished the deposit/staking flow.
 1. If a user tries to stake an amount that requires the vault sending more shares than it currently has, should we revert the entire transaction and display the current balance next to the amount requested? Or should we send them all the xUNO we have left and only transferFrom part of the stablecoin amount they approved to cover the amouunt of xUNO we send to them?
 2. What will we do about users that hold STBT and want to `deposit` into the vault and mint new xUNO?
 3. What if Uno Re wants to withdrawal the STBT and burn it for the initial stablecoin deposit?
-
-- should Uno always be allowed to withdraw? Or should they only be allowed if they have the xUNO amount that was minted.
+4. Should Uno always be allowed to withdraw? Or should they only be allowed if they have the xUNO amount that was minted.
+5. What will we do about users that lost access to their account after receiving xUNO?
+6. Need a plan for when Uno Re wants to return/burn STBT for their stablecoin investment back.
+7. Test to ensure the reward calculation formula holds true if Uno Re were to deposit additional STBT into the vault.
+   - it currently doesn't, we need an additional `if` statement to check if the initial assets amount was updated.
+   - add a check before calculating rewards to see if the `initialVaultBalance` was updated or not, if it was updated at week y,
+     then calculate the rewards for week x like normal, but then calculate rewards for week y based on the updated STBT vault balance
 
 ### Additional
 
