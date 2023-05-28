@@ -22,15 +22,10 @@
 
 ### TO DO
 
-1. clean up tests and make them adapt to the current network
-2. create Loki contract logic that follows preliminary tests flow
-3. calculate exact yield
-
-   - 4-5% currently for STBT
-   - x - y% currently for xUNO
-
-4. create redemption and withdrawal flows
-5. create withdrawal tests to follow preliminary deposit test flow
+1. implement the updated vault logic for reward calculation
+2. rename `claim` to `unstake` and implement a `claim` function to get rewards without withdrawing stablecoins
+3. test the new logic on mainnet fork
+4. test the new logic on Goerli testnet
 
 ### EXTRA
 
@@ -159,3 +154,103 @@ function calculateRewards(address user) public view returns (uint) {
   return userRewards;
 }
 ```
+
+Test function examples:
+
+1. Alice depositing 50,000 for the first time on week 1:
+   lastClaimWeek = 0
+   currentWeek = 1
+   totalRewards = 1000
+   stakedPortion = 0
+   userRewards = 0
+
+2. Alice depositing 50,000 for the second time on week 3:
+   lastClaimWeek = 1
+   currentWeek = 3
+   totalRewards = 2000
+   stakedPortion = 4
+   userRewards = $500
+
+3. Bob depositing $50,000 for the first time on week 3:
+   lastClaimWeek = 0
+   currentWeek = 3
+   totalRewards = 3000
+   stakedPortion = 0
+   userRewards = 0
+
+4. Alice claiming rewards on week 5:
+   lastClaimWeek = 3
+   currentWeek = 5
+   totalRewards = 2000
+   stakedPortion = 2
+   userRewards = $1000
+
+5. Bob claiming rewards on week 5:
+   lastClaimWeek = 3
+   currentWeek = 5
+   totalRewards = 2000
+   stakedPortion = 4
+   userRewards = $500
+
+6. Patrick depositing $50,000 on week 6
+   lastClaimWeek = 0
+   currentWeek = 6
+   totalRewards = 6000
+   stakedPortion = 0
+   userRewards = 0
+
+7. Alice claiming rewards on week 6
+   lastClaimWeek = 5
+   currentWeek = 6
+   totalRewards = 1000
+   stakedPortion = 2
+   userRewards = $500
+
+8. Bob claiming rewards on week 6
+   lastClaimWeek = 5
+   currentWeek = 6
+   totalRewards = 1000
+   stakedPortion = 4
+   userRewards = $250
+
+9. Patrick claiming rewards on week 7
+   lastClaimWeek = 6
+   currentWeek = 7
+   totalRewards = 1000
+   stakedPortion = 4
+   userRewards = $250
+
+10. Alice claiming rewards on week 7
+    lastClaimWeek = 6
+    currentWeek = 7
+    totalRewards = 1000
+    stakedPortion = 2
+    userRewards = $500
+
+11. Bob claiming rewards on week 7
+    lastClaimWeek = 6
+    currentWeek = 7
+    totalRewards = 1000
+    stakedPortion = 4
+    userRewards = $250
+
+12. Patrick claiming rewards on week 8
+    lastClaimWeek = 7
+    currentWeek = 8
+    totalRewards = 1000
+    stakedPortion = 4
+    userRewards = $250
+
+13. Alice claiming rewards on week 8
+    lastClaimWeek = 7
+    currentWeek = 8
+    totalRewards = 1000
+    stakedPortion = 2
+    userRewards = $500
+
+14. Bob claiming rewards on week 8
+    lastClaimWeek = 7
+    currentWeek = 8
+    totalRewards = 1000
+    stakedPortion = 4
+    userRewards = $250
