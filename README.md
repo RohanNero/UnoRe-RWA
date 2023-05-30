@@ -18,14 +18,14 @@ By staking to the vault you earn these native `STBT` yields proportional to the 
 
 **where**:
 
-r = rewards to send to the user
-i/initialAmount = initial amount of STBT in the vault
-c/currentWeek = the current week index, starting from the contract's deployment
-u/userStake = total amount of stablecoins the user staked
-l = the lastClaim week or last time the user claimed their rewards
-x = an integer starting at 0
-Ia = array of rewards the vault earned each week
-Ib = array of underlying vault STBT balances each week
+- r = rewards to send to the user
+- i = initial amount of STBT in the vault
+- c = the current week index, starting from the contract's deployment
+- u/userStake = total amount of stablecoins the user staked
+- l = the lastClaim week or last time the user claimed their rewards
+- Ia = array of rewards the vault earned each week
+- Ib = array of underlying vault STBT balances each week
+- x = an integer starting at 0
 
 The deposit flow is pretty straightforward and follows the steps outlined in this diagram
 
