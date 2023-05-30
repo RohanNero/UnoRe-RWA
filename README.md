@@ -14,7 +14,18 @@ Users may stake DAI, USDC, or USDT into the `MatrixUno` vault to receive `xUNO`.
 
 By staking to the vault you earn these native `STBT` yields proportional to the amount you've staked. Rewards are distributed to users automatically whenever they call `stake`, `unstake` or `claim`. The formula for calculating a user's rewards at any time is as follows:
 
-![](images/formula.png)
+![](images/formula.svg)
+
+**where**:
+
+r = rewards to send to the user
+i/initialAmount = initial amount of STBT in the vault
+c/currentWeek = the current week index, starting from the contract's deployment
+u/userStake = total amount of stablecoins the user staked
+l = the lastClaim week or last time the user claimed their rewards
+x = an integer starting at 0
+Ia = array of rewards the vault earned each week
+Ib = array of underlying vault STBT balances each week
 
 The deposit flow is pretty straightforward and follows the steps outlined in this diagram
 
