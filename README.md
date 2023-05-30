@@ -21,7 +21,7 @@ By staking to the vault you earn these native `STBT` yields proportional to the 
 - r = rewards to send to the user
 - i = initial amount of STBT in the vault
 - c = the current week index, starting from the contract's deployment
-- u/userStake = total amount of stablecoins the user staked
+- u = total amount of stablecoins the user staked
 - l = the lastClaim week or last time the user claimed their rewards
 - Ia = array of rewards the vault earned each week
 - Ib = array of underlying vault STBT balances each week
