@@ -44,6 +44,7 @@ module.exports = {
       chainId: 1337,
       forking: {
         url: process.env.FORKING_URL,
+        blockNumber: 17372500,
       },
     },
     goerli: {
