@@ -22,6 +22,7 @@
 
 ### TO DO
 
+0. Figure out how to handle user STBT deposit/withdrawals
 1. implement the updated vault logic for reward calculation
 2. rename `claim` to `unstake` and implement a `claim` function to get rewards without withdrawing stablecoins
 3. test the new logic on mainnet fork
@@ -124,27 +125,23 @@ rewards = totalRedeemable / portion
 
 But a revised formula that accounts for the amount that the user has already claimed could be:
 
-rewards = ((t - i) - (e - c)) / (i / u) <---------- WORK IN PROGRESS, THIS DOESN'T WORK
+![](images/formula.png)
 
 **where**:
 
-t/totalAssets = total amount of STBT in the vault
-i/initialAssets = initial amount of STBT in the vault
-e/totalEarned = total amount of stbt sent to the vault (totalRedeemable + totalClaimed)
-c/claimed = total amount the user has claimed
+r = rewards to send to the user
+i/initialAmount = initial amount of STBT in the vault
+c/currentWeek = the current week index, starting from the contract's deployment
 u/userStake = total amount of stablecoins the user staked
+l = the lastClaim week or last time the user claimed their rewards
+x = an integer starting at 0
+p = an array that stores the rewards the vault earned that week
 
-**variables:**
-
-- totalClaimed - total stbt rewards claiemd
-- totalEarned - total stbt rewards sent to vault (this is totalRedeemable + totalClaimed)
-- claimed[msg.sender] - how much the user has claimed
--
-
-### Possible reward calculation function
+### Possible reward calculation function WIP
 
 ```js
 function calculateRewards(address user) public view returns (uint) {
+
   uint lastClaimWeek = lastClaim[user];
   uint currentWeek = (block.timestamp - startingTimestamp) / SECONDS_IN_WEEK;
   uint totalRewards = 0;

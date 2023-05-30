@@ -55,6 +55,9 @@ contract MatrixUno is ERC4626 {
     /**@notice the amount of STBT deposited by Uno Re */
     uint private initialAmount;
 
+    /**@notice the current amount of STBT deposited in the vault by Uno Re */
+    uint private currentAmount;
+
 
     /**@notice Uno Re's address used for depositing STBT */
     address private immutable uno;

@@ -16,6 +16,14 @@ By staking to the vault you earn these native `STBT` yields proportional to the 
 
 ![](images/formula.png)
 
+The deposit flow is pretty straightforward and follows the steps outlined in this diagram
+
+![](images/deposit_diagram.png)
+
+The withdrawal flow is a little more complex involving an extra step to convert STBT into stablecoins before being sent to the user
+
+![](images/withdrawal_diagram.png)
+
 ### Begin testing Matrix - Uno Re flow
 
 The first thing you must do to test the MatrixUno flow is put your mainnet RPC_URL in the .env file like shown in the `.env.example`
