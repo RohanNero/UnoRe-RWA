@@ -1,6 +1,7 @@
 ### Notes
 
 - When calling an overloaded function, (function that shares name with another), you must use full signature!
+- If you change the MatrixUno contract logic, the address will change which requires you to change STBT permission test address (remix)
 
   **Example:**
 
