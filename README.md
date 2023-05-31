@@ -44,13 +44,38 @@ The first thing you must do to test the MatrixUno flow is put your mainnet RPC_U
 
     `FORKING_URL=https://eth-mainnet.g.alchemy.com/v2/<YOUR_KEY>`
 
+#### Mainnet Fork
+
 Now we can start a mainnet fork on your local hardhat blockchain
 
     `yarn hardhat node --tags matrixUno`
 
-After the fork has started running, and your vault contract has been deployed, you're ready to run the tests
+After the fork has started running, and your vault contract has been deployed, you're ready to run the fork tests
 
     `yarn hardhat test --network localhost`
+
+If all 17 `stake()` and `claim()` tests pass, then everything is working as expected! These tests showcase staking an amount of stablecoin,
+and then unstaking the stablecoin to get your initial tokens back plus any earned rewards.
+
+#### Goerli testnet
+
+Testing on Goerli has many key differences from how the forked tests are performed, however the overall flow remains the same. To begin testing on Goerli, you first must deploy a `MockCurvePool` contract that acts as our STBT/3CRV pool to swap STBT for stablecoins.
+
+`yarn hardhat deploy --network goerli --tags curve`
+
+Once the Mock Curve Pool contract is deployed, take the contract address and paste it into the `poolAddress` variable under the Goerli Network Config section of the `helper-hardhat-config.js` file. Once the newly deployed mock pool address is in the helper config file, you can deploy the actual `MatrixUno` vault.
+
+`yarn hardhat deploy --network goerli --tags matrixUno`
+
+Once the contracts are deployed, both of them must be whitelisted by the STBT bot on Telegram. To do so, run the following command:
+
+`/bind_address <YOUR_ADDRESS_HERE>`
+
+This will whitelist your contract and also transfer 1 million mock USDC to it. After the contracts have been whitelisted to receieve STBT, you can run the `MatrixUno` staging tests.
+
+`yarn hardhat test --network goerli`
+
+If you see `false` console logged in the terminal, run the test command again. Sometimes the variables take longer than one block confirmation to get updated.
 
 ### Maple UNO
 

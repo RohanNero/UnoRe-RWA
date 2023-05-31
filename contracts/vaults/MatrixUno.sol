@@ -156,7 +156,6 @@ contract MatrixUno is ERC4626 {
         //  } else {
         //   balances[msg.sender][token] -= amount;
         //  }
-
         //console.log("subtractAmount:", subtractAmount);
 
         // calculate rewards earned by user
@@ -164,7 +163,11 @@ contract MatrixUno is ERC4626 {
         uint pot = viewRedeemable() + claimedByOthers;
         uint earned = pot / viewPortion();
         // updating global variables
-        balances[msg.sender][token] -= amount;
+        if (token > 0) {
+            balances[msg.sender][token] -= (amount / 1e12);
+        } else {
+            balances[msg.sender][token] -= amount;
+        }
         totalClaimed += earned;
         claimed[msg.sender] += earned;
         // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin

@@ -12,11 +12,14 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   //log(chainId)
 
   if (chainId == 5) {
-    const MockCurvePool = await deploy("MockCurvePool", {
+    const mockCurvePool = await deploy("MockCurvePool", {
       from: deployer,
       log: true,
       waitConfirmations: networkConfig[chainId].blockConfirmations,
     })
+
+    log("Verifying contract...")
+    await verify(mockCurvePool.address)
   }
 }
 

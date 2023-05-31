@@ -22,16 +22,15 @@ contract MockCurvePool {
      *@param j Index valie of the underlying coin to receive
      *@param _dx Amount of `i` being exchanged
      *@param _min_dy Minimum amount of `j` to receive
-     *@param _receiver Address that receives `j`
      *@return Actual amount of `j` received */
     function exchange_underlying(
         int128 i,
         int128 j,
         uint256 _dx,
-        uint256 _min_dy,
-        address _receiver
+        uint256 _min_dy
     ) public returns (uint256) {
         stbt.transferFrom(msg.sender, address(this), _dx);
+        /**@notice the amount is divided by 1e12 to remove 12 zeros since USDC only has 6 decimals */
         usdc.transfer(msg.sender, _min_dy);
     }
 }
