@@ -15,7 +15,7 @@ const networkConfig = {
     name: "goerli",
     blockConfirmations: "5",
     stbtAddress: "0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32",
-    poolAddress: "",
+    poolAddress: "0x7Cff3FEC7B5b9EE81af7e1eB69DC24700A8D4F43",
     unoAddress: "0xe4A98D2bFD66Ce08128FdFFFC9070662E489a28E",
     stables: [
       "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
@@ -35,7 +35,7 @@ const networkConfig = {
 
 const developmentChains = ["hardhat", "localhost"]
 
-const abi = [
+const usdcAbi = [
   {
     anonymous: false,
     inputs: [
@@ -3915,7 +3915,7 @@ const stbtModeratorAbi = [
 module.exports = {
   developmentChains,
   networkConfig,
-  abi,
+  usdcAbi,
   lpAbi,
   gaugeAbi,
   threeCRVAbi,

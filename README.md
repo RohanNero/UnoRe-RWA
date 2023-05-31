@@ -34,6 +34,10 @@ The withdrawal flow is a little more complex involving an extra step to convert 
 
 ![](images/withdrawal_diagram.png)
 
+## Testing
+
+Currently there are two seperate test flows being used, one on an Ethereum Mainnet Fork, and the other on Ethereum's Goerli testnet
+
 ### Begin testing Matrix - Uno Re flow
 
 The first thing you must do to test the MatrixUno flow is put your mainnet RPC_URL in the .env file like shown in the `.env.example`

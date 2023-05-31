@@ -11,19 +11,12 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   const chainId = await getChainId()
   //log(chainId)
 
-  if (developmentChains.includes(network.name)) {
-  } else {
-  }
-
-  mapleUNO = await deploy("deposit", {
-    from: deployer,
-    log: true,
-    waitConfirmations: networkConfig[chainId].blockConfirmations,
-  })
-
-  if (!developmentChains.includes(network.name)) {
-    log("Verifying contract...")
-    await verify(mapleUNO.address, args)
+  if (chainId == 5) {
+    const MockCurvePool = await deploy("MockCurvePool", {
+      from: deployer,
+      log: true,
+      waitConfirmations: networkConfig[chainId].blockConfirmations,
+    })
   }
 }
 
