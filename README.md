@@ -30,7 +30,7 @@ The deposit flow is pretty straightforward and follows the steps outlined in thi
 
 ![](images/stake_diagram.png)
 
-The withdrawal flow is a little more complex involving an extra step to convert STBT into stablecoins before being sent to the user
+The `unstake()` flow is a little more complex involving an extra step to convert STBT into stablecoins before being sent to the user
 
 ![](images/unstake_diagram.png)
 
