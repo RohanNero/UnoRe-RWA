@@ -26,7 +26,7 @@ By staking to the vault you earn these native `STBT` yields proportional to the 
 - Ib = array of underlying vault STBT balances each week
 - x = an integer starting at 0
 
-The deposit flow is pretty straightforward and follows the steps outlined in this diagram
+The `stake()` flow is pretty straightforward and follows the steps outlined in this diagram
 
 ![](images/stake_diagram.png)
 
