@@ -5,10 +5,18 @@ const networkConfig = {
     stbtAddress: "0x530824da86689c9c17cdc2871ff29b058345b44a",
     poolAddress: "0x892d701d94a43bdbcb5ea28891daca2fa22a690b",
     unoAddress: "0x81BD585940501b583fD092BC8397F2119A96E5ba",
+    stables: [
+      "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    ],
   },
   5: {
     name: "goerli",
     blockConfirmations: "5",
+    stbtAddress: "0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32",
+    poolAddress: "",
+    unoAddress: "",
   },
   80001: {
     name: "mumbai",

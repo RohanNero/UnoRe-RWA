@@ -16,6 +16,7 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
     networkConfig[chainId]["stbtAddress"],
     networkConfig[chainId]["poolAddress"],
     networkConfig[chainId]["unoAddress"],
+    networkConfig[chainId]["stables"],
   ]
 
   matrixUno = await deploy("MatrixUno", {
