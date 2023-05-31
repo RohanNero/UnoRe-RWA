@@ -133,7 +133,7 @@ contract MatrixUno is ERC4626 {
      *@param amount - the amount of xUNO you want to return to the vault
      *@param token - the stablecoin you want your interest to be in
      *@dev (currently must match the deposited stable)*/
-    function claim(uint amount, uint8 token) public returns (uint) {
+    function unstake(uint amount, uint8 token) public returns (uint) {
         /** Steps to claim
       1. approve xUNO
       2. xUNO transferFrom to vault

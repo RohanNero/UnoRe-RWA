@@ -739,10 +739,10 @@ describe("Loki unit tests", function () {
       assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
     })
   })
-  describe("claim", function () {
+  describe("unstake", function () {
     it("reverts if `amount` input is zero", async function () {
       await expect(
-        vault.connect(whale).claim(0, 1, { gasLimit: 300000 })
+        vault.connect(whale).unstake(0, 1, { gasLimit: 300000 })
       ).to.be.revertedWithCustomError(vault, "MatrixUno__ZeroAmountGiven")
     })
     it("reverts if `token` input is more than two", async function () {
@@ -779,7 +779,7 @@ describe("Loki unit tests", function () {
       if (whaleBalance > 100000000 && totalClaimed == 0) {
         const claimTx = await vault
           .connect(whale)
-          .claim(xUnoDeposit, 1, { gasLimit: 3000000 })
+          .unstake(xUnoDeposit, 1, { gasLimit: 3000000 })
         await claimTx.wait(1)
       }
 
