@@ -24,6 +24,30 @@
 ### TO DO
 
 0. Figure out how to handle user STBT deposit/withdrawals
+
+   - STBT deposits will add STBT to the vault that isnt rewards, STBT withdrawals for these users must use the
+     initial STBT deposit + STBT earned by that portion of STBT deposited. Implementing this feature requires refactoring
+     how rewards are calculated for all users. This is because the reward formula relies on the amount of STBT earned by the vault per week, which works while expecting that the STBT deposited into the contract comes from Uno Re exclusively.
+     In order for this to work, the rewards must be calculated using the total amount of STBT deposited into the vault as opposed to just the STBT
+     deposited by Uno.
+     For example:
+     - Vault earns 1% rewards per week of the STBT deposited, if there is $200,000 worth of STBT in the contract then $2000 gets sent to the contract every week.
+     - If a user stakes $50,000 USDC they own a portion equal to 1/4 of the STBT in the contract, and receive $500 weekly.
+     - If a user depoits $50,000 STBT into the contract, the total amount now is $250,000 deposited
+     - This means the same user now only owns 1/5 of the STBT in the contract and should receive $500 weekly still.
+     - TDLR, to implement permissionless staking of stablecoins and STBT, the reward calculation formula for stablecoin stakers must be revised to calculate the reward amount by dividing the total STBT deposited by their portion, as opposed to the total STBT deposited by Uno Re.
+     - For STBT deposits, s = aT/B. 50,000 \* 200,000 / 200,000 = 50,000
+     - For STBT withdrawal, a = sB/T. 50,000 \* 252,500 / 250,000 = 50,500
+     - For Stablecoin stake, depositing gives you shares at a 1:1 ratio
+     - For stablecoin unstake, a user who has deposited the same amount of liquidity as the STBT depositer, will get 50,500 back as well.
+     - Based on these calculations, we can assume that the vault math holds up and also distributes rewards to users at the same rate as users
+       that have staked stablecoins.
+     - Need a variable that tracks the amount of STBT deposited not just by Uno Re, but also by all users.
+       Then the amount of rewards per week will be calculated using that number. e.g. current balance = 201,000 and total deposited = 200,000
+       rewards for week 1 = 1000. But what happens if only 200 of the 1000 is claimed before the next reward snapshot?
+       current balance = 201,800 and total deposited = 200,000. week 2 rewards = 1800 when it should be 1000 again. How can we solve this issue?
+       The formula that gets the `rewardsPerWeek` must be updated to account for non-claimed rewards. This might require that the total amount of STBT claimed is tracked in a variable.
+
 1. implement the updated vault logic for reward calculation
 2. rename `claim` to `unstake` and implement a `claim` function to get rewards without withdrawing stablecoins
 3. test the new logic on mainnet fork
