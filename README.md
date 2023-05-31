@@ -28,11 +28,11 @@ By staking to the vault you earn these native `STBT` yields proportional to the 
 
 The deposit flow is pretty straightforward and follows the steps outlined in this diagram
 
-![](images/deposit_diagram.png)
+![](images/stake_diagram.png)
 
 The withdrawal flow is a little more complex involving an extra step to convert STBT into stablecoins before being sent to the user
 
-![](images/withdrawal_diagram.png)
+![](images/unstake_diagram.png)
 
 ## Testing
 
