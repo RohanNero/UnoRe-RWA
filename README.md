@@ -77,10 +77,10 @@ This will whitelist your contract and also transfer 1 million mock USDC to it. A
 
 If you see `false` console logged in the terminal, run the test command again. Sometimes the variables take longer than one block confirmation to get updated.
 
-Example contracts deployed on Goerli:
+#### Example contracts deployed on Goerli:
 
-MatrixUno Vault [0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70](https://goerli.etherscan.io/address/0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70)
-Mock Curve Pool [0xC185462cDa787E00707b3E234e4763538fA15E8d](https://goerli.etherscan.io/address/0xC185462cDa787E00707b3E234e4763538fA15E8d)
+- MatrixUno Vault [0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70](https://goerli.etherscan.io/address/0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70)
+- Mock Curve Pool [0xC185462cDa787E00707b3E234e4763538fA15E8d](https://goerli.etherscan.io/address/0xC185462cDa787E00707b3E234e4763538fA15E8d)
 
 ### Maple UNO
 
