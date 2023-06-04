@@ -100,6 +100,7 @@ contract MatrixUnoV2 is ERC4626 {
         usdc = IERC20(stables[1]);
         usdt = IERC20(stables[2]);
         startingTimestamp = block.timestamp;
+        rewardInfoArray[0] = weeklyRewardInfo(0, 2e23, 2e23, );
     }
 
     /** USER FUNCTIONS */
@@ -117,8 +118,8 @@ contract MatrixUnoV2 is ERC4626 {
         if (token > 2) {
             revert MatrixUno__InvalidTokenId(token);
         }
-        /**@notice Transfer xUNO from the vault to the user
-         @dev Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
+        /**  Transfer xUNO from the vault to the user
+         Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
          DAI = 18 decimals, USDT/USDC = 6 decimals
          100 DAI  = 100000000000000000000
          100 USDC = 100000000 */
@@ -128,25 +129,30 @@ contract MatrixUnoV2 is ERC4626 {
         } else {
             transferAmount = amount;
         }
-        /**@notice if there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
+        /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint transferFromAmount;
         console.log("balanceOf:", this.balanceOf(address(this)));
         if (this.balanceOf(address(this)) < transferAmount) {
-            transferFromAmount = this.balanceOf(address(this));
+            if (token > 0) {
+                transferFromAmount = this.balanceOf(address(this)) / 1e12;
+            } else {
+                transferFromAmount = this.balanceOf(address(this));
+            }
         } else {
             transferFromAmount = amount;
         }
         console.log("transferFrom:", transferFromAmount);
-        /**@notice actually moving the tokens and updating balance */
+        /** Actually moving the tokens and updating balance */
         IERC20(stables[token]).transferFrom(
             msg.sender,
             address(this),
             transferFromAmount
         );
+        _claim(msg.sender);
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
         console.log("transferAmount:", transferAmount);
         console.log("msg.sender:", msg.sender);
-        this.transfer(msg.sender, transferAmount);
+        transfer(msg.sender, transferAmount);
         shares = transferAmount;
     }
 
