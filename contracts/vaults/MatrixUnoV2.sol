@@ -301,9 +301,11 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
             SECONDS_IN_WEEK;
         uint totalRewards = 0;
         for (uint i = lastClaimWeek; i < currentWeek; i++) {
-            uint stakedPortion = viewPortion(addr);
-            uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
-            totalRewards += userRewards;
+            uint stakedPortion = viewPortionAt(i, addr);
+            if (stakedPortion > 0) {
+                uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
+                totalRewards += userRewards;
+            }
         }
         return totalRewards;
     }
@@ -361,10 +363,38 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         redeemable = this.totalAssets() - initialAmount;
     }
 
-    /**@notice this function returns the amount of times that the users totalStaked goes into the initialAmount
+    /**@notice this function returns the amount of times that the users totalStaked goes into the initialAmount at given week
+     *@dev essentially views what portion of the STBT is being represented by the user
+     *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of initialAmount)
+     *@param week is the rewardInfoArray index that you'd like to view portion from
+     *@param addr is the user's portion you are viewing */
+    function viewPortionAt(
+        uint week,
+        address addr
+    ) public view returns (uint portion) {
+        uint daiStaked = claimInfoMap[addr].balances[0];
+        uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
+        uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
+        uint totalStaked = daiStaked + usdcStaked + usdtStaked;
+        console.log("dai staked:", daiStaked);
+        console.log("usdc staked:", usdcStaked);
+        console.log("usdt staked:", usdtStaked);
+        console.log("total staked:", totalStaked);
+        console.log("initialAmount", initialAmount);
+        if (totalStaked > 0) {
+            portion = rewardInfoArray[week].vaultAssetBalance / totalStaked;
+        } else {
+            portion = 0;
+        }
+        console.log("portion:", portion);
+    }
+
+    /**@notice this function returns the amount of times that the users totalStaked goes into the initialAmount currently
      *@dev essentially views what portion of the STBT is being represented by the user
      *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of initialAmount) */
-    function viewPortion(address addr) public view returns (uint portion) {
+    function viewCurrentPortion(
+        address addr
+    ) public view returns (uint portion) {
         uint daiStaked = claimInfoMap[addr].balances[0];
         uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
         uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
