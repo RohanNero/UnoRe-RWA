@@ -14,6 +14,9 @@ error MatrixUno__InvalidTokenId(uint tokenId);
    @param transferAmount - the amount of shares that would be transferred to the user */
 error MatrixUno__NotEnoughShares(uint vaultBalance, uint transferAmount);
 
+/**@notice used when `performUpkeep()` is called before a week has passed */
+error MatrixUno__UpkeepNotReady();
+
 /**@title MatrixUno
  *@author Rohan Nero
  *@notice this contract allows UNO users to earn native STBT yields from Matrixdock.
@@ -79,6 +82,9 @@ contract MatrixUnoV2 is ERC4626 {
     /**@notice constant variable representing the number of seconds in a week */
     uint private constant SECONDS_IN_WEEK = 604800;
 
+    /**@notice last timestamp that performUpkeep() was called */
+    uint private lastUpkeepTime;
+
     /**@notice need to provide the asset that is used in this vault
      *@dev vault shares are an ERC20 called "Matrix UNO"/"xUNO", these represent a user's stablecoin stake into an UNO-RWA pool
      *@param asset - the IERC contract you wish to use as the vault asset, in this case STBT
@@ -100,7 +106,7 @@ contract MatrixUnoV2 is ERC4626 {
         usdc = IERC20(stables[1]);
         usdt = IERC20(stables[2]);
         startingTimestamp = block.timestamp;
-        rewardInfoArray[0] = weeklyRewardInfo(0, 2e23, 2e23, );
+        rewardInfoArray[0] = weeklyRewardInfo(0, 2e23, 2e23, 0, 2e23);
     }
 
     /** USER FUNCTIONS */
@@ -231,23 +237,6 @@ contract MatrixUnoV2 is ERC4626 {
         earned = _claim(msg.sender);
     }
 
-    /** Internal and Private functions */
-
-    /**@notice contains the reward calculation logic
-     *@dev this function is called by `claim` and `unstake`  */
-    function _claim(address addr) private view returns (uint) {
-        uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
-        uint currentWeek = (block.timestamp - startingTimestamp) /
-            SECONDS_IN_WEEK;
-        uint totalRewards = 0;
-        for (uint i = lastClaimWeek; i < currentWeek; i++) {
-            uint stakedPortion = viewPortion(addr);
-            uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
-            totalRewards += userRewards;
-        }
-        return totalRewards;
-    }
-
     /** Native ERC-4626 Vault functions */
 
     /** @dev See {IERC4626-deposit}. */
@@ -268,6 +257,47 @@ contract MatrixUnoV2 is ERC4626 {
         }
 
         return shares;
+    }
+
+    /** Chainlink Automation functions */
+
+    /**@notice this function will call `performUpkeep()` when upkeepNeeded is true
+     *@dev returns true when one week has passed since the last `performUpkeep()` call
+     */
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */)
+    {
+        upkeepNeeded = (block.timestamp - lastTimeStamp) > interval;
+    }
+
+    function performUpkeep(bytes calldata /* performData */) external override {
+        //We highly recommend revalidating the upkeep in the performUpkeep function
+        if ((block.timestamp - lastUpkeepTime) < SECONDS_IN_WEEK) {
+            revert MatrixUno__UpkeepNotReady();
+        }
+        lastUpkeepTime = block.timestamp;
+    }
+
+    /** Internal and Private functions */
+
+    /**@notice contains the reward calculation logic
+     *@dev this function is called by `claim` and `unstake`  */
+    function _claim(address addr) private view returns (uint) {
+        uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
+        uint currentWeek = (block.timestamp - startingTimestamp) /
+            SECONDS_IN_WEEK;
+        uint totalRewards = 0;
+        for (uint i = lastClaimWeek; i < currentWeek; i++) {
+            uint stakedPortion = viewPortion(addr);
+            uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
+            totalRewards += userRewards;
+        }
+        return totalRewards;
     }
 
     /** View / Pure functions */
