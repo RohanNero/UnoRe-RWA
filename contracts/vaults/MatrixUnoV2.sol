@@ -22,6 +22,8 @@ error MatrixUno__InvalidTokenId(uint tokenId);
 error MatrixUno__NotEnoughShares(uint vaultBalance, uint transferAmount);
 /**@notice used when `performUpkeep()` is called before a week has passed */
 error MatrixUno__UpkeepNotReady();
+/**@notice used when calling `_claim` to ensure the user can claim rewards */
+error MatrixUno__CannotClaimYet();
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -62,8 +64,8 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
     }
 
     /**@notice each index corresponds to a week
-     *@dev index 0 has default values set but doesn't actually correspond to a real week
-     *@dev this means index 1 = week 1 and this is from startingTimestamp to startingTimestamp + SECONDS_IN_WEEK */
+     *@dev index 0 is the contract's first week of being deployed
+     *@dev starting at startingTimestamp, ending at startingTimestamp + SECONDS_IN_WEEK */
     weeklyRewardInfo[] private rewardInfoArray;
 
     /**@notice Array of the stablecoin addresses
@@ -119,7 +121,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         usdt = IERC20(stables[2]);
         startingTimestamp = block.timestamp;
         lastUpkeepTime = block.timestamp;
-        rewardInfoArray[0] = weeklyRewardInfo(0, 2e23, 2e23, 0, 2e23, 0, 0);
+        rewardInfoArray[0].previousWeekBalance = 2e23;
     }
 
     /** USER FUNCTIONS */
@@ -282,8 +284,26 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         // Most important task performUpkeep does is to set the weeklyRewardInfo for the week
         // This is crucial because the weeklyRewardInfo is used in user's reward calculation
 
-        // uint rewards; // amount of STBT rewards earned by the vault
-        // uint vaultAssetBalance; // total amount of assets deposited into the vault
+        uint currentWeek = viewCurrentWeek();
+        // set `currentBalance` for the current week
+        rewardInfoArray[currentWeek].currentBalance = stbt.balanceOf(
+            address(this)
+        );
+        weeklyRewardInfo memory currentInfo = rewardInfoArray[currentWeek];
+        //`rewardsPerWeek` = (`currentBalance` + `claimedPerWeek` + `withdrawn` ) - (`lastWeekBalance` + `deposited`)
+        rewardInfoArray[currentWeek].rewards =
+            (currentInfo.currentBalance +
+                currentInfo.rewardsClaimed +
+                currentInfo.withdrawn) -
+            (currentInfo.previousWeekBalance + currentInfo.deposited);
+        // Set the `previousWeekBalance` variable unless it's still week 0
+        if (currentWeek > 0) {
+            rewardInfoArray[currentWeek].previousWeekBalance = rewardInfoArray[
+                currentWeek - 1
+            ].currentBalance;
+        }
+        // uint rewards; this will be calculated inside this function
+        // uint vaultAssetBalance; already set
         // uint previousWeekBalance; MAY REMOVE THIS VARIABLE SINCE IT CAN BE FOUND BY VIEWING CURRENT BALANCE FOR PREVIOUS WEEK
         // uint rewardsClaimed; already set
         // uint currentBalance; view stbt.balanceOf(address(this))
@@ -297,8 +317,10 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
      *@dev this function is called by `claim` and `unstake`  */
     function _claim(address addr) private view returns (uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
-        uint currentWeek = (block.timestamp - startingTimestamp) /
-            SECONDS_IN_WEEK;
+        uint currentWeek = viewCurrentWeek();
+        if (lastClaimWeek >= currentWeek) {
+            revert MatrixUno__CannotClaimYet();
+        }
         uint totalRewards = 0;
         for (uint i = lastClaimWeek; i < currentWeek; i++) {
             uint stakedPortion = viewPortionAt(i, addr);
@@ -412,5 +434,11 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
             portion = 0;
         }
         console.log("portion:", portion);
+    }
+
+    /**@notice this function returns what week the contract is currently at
+     *@dev week 0 is the time frame from startingTimestamp to startingTimestamp + SECONDS_IN_WEEK */
+    function viewCurrentWeek() public view returns (uint) {
+        return (block.timestamp - startingTimestamp) / SECONDS_IN_WEEK;
     }
 }
