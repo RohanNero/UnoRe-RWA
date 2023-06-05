@@ -2,18 +2,24 @@
 
 pragma solidity 0.8.7;
 
+/**@notice this contract is a vault contract with some custom additions */
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+/**@notice used to interact with multiple ERC20 token contracts */
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+/**@notice used to update contract values weekly for reward calculation */
+import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
+/**@notice used when swapping STBT into stablecoins for user rewards */
 import "../Curve/interfaces/IStableSwap.sol";
+/**@notice used in testing to ensure values are set correctly */
 import "hardhat/console.sol";
 
+/**notice used to revert function calls that pass zero as the `amount` */
 error MatrixUno__ZeroAmountGiven();
 /**@param tokenId - corresponds to the `stables` indices */
 error MatrixUno__InvalidTokenId(uint tokenId);
 /**@param vaultBalance - the amount of shares the vault currently has
    @param transferAmount - the amount of shares that would be transferred to the user */
 error MatrixUno__NotEnoughShares(uint vaultBalance, uint transferAmount);
-
 /**@notice used when `performUpkeep()` is called before a week has passed */
 error MatrixUno__UpkeepNotReady();
 
@@ -21,7 +27,7 @@ error MatrixUno__UpkeepNotReady();
  *@author Rohan Nero
  *@notice this contract allows UNO users to earn native STBT yields from Matrixdock.
  *@dev This vault uses STBT as the asset and xUNO as the shares token*/
-contract MatrixUnoV2 is ERC4626 {
+contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
     /**@notice the STBT/3CRV pool used for withdrawals
      *@dev used to convert STBT rewards into stablecoins for users
      *@dev Ethereum mainnet address: 0x892d701d94a43bdbcb5ea28891daca2fa22a690b */
@@ -36,13 +42,16 @@ contract MatrixUnoV2 is ERC4626 {
     IERC20 private usdc;
     IERC20 private usdt;
 
-    /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week */
+    /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week
+     *@dev each struct corresponds to a different week since the contract's inception */
     struct weeklyRewardInfo {
-        uint rewards;
+        uint rewards; // amount of STBT rewards earned by the vault
         uint vaultAssetBalance; // total amount of assets deposited into the vault
-        uint previousWeekBalance;
-        uint rewardsClaimed;
+        uint previousWeekBalance; // the total STBT in the vault the previous week (last `performUpkeep()` call)
+        uint rewardsClaimed; // amount of STBT rewards that were claimed
         uint currentBalance; // total amount of assets in the vault, deposited or sent from MatrixPort
+        uint deposited; // amount of STBT deposited into the vault
+        uint withdrawn; // amount of STBT withdrawn from the vault
     }
 
     /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim week*/
@@ -52,10 +61,13 @@ contract MatrixUnoV2 is ERC4626 {
         uint totalAmountClaimed;
     }
 
-    /**@notice each index corresponds to a week  */
+    /**@notice each index corresponds to a week
+     *@dev index 0 has default values set but doesn't actually correspond to a real week
+     *@dev this means index 1 = week 1 and this is from startingTimestamp to startingTimestamp + SECONDS_IN_WEEK */
     weeklyRewardInfo[] private rewardInfoArray;
 
-    /**@notice Array of the stablecoin addresses */
+    /**@notice Array of the stablecoin addresses
+     *@dev 0 = DAI, 1 = USDC, 2= USDT*/
     address[3] private stables;
 
     /**@notice User stablecoin balances and week index of their last claim */
@@ -106,7 +118,8 @@ contract MatrixUnoV2 is ERC4626 {
         usdc = IERC20(stables[1]);
         usdt = IERC20(stables[2]);
         startingTimestamp = block.timestamp;
-        rewardInfoArray[0] = weeklyRewardInfo(0, 2e23, 2e23, 0, 2e23);
+        lastUpkeepTime = block.timestamp;
+        rewardInfoArray[0] = weeklyRewardInfo(0, 2e23, 2e23, 0, 2e23, 0, 0);
     }
 
     /** USER FUNCTIONS */
@@ -183,7 +196,7 @@ contract MatrixUnoV2 is ERC4626 {
             revert MatrixUno__InvalidTokenId(token);
         }
         this.transferFrom(msg.sender, address(this), amount);
-        uint stableBalance = claimInfoMap[msg.sender].balances[token];
+        //uint stableBalance = claimInfoMap[msg.sender].balances[token];
         //uint rewards; // minimumRecieved used instead
         //  if(token > 0) {
         //   balances[msg.sender][token] -= (amount / 1e12);
@@ -205,36 +218,19 @@ contract MatrixUnoV2 is ERC4626 {
         }
         totalClaimed += earned;
         claimInfoMap[msg.sender].totalAmountClaimed += earned;
-        // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
-        uint minimumReceive = earned * (99e16);
-        // 99% of the earned amount (.01)
-        if (token > 0) {
-            minimumReceive /= 1e30;
-        } else {
-            minimumReceive /= 1e18;
-        }
-        console.log("earned:", earned);
-        console.log("minimumReceive:", minimumReceive);
-        stbt.approve(address(pool), earned);
-        pool.exchange_underlying(
-            int128(0),
-            int128(uint128(token + 1)),
-            earned,
-            minimumReceive
-        );
-        // finally transfer stablecoins to user
-        IERC20(stables[token]).transfer(
-            msg.sender,
-            stableBalance + minimumReceive
-        );
-        return stableBalance + minimumReceive;
+
+        // swap STBT into stable and send to user
+        return _swap(earned, token, msg.sender);
     }
 
     /**@notice allows users to claim their staking rewards without unstaking
      *@dev calculates the amount of rewards a user is owed and sends it to them
      *@dev this function is called by unstake */
-    function claim() public returns (uint earned) {
+    function claim(uint8 token) public returns (uint earned) {
+        // calculate amount earned
         earned = _claim(msg.sender);
+        // swap STBT into stable and send to user
+        return _swap(earned, token, msg.sender);
     }
 
     /** Native ERC-4626 Vault functions */
@@ -272,15 +268,27 @@ contract MatrixUnoV2 is ERC4626 {
         override
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
-        upkeepNeeded = (block.timestamp - lastTimeStamp) > interval;
+        upkeepNeeded = (block.timestamp - lastUpkeepTime) > SECONDS_IN_WEEK;
     }
 
+    /**@notice this function is called by Chainlink weekly to update values for reward calculation
+     *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep(bytes calldata /* performData */) external override {
-        //We highly recommend revalidating the upkeep in the performUpkeep function
+        // It's highly recommended to revalidate the upkeep in the performUpkeep function
         if ((block.timestamp - lastUpkeepTime) < SECONDS_IN_WEEK) {
             revert MatrixUno__UpkeepNotReady();
         }
         lastUpkeepTime = block.timestamp;
+        // Most important task performUpkeep does is to set the weeklyRewardInfo for the week
+        // This is crucial because the weeklyRewardInfo is used in user's reward calculation
+
+        // uint rewards; // amount of STBT rewards earned by the vault
+        // uint vaultAssetBalance; // total amount of assets deposited into the vault
+        // uint previousWeekBalance; MAY REMOVE THIS VARIABLE SINCE IT CAN BE FOUND BY VIEWING CURRENT BALANCE FOR PREVIOUS WEEK
+        // uint rewardsClaimed; already set
+        // uint currentBalance; view stbt.balanceOf(address(this))
+        // uint deposited; already set
+        // uint withdrawn; already set
     }
 
     /** Internal and Private functions */
@@ -298,6 +306,37 @@ contract MatrixUnoV2 is ERC4626 {
             totalRewards += userRewards;
         }
         return totalRewards;
+    }
+
+    function _swap(
+        uint earned,
+        uint8 token,
+        address receiver
+    ) private returns (uint) {
+        uint stableBalance = claimInfoMap[receiver].balances[token];
+        // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
+        uint minimumReceive = earned * (99e16);
+        // 99% of the earned amount (.01)
+        if (token > 0) {
+            minimumReceive /= 1e30;
+        } else {
+            minimumReceive /= 1e18;
+        }
+        // console.log("earned:", earned);
+        // console.log("minimumReceive:", minimumReceive);
+        stbt.approve(address(pool), earned);
+        pool.exchange_underlying(
+            int128(0),
+            int128(uint128(token + 1)),
+            earned,
+            minimumReceive
+        );
+        // finally transfer stablecoins to user
+        IERC20(stables[token]).transfer(
+            receiver,
+            stableBalance + minimumReceive
+        );
+        return stableBalance + minimumReceive;
     }
 
     /** View / Pure functions */
