@@ -20,15 +20,15 @@ The MatrixUno integration involves using a customized ERC-4626 as well as intera
 
 The modifications to the vault logic involves:
 
-    1. `deposit()` and `withdraw()` have conditional statements to see if the caller is Uno Re's EOA that has been whitelisted by Matrixdock; if the caller is Uno, an additional variable called `unoDepositAmount` is incremented/decremented.
+1. `deposit()` and `withdraw()` have conditional statements to see if the caller is Uno Re's EOA that has been whitelisted by Matrixdock; if the caller is Uno, an additional variable called `unoDepositAmount` is incremented/decremented.
 
-    2. `stake()` and `unstake()` are two new functions that allow users to transfer stablecoins to the vault and in return receive xUNO.
+2. `stake()` and `unstake()` are two new functions that allow users to transfer stablecoins to the vault and in return receive xUNO.
 
-    3. `_swap()` handles exchanging STBT for stablecoins with the Curve STBT/3CRV pool
+3. `_swap()` handles exchanging STBT for stablecoins with the Curve STBT/3CRV pool
 
-    4. `_claim()`handles calculating the amount of rewards to send to each user
+4. `_claim()`handles calculating the amount of rewards to send to each user
 
-    5. `checkUpkeep()` and `performUpkeep()` are functions called by Chainlink to update variables for reward calculation
+5. `checkUpkeep()` and `performUpkeep()` are functions called by Chainlink to update variables for reward calculation
 
 The Curve Finance STBT/3CRV pool is used to exchange STBT rewards into stablecoins before being transferred to the user. We call the function `exchange_underlying()` after approving the pool to take our STBT; the pool sends back stablecoins.
 
