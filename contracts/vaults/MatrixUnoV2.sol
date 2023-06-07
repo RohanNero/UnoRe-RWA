@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 /**@notice used when swapping STBT into stablecoins for user rewards */
 import "../Curve/interfaces/IStableSwap.sol";
+/**@notice uses to screen addresses prior to staking */
+import "../interfaces/ISanctionsList.sol";
 /**@notice used in testing to ensure values are set correctly */
 import "hardhat/console.sol";
 
@@ -24,6 +26,8 @@ error MatrixUno__NotEnoughShares(uint vaultBalance, uint transferAmount);
 error MatrixUno__UpkeepNotReady();
 /**@notice used when calling `_claim` to ensure the user can claim rewards */
 error MatrixUno__CannotClaimYet();
+/**@notice used when calling `stake` to ensure the user isn't a sanctioned entity */
+error MatrixUno__SanctionedAddress();
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -44,19 +48,24 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
     IERC20 private usdc;
     IERC20 private usdt;
 
+    /**@notice used to screen users prior to being allowed to stake
+     *@dev the address is the Mainnet Ethereum Chainaylsis SanctionsList contract */
+    ISanctionsList private sanctionsList =
+        ISanctionsList(0x40C57923924B5c5c5455c48D93317139ADDaC8fb);
+
     /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week
      *@dev each struct corresponds to a different week since the contract's inception */
     struct weeklyRewardInfo {
         uint rewards; // amount of STBT rewards earned by the vault
         uint vaultAssetBalance; // total amount of assets deposited into the vault
         uint previousWeekBalance; // the total STBT in the vault the previous week (last `performUpkeep()` call)
-        uint rewardsClaimed; // amount of STBT rewards that were claimed
+        uint claimed; // amount of STBT rewards that were claimed
         uint currentBalance; // total amount of assets in the vault, deposited or sent from MatrixPort
         uint deposited; // amount of STBT deposited into the vault
         uint withdrawn; // amount of STBT withdrawn from the vault
     }
 
-    /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim week*/
+    /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim week */
     struct claimInfo {
         uint[3] balances;
         uint16 lastClaimedWeek;
@@ -82,7 +91,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
     uint private totalClaimed;
 
     /**@notice the amount of STBT deposited by Uno Re */
-    uint private initialAmount;
+    uint private unoDepositAmount;
 
     /**@notice the current amount of STBT deposited in the vault by Uno Re */
     uint private currentAmount;
@@ -124,8 +133,6 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         rewardInfoArray[0].previousWeekBalance = 2e23;
     }
 
-    /** USER FUNCTIONS */
-
     /**@notice this function allows users to stake stablecoins for xUNO
      *@dev this contract holds the stablecoins and transfers xUNO from its balance
      *@param amount - the amount of stablecoin to deposit
@@ -138,6 +145,9 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         }
         if (token > 2) {
             revert MatrixUno__InvalidTokenId(token);
+        }
+        if (sanctionsList.isSanctioned(msg.sender)) {
+            revert MatrixUno__SanctionedAddress();
         }
         /**  Transfer xUNO from the vault to the user
          Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
@@ -177,7 +187,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         shares = transferAmount;
     }
 
-    /**@notice this function allows users to claim their stablecoins plus accrued rewards
+    /**@notice this function allows users to unstake their stablecoins plus accrued rewards
      *@dev requires approving this contract to take the xUNO first
      *@param amount - the amount of xUNO you want to return to the vault
      *@param token - the stablecoin you want your interest to be in
@@ -235,9 +245,8 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         return _swap(earned, token, msg.sender);
     }
 
-    /** Native ERC-4626 Vault functions */
-
-    /** @dev See {IERC4626-deposit}. */
+    /**@notice ERC-4626 but with some custom logic for calls from `uno`
+     *@dev See {IERC4626-deposit}. */
     function deposit(
         uint256 assets,
         address receiver
@@ -251,9 +260,31 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         _deposit(_msgSender(), receiver, assets, shares);
         /**@notice custom MatrixUno logic to track STBT deposited by Uno Re */
         if (receiver == address(this) && msg.sender == uno) {
-            initialAmount = assets;
+            unoDepositAmount += assets;
         }
+        rewardInfoArray[viewCurrentWeek()].deposited += assets;
+        return shares;
+    }
 
+    /**@notice ERC-4626 but with some custom logic for calls from `uno`
+     *@dev See {IERC4626-deposit}. */
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) public virtual override returns (uint256) {
+        require(
+            assets <= maxWithdraw(owner),
+            "ERC4626: withdraw more than max"
+        );
+
+        uint256 shares = previewWithdraw(assets);
+        _withdraw(_msgSender(), receiver, owner, assets, shares);
+        /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
+        if (msg.sender == uno) {
+            unoDepositAmount -= assets;
+        }
+        rewardInfoArray[viewCurrentWeek()].withdrawn += assets;
         return shares;
     }
 
@@ -293,7 +324,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         //`rewardsPerWeek` = (`currentBalance` + `claimedPerWeek` + `withdrawn` ) - (`lastWeekBalance` + `deposited`)
         rewardInfoArray[currentWeek].rewards =
             (currentInfo.currentBalance +
-                currentInfo.rewardsClaimed +
+                currentInfo.claimed +
                 currentInfo.withdrawn) -
             (currentInfo.previousWeekBalance + currentInfo.deposited);
         // Set the `previousWeekBalance` variable unless it's still week 0
@@ -305,7 +336,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         // uint rewards; this will be calculated inside this function
         // uint vaultAssetBalance; already set
         // uint previousWeekBalance; MAY REMOVE THIS VARIABLE SINCE IT CAN BE FOUND BY VIEWING CURRENT BALANCE FOR PREVIOUS WEEK
-        // uint rewardsClaimed; already set
+        // uint claimed; already set
         // uint currentBalance; view stbt.balanceOf(address(this))
         // uint deposited; already set
         // uint withdrawn; already set
@@ -315,7 +346,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
 
     /**@notice contains the reward calculation logic
      *@dev this function is called by `claim` and `unstake`  */
-    function _claim(address addr) private view returns (uint) {
+    function _claim(address addr) private returns (uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
         uint currentWeek = viewCurrentWeek();
         if (lastClaimWeek >= currentWeek) {
@@ -329,9 +360,11 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
                 totalRewards += userRewards;
             }
         }
+        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
         return totalRewards;
     }
 
+    /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool */
     function _swap(
         uint earned,
         uint8 token,
@@ -380,14 +413,15 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         _totalClaimed = totalClaimed;
     }
 
-    /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins */
-    function viewRedeemable() public view returns (uint redeemable) {
-        redeemable = this.totalAssets() - initialAmount;
+    /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins
+     *@param week is the rewardInfoArray index that you'd like to view portion from */
+    function viewRedeemableAt(uint week) public view returns (uint redeemable) {
+        redeemable = totalAssets() - rewardInfoArray[week].vaultAssetBalance;
     }
 
-    /**@notice this function returns the amount of times that the users totalStaked goes into the initialAmount at given week
+    /**@notice this function returns the amount of times that the users totalStaked goes into the unoDepositAmount at given week
      *@dev essentially views what portion of the STBT is being represented by the user
-     *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of initialAmount)
+     *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of unoDepositAmount)
      *@param week is the rewardInfoArray index that you'd like to view portion from
      *@param addr is the user's portion you are viewing */
     function viewPortionAt(
@@ -402,7 +436,10 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         console.log("usdc staked:", usdcStaked);
         console.log("usdt staked:", usdtStaked);
         console.log("total staked:", totalStaked);
-        console.log("initialAmount", initialAmount);
+        console.log(
+            "vaultAssetBalance",
+            rewardInfoArray[week].vaultAssetBalance
+        );
         if (totalStaked > 0) {
             portion = rewardInfoArray[week].vaultAssetBalance / totalStaked;
         } else {
@@ -411,9 +448,9 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         console.log("portion:", portion);
     }
 
-    /**@notice this function returns the amount of times that the users totalStaked goes into the initialAmount currently
+    /**@notice this function returns the amount of times that the users totalStaked goes into the unoDepositAmount currently
      *@dev essentially views what portion of the STBT is being represented by the user
-     *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of initialAmount) */
+     *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of unoDepositAmount) */
     function viewCurrentPortion(
         address addr
     ) public view returns (uint portion) {
@@ -425,11 +462,14 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         console.log("usdc staked:", usdcStaked);
         console.log("usdt staked:", usdtStaked);
         console.log("total staked:", totalStaked);
-        console.log("initialAmount", initialAmount);
+        console.log(
+            "vaultAssetBalance",
+            rewardInfoArray[viewCurrentWeek()].vaultAssetBalance
+        );
         if (totalStaked > 0) {
-            uint index = (block.timestamp - startingTimestamp) /
-                SECONDS_IN_WEEK;
-            portion = rewardInfoArray[index].vaultAssetBalance / totalStaked;
+            portion =
+                rewardInfoArray[viewCurrentWeek()].vaultAssetBalance /
+                totalStaked;
         } else {
             portion = 0;
         }
