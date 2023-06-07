@@ -1,4 +1,4 @@
-## Uno Re Real World Assets
+# Uno Re Real World Assets
 
 These are designs for new UNO RE staking pools that allow users to invest in real world assets while investing into UNO's single sided insurance pools (SSIP)
 
@@ -6,9 +6,31 @@ These are designs for new UNO RE staking pools that allow users to invest in rea
 
 ## Matrix - Uno
 
+### Notes
+
+The POC vault logic is lacking a lot of the functionality present in the revised MatrixUno vault. Some of the functionality added in the new and improved vault contract is:
+
+1. Functioning reward calculation formula that accounts for withdrawals, claims and additional STBT deposits.
+2. Implemented Chainlink Automation so that values in the contract are always updated and ready to be used.
+3. Integrated Chainalysis's `SanctionsList` contract to screen addresses prior to staking stablecoins.
+
 ### Overview
 
 The MatrixUno integration involves using a customized ERC-4626 as well as interacting with Curve finance's Vyper smart contracts.
+
+The modifications to the vault logic involves:
+
+    1. `deposit()` and `withdraw()` have conditional statements to see if the caller is Uno Re's EOA that has been whitelisted by Matrixdock; if the caller is Uno, an additional variable called `unoDepositAmount` is incremented/decremented.
+
+    2. `stake()` and `unstake()` are two new functions that allow users to transfer stablecoins to the vault and in return receive xUNO.
+
+    3. `_swap()` handles exchanging STBT for stablecoins with the Curve STBT/3CRV pool
+
+    4. `_claim()`handles calculating the amount of rewards to send to each user
+
+    5. `checkUpkeep()` and `performUpkeep()` are functions called by Chainlink to update variables for reward calculation
+
+The Curve Finance STBT/3CRV pool is used to exchange STBT rewards into stablecoins before being transferred to the user. We call the function `exchange_underlying()` after approving the pool to take our STBT; the pool sends back stablecoins.
 
 Users may stake DAI, USDC, or USDT into the `MatrixUno` vault to receive `xUNO`. This `shares` token represents your portion of an `STBT` investment that in turn represents a portion of a US treasury bills!
 
@@ -34,11 +56,11 @@ The `unstake()` flow is a little more complex involving an extra step to convert
 
 ![](images/unstake_diagram.png)
 
-## Testing
+### Testing
 
 Currently there are two seperate test flows being used, one on an Ethereum Mainnet Fork, and the other on Ethereum's Goerli testnet
 
-### Begin testing Matrix - Uno Re flow
+#### Begin testing Matrix - Uno Re flow
 
 The first thing you must do to test the MatrixUno flow is put your mainnet RPC_URL in the .env file like shown in the `.env.example`
 
