@@ -515,4 +515,21 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
     function viewCurrentWeek() public view returns (uint) {
         return (block.timestamp - startingTimestamp) / SECONDS_IN_WEEK;
     }
+
+    /**@notice this function allows users to view the amount of rewards they currently have earned */
+    function viewRewards() public view returns (uint totalRewards) {
+        totalRewards = _claim(msg.sender);
+    }
+
+    /**@notice returns roughly the total amount of stablecoins that a user can withdraw
+     *@dev this amount is not precise since STBT needs to be swapped for stablecoins and some slippage will occur */
+    function viewTotalWithdrawable()
+        public
+        view
+        returns (uint totalWithdrawable)
+    {
+        totalWithdrawable =
+            _claim(msg.sender) +
+            viewTotalStakedBalance(msg.sender);
+    }
 }
