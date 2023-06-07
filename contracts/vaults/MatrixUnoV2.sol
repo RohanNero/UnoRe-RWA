@@ -179,7 +179,12 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
             address(this),
             transferFromAmount
         );
-        _claim(msg.sender);
+        uint totalRewards = _claim(msg.sender);
+        totalClaimed += totalRewards;
+        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+        uint minimumReceive = _swap(totalRewards, token);
+        // since user is staking, send only the rewards
+        IERC20(stables[token]).transfer(msg.sender, minimumReceive);
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
         console.log("transferAmount:", transferAmount);
         console.log("msg.sender:", msg.sender);
@@ -221,28 +226,36 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
         // uint claimedByOthers = totalClaimed - claimed[msg.sender];
         // uint pot = viewRedeemable() + claimedByOthers;
         // uint earned = pot / viewPortion();
-        uint earned = _claim(msg.sender);
+        uint totalRewards = _claim(msg.sender);
+        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+        uint minimumReceive = _swap(totalRewards, token);
+        // since user is unstaking, send the rewards plus the balance
+        IERC20(stables[token]).transfer(msg.sender, amount + minimumReceive);
         // updating global variables
         if (token > 0) {
             claimInfoMap[msg.sender].balances[token] -= (amount / 1e12);
         } else {
             claimInfoMap[msg.sender].balances[token] -= amount;
         }
-        totalClaimed += earned;
-        claimInfoMap[msg.sender].totalAmountClaimed += earned;
+        totalClaimed += totalRewards;
+        claimInfoMap[msg.sender].totalAmountClaimed += totalRewards;
 
         // swap STBT into stable and send to user
-        return _swap(earned, token, msg.sender);
+        return amount + minimumReceive;
     }
 
     /**@notice allows users to claim their staking rewards without unstaking
      *@dev calculates the amount of rewards a user is owed and sends it to them
      *@dev this function is called by unstake */
-    function claim(uint8 token) public returns (uint earned) {
+    function claim(uint8 token) public returns (uint) {
         // calculate amount earned
-        earned = _claim(msg.sender);
-        // swap STBT into stable and send to user
-        return _swap(earned, token, msg.sender);
+        uint totalRewards = _claim(msg.sender);
+        totalClaimed += totalRewards;
+        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+        uint minimumReceive = _swap(totalRewards, token);
+        // since user is claiming, send only the rewards
+        IERC20(stables[token]).transfer(msg.sender, minimumReceive);
+        return totalRewards;
     }
 
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
@@ -346,7 +359,7 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
 
     /**@notice contains the reward calculation logic
      *@dev this function is called by `claim` and `unstake`  */
-    function _claim(address addr) private returns (uint) {
+    function _claim(address addr) private view returns (uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
         uint currentWeek = viewCurrentWeek();
         if (lastClaimWeek >= currentWeek) {
@@ -360,17 +373,17 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
                 totalRewards += userRewards;
             }
         }
-        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+
         return totalRewards;
     }
 
     /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool */
     function _swap(
         uint earned,
-        uint8 token,
-        address receiver
-    ) private returns (uint) {
-        uint stableBalance = claimInfoMap[receiver].balances[token];
+        uint8 token
+    ) private returns (uint _minimumReceive) {
+        // removed `stableBalance` since _swap no longer transfers the rewards to the user
+        //uint stableBalance = claimInfoMap[receiver].balances[token];
         // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
         uint minimumReceive = earned * (99e16);
         // 99% of the earned amount (.01)
@@ -389,23 +402,44 @@ contract MatrixUnoV2 is ERC4626, AutomationCompatibleInterface {
             minimumReceive
         );
         // finally transfer stablecoins to user
-        IERC20(stables[token]).transfer(
-            receiver,
-            stableBalance + minimumReceive
-        );
-        return stableBalance + minimumReceive;
+        // IERC20(stables[token]).transfer(
+        //     receiver,
+        //     stableBalance + minimumReceive
+        // );
+        return minimumReceive;
     }
 
     /** View / Pure functions */
 
     /**@notice this function lets you view the stablecoin balances of users
-     *@param addr the owner of the balance you are viewing
+     *@param user the owner of the balance you are viewing
      *@param token is the tokenId of the stablecoin you want to view  */
-    function viewBalance(
-        address addr,
+    function viewStakedBalance(
+        address user,
         uint8 token
     ) public view returns (uint256 balance) {
-        balance = claimInfoMap[addr].balances[token];
+        balance = claimInfoMap[user].balances[token];
+    }
+
+    /**@notice this function returns the total amount of stablecoins a user has deposited
+     *@param user the owner of the balance you are viewing */
+    function viewTotalStakedBalance(
+        address user
+    ) public view returns (uint totalStaked) {
+        uint daiBalance = viewStakedBalance(user, 0);
+        uint usdcBalance = viewStakedBalance(user, 1);
+        uint usdtBalance = viewStakedBalance(user, 2);
+        // Add 12 zeros to USDC and USDT because they only have 6 decimals
+        totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
+    }
+
+    /**@notice returns the total amount of stablecoins in the vault */
+    function viewVaultStableBalance() public view returns (uint totalStaked) {
+        uint daiBalance = dai.balanceOf(address(this));
+        uint usdcBalance = usdc.balanceOf(address(this));
+        uint usdtBalance = usdt.balanceOf(address(this));
+        // Add 12 zeros to USDC and USDT because they only have 6 decimals
+        totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
     }
 
     /**@notice this function returns the totalClaimed variable */
