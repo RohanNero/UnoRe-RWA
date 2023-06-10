@@ -30,7 +30,7 @@ developmentChains.includes(network.name)
           usdcAbi,
           "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f"
         )
-        vault = await ethers.getContract("MatrixUno")
+        vault = await ethers.getContract("MatrixUnoPOC")
 
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
@@ -54,15 +54,20 @@ developmentChains.includes(network.name)
             deployer,
             vault.address
           )
+          //console.log("initialSTBTAllowance:", initialStbtAllowance.toString())
           /** APPROVE VAULT TO TAKE STBT */
           if (initialStbtAllowance < stbtDeposit) {
             await stbt.approve(vault.address, stbtDeposit)
           }
           /** DEPOSIT THE STBT */
+          //console.log("reached")
           if (initialVaultShares == 0) {
-            const depositTx = await vault.deposit(stbtDeposit, vault.address)
+            const depositTx = await vault.deposit(stbtDeposit, vault.address, {
+              gasLimit: 3000000,
+            })
             await depositTx.wait(1)
           }
+          //console.log("reached2")
           const finalVaultShares = await vault.balanceOf(vault.address)
           //console.log("FinalVaultShares:", finalVaultShares.toString())
         })

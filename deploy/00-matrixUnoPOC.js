@@ -18,15 +18,12 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
     networkConfig[chainId]["unoAddress"],
     networkConfig[chainId]["stables"],
   ]
-  console.log(args)
-  console.log(deployer)
 
-  matrixUno = await deploy("MatrixUno", {
+  matrixUno = await deploy("MatrixUnoPOC", {
     from: deployer,
     args: args,
     log: true,
     waitConfirmations: networkConfig[chainId].blockConfirmations,
-    gasLimit: "7000000",
   })
 
   if (!developmentChains.includes(network.name)) {
@@ -35,4 +32,4 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   }
 }
 
-module.exports.tags = ["all", "main", "uno", "matrixUno"]
+module.exports.tags = ["all", "poc", "uno", "matrixUnoPOC"]

@@ -18,6 +18,27 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 const SNOWTRACE_API_KEY = process.env.SNOWTRACE_API_KEY
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
 
+/**@dev this task deposits `amount` of STBT into the matrixUno vault */
+task("matrixDeposit", "deposits `amount` of STBT into the matrixUno vault")
+  //.addParam("address", "TokenWizardAuto contract address you wish to view")
+  .addParam("amount", "amount of STBT to be deposited")
+  .addParam("receiver", "address to receive the STBT")
+  .setAction(async ({ amount, receiver }) => {
+    const { stbtAbi } = require("./helper-hardhat-config.js")
+    const vault = await ethers.getContract("MatrixUno")
+    const stbt = await ethers.getContractAt(
+      stbtAbi,
+      "0x0f539454d2effd45e9bfed7c57b2d48bfd04cb32"
+    )
+
+    const cAmount = (amount * 1e18).toString()
+    const approveArgs = [vault.address, cAmount]
+    await stbt.approve({ args: vault.address, cAmount })
+    console.log(vault.address)
+    await vault.deposit(cAmount, receiver)
+    //console.log(value.toString())
+  })
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   vyper: {

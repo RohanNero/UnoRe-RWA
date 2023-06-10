@@ -16,7 +16,7 @@ const {
 } = require("../../helper-hardhat-config.js")
 const { assert, expect } = require("chai")
 
-describe("MatrixUno Unit Tests", function () {
+describe("MatrixUnoPOC Unit Tests", function () {
   let deployer,
     whale,
     matrixUNO,
@@ -93,7 +93,7 @@ describe("MatrixUno Unit Tests", function () {
       stbtAbi,
       "0x530824DA86689C9C17CdC2871Ff29B058345b44a"
     )
-    vault = await ethers.getContract("MatrixUno")
+    vault = await ethers.getContract("MatrixUnoPOC")
     stbtModerator = await ethers.getContractAt(
       stbtModeratorAbi,
       "0x22276A1BD16bc3052b362C2e0f65aacE04ed6F99"
