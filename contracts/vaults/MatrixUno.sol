@@ -84,9 +84,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice User stablecoin balances and week index of their last claim */
     mapping(address => claimInfo) private claimInfoMap;
 
-    /**@notice tracks the amount of STBT each user has claimed */
-    mapping(address => uint) private claimed;
-
     /**@notice tracks the total amount of STBT claimed by users */
     uint private totalClaimed;
 
@@ -412,28 +409,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
 
     /** View / Pure functions */
 
-    /**@notice this function lets you view the stablecoin balances of users
-     *@param user the owner of the balance you are viewing
-     *@param token is the tokenId of the stablecoin you want to view  */
-    function viewStakedBalance(
-        address user,
-        uint8 token
-    ) public view returns (uint256 balance) {
-        balance = claimInfoMap[user].balances[token];
-    }
-
-    /**@notice this function returns the total amount of stablecoins a user has deposited
-     *@param user the owner of the balance you are viewing */
-    function viewTotalStakedBalance(
-        address user
-    ) public view returns (uint totalStaked) {
-        uint daiBalance = viewStakedBalance(user, 0);
-        uint usdcBalance = viewStakedBalance(user, 1);
-        uint usdtBalance = viewStakedBalance(user, 2);
-        // Add 12 zeros to USDC and USDT because they only have 6 decimals
-        totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
-    }
-
     /**@notice returns the total amount of stablecoins in the vault */
     function viewVaultStableBalance() public view returns (uint totalStaked) {
         uint daiBalance = dai.balanceOf(address(this));
@@ -529,9 +504,48 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             viewTotalStakedBalance(msg.sender);
     }
 
+    /**@notice returns the rewardInfo struct for a given week 
+      *@param week corresponds to the rewardInfoArray index */
+      function viewRewardInfo(uint week) public view returns(weeklyRewardInfo memory) {
+        return rewardInfoArray[week];
+      }
+
     /**@notice returns addresses of DAI/UDSC/USDT used by this contract */
     function viewStables() public view returns(address[3] memory) {
         return stables;
+    }
+
+    /**@notice this function lets you view the stablecoin balances of users
+     *@param user the owner of the balance you are viewing
+     *@param token is the tokenId of the stablecoin you want to view  */
+    function viewStakedBalance(
+        address user,
+        uint8 token
+    ) public view returns (uint256 balance) {
+        balance = claimInfoMap[user].balances[token];
+    }
+
+    /**@notice this function returns the total amount of stablecoins a user has deposited
+     *@param user the owner of the balance you are viewing */
+    function viewTotalStakedBalance(
+        address user
+    ) public view returns (uint totalStaked) {
+        uint daiBalance = viewStakedBalance(user, 0);
+        uint usdcBalance = viewStakedBalance(user, 1);
+        uint usdtBalance = viewStakedBalance(user, 2);
+        // Add 12 zeros to USDC and USDT because they only have 6 decimals
+        totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
+    }
+
+    /**@notice returns the last week a user has claimed
+      *@param user the address that has claimed */
+    function viewLastClaimed(address user) public view returns(uint16) {
+        return claimInfoMap[user].lastClaimedWeek;
+    }
+    /**@notice returns the amount a user has claimed
+      *@param user the address that has claimed */
+    function viewClaimedAmount(address user) public view returns(uint) {
+        return claimInfoMap[user].totalAmountClaimed;
     }
 
     /**@notice this function returns the totalClaimed variable */
