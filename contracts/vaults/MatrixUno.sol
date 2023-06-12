@@ -93,9 +93,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice the amount of STBT deposited by Uno Re */
     uint private unoDepositAmount;
 
-    /**@notice the current amount of STBT deposited in the vault by Uno Re */
-    uint private currentAmount;
-
     /**@notice Uno Re's address used for depositing STBT */
     address private immutable uno;
 
@@ -446,11 +443,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
     }
 
-    /**@notice this function returns the totalClaimed variable */
-    function viewTotalClaimed() public view returns (uint _totalClaimed) {
-        _totalClaimed = totalClaimed;
-    }
-
     /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins
      *@param week is the rewardInfoArray index that you'd like to view portion from */
     function viewRedeemableAt(uint week) public view returns (uint redeemable) {
@@ -536,4 +528,42 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             _claim(msg.sender) +
             viewTotalStakedBalance(msg.sender);
     }
+
+    /**@notice returns addresses of DAI/UDSC/USDT used by this contract */
+    function viewStables() public view returns(address[3] memory) {
+        return stables;
+    }
+
+    /**@notice this function returns the totalClaimed variable */
+    function viewTotalClaimed() public view returns (uint _totalClaimed) {
+        _totalClaimed = totalClaimed;
+    }
+
+    /**@notice returns the amount of STBT that Uno Re has deposited into the vault */
+    function viewUnoDeposit() public view returns(uint) {
+        return unoDepositAmount;
+    }
+
+    /**@notice returns the address that Uno Re will use to deposit/withdraw STBT */
+    function viewUnoAddress() public view returns(address) {
+        return uno;
+    }
+
+    /**@notice returns the vault's starting timestamp */
+    function viewStartingtime() public view returns(uint) {
+        return startingTimestamp;
+    }
+
+    /**@notice returns the last time this contract had upkeep performed */
+    function viewLastUpkeepTime() public view returns(uint) {
+        return lastUpkeepTime;
+    }
+
+    
+    
+
+
+    
+
+
 }
