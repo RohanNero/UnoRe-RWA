@@ -18,7 +18,7 @@ const { assert, expect } = require("chai")
 
 developmentChains.includes(network.name)
   ? describe.skip
-  : describe("Matrix Uno POC Goerli Staging tests", function () {
+  : describe("Matrix Uno Goerli Staging tests", function () {
       let deployer, stbt, usdc, vault
       beforeEach(async function () {
         deployer = (await getNamedAccounts()).deployer
@@ -30,7 +30,7 @@ developmentChains.includes(network.name)
           usdcAbi,
           "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f"
         )
-        vault = await ethers.getContract("MatrixUnoPOC")
+        vault = await ethers.getContract("MatrixUno")
 
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
@@ -45,7 +45,7 @@ developmentChains.includes(network.name)
        * 6. call unstake()
        * 7. Ensure the user gained USDC rewards
        */
-      describe("stake", function () {
+      describe.only("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           //console.log("InitialVaultShares:", initialVaultShares.toString())
