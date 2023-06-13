@@ -18,8 +18,8 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
     networkConfig[chainId]["unoAddress"],
     networkConfig[chainId]["stables"],
   ]
-  console.log(args)
-  console.log(deployer)
+  //console.log(args)
+  //console.log(deployer)
 
   matrixUno = await deploy("MatrixUno", {
     from: deployer,

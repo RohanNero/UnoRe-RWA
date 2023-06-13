@@ -148,8 +148,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         /**  Transfer xUNO from the vault to the user
          Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
          DAI = 18 decimals, USDT/USDC = 6 decimals
-         100 DAI  = 100000000000000000000
-         100 USDC = 100000000 */
+         100 DAI  = 100 000000000000000000
+         100 USDC = 100 000000 */
         uint transferAmount;
         if (token > 0) {
             transferAmount = amount * 1e12;
@@ -158,7 +158,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         }
         /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint transferFromAmount;
-        console.log("balanceOf:", this.balanceOf(address(this)));
+        //console.log("balanceOf:", balanceOf(address(this)));
         if (this.balanceOf(address(this)) < transferAmount) {
             if (token > 0) {
                 transferFromAmount = this.balanceOf(address(this)) / 1e12;
@@ -168,7 +168,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         } else {
             transferFromAmount = amount;
         }
-        console.log("transferFrom:", transferFromAmount);
+        //console.log("transferFrom:", transferFromAmount);
         /** Actually moving the tokens and updating balance */
         IERC20(stables[token]).transferFrom(
             msg.sender,
@@ -176,15 +176,20 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             transferFromAmount
         );
         uint totalRewards = _claim(msg.sender);
-        totalClaimed += totalRewards;
-        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
-        uint minimumReceive = _swap(totalRewards, token);
-        // since user is staking, send only the rewards
-        IERC20(stables[token]).transfer(msg.sender, minimumReceive);
+        if(totalRewards > 0) {
+            totalClaimed += totalRewards;
+            rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+            uint minimumReceive = _swap(totalRewards, token);
+            // since user is staking, send only the rewards
+            IERC20(stables[token]).transfer(msg.sender, minimumReceive);
+        } 
+        
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
-        console.log("transferAmount:", transferAmount);
-        console.log("msg.sender:", msg.sender);
-        transfer(msg.sender, transferAmount);
+        // console.log("transferAmount:", transferAmount);
+        // console.log(balanceOf(address(this)));
+        // console.log("msg.sender:", msg.sender);
+        this.transfer(msg.sender, transferAmount);
+        //console.log("transferred");
         shares = transferAmount;
     }
 
@@ -360,10 +365,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     function _claim(address addr) private view returns (uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
         uint currentWeek = viewCurrentWeek();
-        if (lastClaimWeek >= currentWeek) {
-            revert MatrixUno__CannotClaimYet();
-        }
+        // if (lastClaimWeek >= currentWeek) {
+        //     revert MatrixUno__CannotClaimYet();
+        // }
         uint totalRewards = 0;
+        //console.log("for loop reached");
         for (uint i = lastClaimWeek; i < currentWeek; i++) {
             uint stakedPortion = viewPortionAt(i, addr);
             if (stakedPortion > 0) {
@@ -371,6 +377,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
                 totalRewards += userRewards;
             }
         }
+        //console.log("for loop passed");
 
         return totalRewards;
     }
