@@ -28,6 +28,8 @@ error MatrixUno__UpkeepNotReady();
 error MatrixUno__CannotClaimYet();
 /**@notice used when calling `stake` to ensure the user isn't a sanctioned entity */
 error MatrixUno__SanctionedAddress();
+/**@notice used when calling `unoClaim` to ensure msg.sender is uno */
+error MatrixUno__OnlyUno();
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -56,13 +58,13 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week
      *@dev each struct corresponds to a different week since the contract's inception */
     struct weeklyRewardInfo {
-        uint rewards; // amount of STBT rewards earned by the vault
+        uint rewards; // amount of STBT rewards earned by the vault during the week
         uint vaultAssetBalance; // total amount of assets deposited into the vault
-        uint previousWeekBalance; // the total STBT in the vault the previous week (last `performUpkeep()` call)
-        uint claimed; // amount of STBT rewards that were claimed
+        uint previousWeekBalance; // total STBT in the vault the previous week (last `performUpkeep()` call)
+        uint claimed; // amount of STBT rewards that were claimed during the week
         uint currentBalance; // total amount of assets in the vault, deposited or sent from MatrixPort
-        uint deposited; // amount of STBT deposited into the vault
-        uint withdrawn; // amount of STBT withdrawn from the vault
+        uint deposited; // amount of STBT deposited into the vault during the week
+        uint withdrawn; // amount of STBT withdrawn from the vault during the week
     }
 
     /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim week */
@@ -101,6 +103,14 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
 
     /**@notice last timestamp that performUpkeep() was called */
     uint private lastUpkeepTime;
+
+    /**@notice the total amount of rewards earned by Uno Re as opposed to users 
+      *@dev Uno Re can claim this amount at any time*/
+    uint private unaccountedRewards;
+
+    /**@notice emits when uno calls `UnoClaim()`
+      *@param amountClaimed is the amount of STBT sent to `uno` */
+    event UnoClaim(uint amountClaimed);
 
     /**@notice need to provide the asset that is used in this vault
      *@dev vault shares are an ERC20 called "Matrix UNO"/"xUNO", these represent a user's stablecoin stake into an UNO-RWA pool
@@ -259,6 +269,17 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         return totalRewards;
     }
 
+    /**@notice allows uno to claim the `unaccountedRewards` */
+    function unoClaim() public {
+        if(msg.sender != uno) {
+            revert MatrixUno__OnlyUno();
+        }
+        stbt.transfer(uno, unaccountedRewards);
+        emit UnoClaim(unaccountedRewards);
+        unaccountedRewards = 0;
+    }
+
+
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
      *@dev See {IERC4626-deposit}. */
     function deposit(
@@ -277,6 +298,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             unoDepositAmount += assets;
         }
         rewardInfoArray[viewCurrentWeek()].deposited += assets;
+        rewardInfoArray[viewCurrentWeek()].vaultAssetBalance += assets;
         return shares;
     }
 
@@ -299,6 +321,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             unoDepositAmount -= assets;
         }
         rewardInfoArray[viewCurrentWeek()].withdrawn += assets;
+        rewardInfoArray[viewCurrentWeek()].vaultAssetBalance -= assets;
         return shares;
     }
 
@@ -340,22 +363,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
                 currentInfo.claimed +
                 currentInfo.withdrawn) -
             (currentInfo.previousWeekBalance + currentInfo.deposited);
-        // // Set the `previousWeekBalance` variable unless it's still week 0
-        // if (currentWeek > 0) {
-        //     rewardInfoArray[currentWeek].previousWeekBalance = rewardInfoArray[
-        //         currentWeek - 1
-        //     ].currentBalance;
-        // }
-        // depreciated the old method and now we push a new struct to the array with only the `previousWeekBalance`
-        rewardInfoArray.push(weeklyRewardInfo(0, 0, currentStbt, 0, 0, 0, 0));
-        // uint rewards; this will be calculated inside this function
-        // uint vaultAssetBalance; already set
-        // uint previousWeekBalance; MAY REMOVE THIS VARIABLE SINCE IT CAN BE FOUND BY VIEWING CURRENT BALANCE FOR PREVIOUS WEEK
-        // uint claimed; already set
-        // uint currentBalance; view stbt.balanceOf(address(this))
-        // uint deposited; already set
-        // uint withdrawn; already set
-        // push an empty weeklyRewardInfo struct into the array so that it can be used for reward calculation
+        // push a new struct to the array with only the `previousWeekBalance`
+        rewardInfoArray.push(weeklyRewardInfo(0, currentInfo.vaultAssetBalance, currentStbt, 0, 0, 0, 0));
+        // increment the `unaccountedRewards` variable
+        unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
     }
 
     /** Internal and Private functions */
