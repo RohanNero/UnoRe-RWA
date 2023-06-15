@@ -374,6 +374,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         rewardInfoArray.push(weeklyRewardInfo(0, currentInfo.vaultAssetBalance, currentStbt, 0, 0, 0, 0));
         // increment the `unaccountedRewards` variable
         unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
+        if(unoDepositAmount == 0) {
+            unaccountedRewards += rewardInfoArray[currentWeek - 1].rewards;
+        } else {
+            unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
+        }
     }
 
     /** Internal and Private functions */
@@ -383,11 +388,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     function _claim(address addr) private view returns (uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
         uint currentWeek = viewCurrentWeek();
-        // if (lastClaimWeek >= currentWeek) {
-        //     revert MatrixUno__CannotClaimYet();
-        // }
         uint totalRewards = 0;
-        //console.log("for loop reached");
         for (uint i = lastClaimWeek; i < currentWeek; i++) {
             int128 stakedPortion = viewPortionAt(i, addr);
             if (stakedPortion > 0) {
@@ -397,7 +398,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             }
         }
         //console.log("for loop passed");
-
         return totalRewards;
     }
 
@@ -471,8 +471,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             "vaultAssetBalance",
             rewardInfoArray[week].vaultAssetBalance
         );
-        if (totalStaked > 0) {
-            // portion = rewardInfoArray[week].vaultAssetBalance / totalStaked;
+        if (totalStaked > 0 && unoDepositAmount > 0) {
              portion = totalStaked.divu(rewardInfoArray[viewCurrentWeek()].vaultAssetBalance);
         } else {
             portion = 0;
@@ -498,10 +497,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             "vaultAssetBalance",
             rewardInfoArray[viewCurrentWeek()].vaultAssetBalance
         );
-        if (totalStaked > 0) {
-            // portion =
-            //     rewardInfoArray[viewCurrentWeek()].vaultAssetBalance /
-            //     totalStaked;
+        if (totalStaked > 0 && unoDepositAmount > 0) {
             portion = totalStaked.divu(rewardInfoArray[viewCurrentWeek()].vaultAssetBalance);
         } else {
             portion = 0;
