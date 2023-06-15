@@ -107,6 +107,25 @@ If you see `false` console logged in the terminal, run the test command again. S
 
 ` MatrixUno Vault [0xf70828e35022b0e86Af2cB258D1078E96aFF2e65](https://goerli.etherscan.io/address/0xf70828e35022b0e86Af2cB258D1078E96aFF2e65)
 
+### Current Developer Quickstart
+
+
+#### POC 
+
+`yarn hardhat node --tags poc`
+
+`yarn hardhat test --network localhost`
+
+#### Main
+
+`yarn hardhat node --tags matrixUno`
+
+### External Resources
+
+1. **Chainlink Automation** is used to update variables for reward calculation at a constant time interval
+2. **Open Zeppelin ERC-4626** is their take on the vault standard EIP that introduces the `asset` and `shares` token structure
+3. **ABDK Math Library** is a math library that allows for precise calculations using fractions, decimals, or percentages
+4. **Chainalysis Sanctions List** is a contract that maintains a list of sanctioned addresses so that anyone can screen users before interacting with a function
 ### Maple UNO
 
 The `Hades` pool interacts with the Maple Finance RWA pools
@@ -129,15 +148,4 @@ The `Loki` pool interacts with the STBT/3CRV Curve pool
 - [3CRV token etherscan](https://etherscan.io/token/0x6c3f90f043a72fa612cbac8115ee7e52bde6e490)
 - [Curve medium guide](https://betterprogramming.pub/how-to-integrate-the-curve-fi-protocol-into-your-defi-protocol-e1d4c43f716d)
 
-### Current Developer Quickstart
 
-
-#### POC 
-
-`yarn hardhat node --tags poc`
-
-`yarn hardhat test --network localhost`
-
-#### Main
-
-`yarn hardhat node --tags matrixUno`
