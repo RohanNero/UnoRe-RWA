@@ -126,6 +126,7 @@ If you see `false` console logged in the terminal, run the test command again. S
 2. **Open Zeppelin ERC-4626** is their take on the vault standard EIP that introduces the `asset` and `shares` token structure
 3. **ABDK Math Library** is a math library that allows for precise calculations using fractions, decimals, or percentages
 4. **Chainalysis Sanctions List** is a contract that maintains a list of sanctioned addresses so that anyone can screen users before interacting with a function
+5. **Curve Finance** is a DeFi protocol that allows users to swap tokens in a permisionless manner
 ### Maple UNO
 
 The `Hades` pool interacts with the Maple Finance RWA pools
