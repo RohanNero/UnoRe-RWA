@@ -14,6 +14,8 @@ import "../Curve/interfaces/IStableSwap.sol";
 import "../interfaces/ISanctionsList.sol";
 /**@notice used in testing to ensure values are set correctly */
 import "hardhat/console.sol";
+/**@notice used in reward calculation math */
+import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 /**notice used to revert function calls that pass zero as the `amount` */
 error MatrixUno__ZeroAmountGiven();
@@ -36,6 +38,11 @@ error MatrixUno__OnlyUno();
  *@notice this contract allows UNO users to earn native STBT yields from Matrixdock.
  *@dev This vault uses STBT as the asset and xUNO as the shares token*/
 contract MatrixUno is ERC4626, AutomationCompatibleInterface {
+
+    /**@notice declare that we are using ABDK Math library for these variabels */
+    using ABDKMath64x64 for uint;
+    using ABDKMath64x64 for int128;
+
     /**@notice the STBT/3CRV pool used for withdrawals
      *@dev used to convert STBT rewards into stablecoins for users
      *@dev Ethereum mainnet address: 0x892d701d94a43bdbcb5ea28891daca2fa22a690b */
@@ -382,9 +389,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint totalRewards = 0;
         //console.log("for loop reached");
         for (uint i = lastClaimWeek; i < currentWeek; i++) {
-            uint stakedPortion = viewPortionAt(i, addr);
+            int128 stakedPortion = viewPortionAt(i, addr);
             if (stakedPortion > 0) {
-                uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
+                //uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
+                uint userRewards = stakedPortion.mulu(rewardInfoArray[i].rewards);
                 totalRewards += userRewards;
             }
         }
@@ -450,7 +458,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     function viewPortionAt(
         uint week,
         address addr
-    ) public view returns (uint portion) {
+    ) public view returns (int128 portion) {
         uint daiStaked = claimInfoMap[addr].balances[0];
         uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
         uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
@@ -464,11 +472,12 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             rewardInfoArray[week].vaultAssetBalance
         );
         if (totalStaked > 0) {
-            portion = rewardInfoArray[week].vaultAssetBalance / totalStaked;
+            // portion = rewardInfoArray[week].vaultAssetBalance / totalStaked;
+             portion = totalStaked.divu(rewardInfoArray[viewCurrentWeek()].vaultAssetBalance);
         } else {
             portion = 0;
         }
-        console.log("portion:", portion);
+        //console.log("portion:", portion);
     }
 
     /**@notice this function returns the amount of times that the users totalStaked goes into the unoDepositAmount currently
@@ -476,7 +485,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of unoDepositAmount) */
     function viewCurrentPortion(
         address addr
-    ) public view returns (uint portion) {
+    ) public view returns (int128 portion) {
         uint daiStaked = claimInfoMap[addr].balances[0];
         uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
         uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
@@ -490,13 +499,14 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             rewardInfoArray[viewCurrentWeek()].vaultAssetBalance
         );
         if (totalStaked > 0) {
-            portion =
-                rewardInfoArray[viewCurrentWeek()].vaultAssetBalance /
-                totalStaked;
+            // portion =
+            //     rewardInfoArray[viewCurrentWeek()].vaultAssetBalance /
+            //     totalStaked;
+            portion = totalStaked.divu(rewardInfoArray[viewCurrentWeek()].vaultAssetBalance);
         } else {
             portion = 0;
         }
-        console.log("portion:", portion);
+        //console.log("portion:", portion);
     }
 
     /**@notice this function returns what week the contract is currently at
