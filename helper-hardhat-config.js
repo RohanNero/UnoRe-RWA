@@ -1,10 +1,24 @@
 const networkConfig = {
+  1: {
+    name: "mainnet",
+    blockConfirmations: "1",
+    stbtAddress: "0x530824da86689c9c17cdc2871ff29b058345b44a",
+    poolAddress: "0x892d701d94a43bdbcb5ea28891daca2fa22a690b",
+    unoAddress: "0x81BD585940501b583fD092BC8397F2119A96E5ba",
+    sanctionsAddress: "0x40C57923924B5c5c5455c48D93317139ADDaC8fb",
+    stables: [
+      "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    ],
+  },
   1337: {
     name: "localhost",
     blockConfirmations: "1",
     stbtAddress: "0x530824da86689c9c17cdc2871ff29b058345b44a",
     poolAddress: "0x892d701d94a43bdbcb5ea28891daca2fa22a690b",
     unoAddress: "0x81BD585940501b583fD092BC8397F2119A96E5ba",
+    sanctionsAddress: "0x40C57923924B5c5c5455c48D93317139ADDaC8fb",
     stables: [
       "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -17,6 +31,7 @@ const networkConfig = {
     stbtAddress: "0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32",
     poolAddress: "0xC185462cDa787E00707b3E234e4763538fA15E8d",
     unoAddress: "0xe4A98D2bFD66Ce08128FdFFFC9070662E489a28E",
+    sanctionsAddress: "0x8Bb392899952320BdEdb13B3f559FDc8013cB9B5",
     stables: [
       "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
       "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f",

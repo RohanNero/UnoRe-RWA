@@ -48,53 +48,58 @@ developmentChains.includes(network.name)
       describe.only("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
-          //console.log("InitialVaultShares:", initialVaultShares.toString())
+          console.log("InitialVaultShares:", initialVaultShares.toString())
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           const initialStbtAllowance = await stbt.allowance(
             deployer,
             vault.address
           )
-          //console.log("initialSTBTAllowance:", initialStbtAllowance.toString())
+          console.log("initialSTBTAllowance:", initialStbtAllowance.toString())
           /** APPROVE VAULT TO TAKE STBT */
           if (initialStbtAllowance < stbtDeposit) {
             await stbt.approve(vault.address, stbtDeposit)
           }
           /** DEPOSIT THE STBT */
-          //console.log("reached")
+          console.log("reached")
           if (initialVaultShares == 0) {
             const depositTx = await vault.deposit(stbtDeposit, vault.address, {
               gasLimit: 3000000,
             })
             await depositTx.wait(1)
           }
-          //console.log("reached2")
+          console.log("reached2")
           const finalVaultShares = await vault.balanceOf(vault.address)
-          //console.log("FinalVaultShares:", finalVaultShares.toString())
+          console.log("FinalVaultShares:", finalVaultShares.toString())
         })
         it("allows users to stake stablecoins for xUNO", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialUsdcBal = await usdc.balanceOf(deployer)
           const initialAssets = await stbt.balanceOf(deployer)
           const initialAllowance = await usdc.allowance(deployer, vault.address)
-          // console.log("InitialShares:", initialShares.toString())
-          // console.log("InitialUsdcBal:", initialUsdcBal.toString())
-          // console.log("InitialAssets:", initialAssets.toString())
-          // console.log("InitialAllowance:", initialAllowance.toString())
+          console.log("InitialShares:", initialShares.toString())
+          console.log("InitialUsdcBal:", initialUsdcBal.toString())
+          console.log("InitialAssets:", initialAssets.toString())
+          console.log("InitialAllowance:", initialAllowance.toString())
+          console.log(deployer)
           /** APPROVE VAULT TO TAKE 50,000 USDC */
           if (initialAllowance < 5e10) {
             await usdc.approve(vault.address, 5e10)
           }
+          console.log("approved!")
           /** CALL STAKE WITH 50,000 USDC */
-          if (initialShares == 0) {
-            const stakeTx = await vault.stake(5e10, 1)
+          if (initialShares > 0) {
+            const stakeTx = await vault.stake(5e10, 1, {
+              gasLimit: 300000
+            })
             await stakeTx.wait(1)
           }
+          console.log("staked!")
 
           const finalShares = await vault.balanceOf(deployer)
           const finalAssets = await stbt.balanceOf(deployer)
 
-          // console.log("FinalShares:", finalShares.toString())
-          // console.log("FinalAssets:", finalAssets.toString())
+          console.log("FinalShares:", finalShares.toString())
+          console.log("FinalAssets:", finalAssets.toString())
         })
       })
       describe("unstake", function () {

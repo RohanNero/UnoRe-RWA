@@ -32,4 +32,4 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   }
 }
 
-module.exports.tags = ["all", "poc", "uno", "matrixUnoPOC"]
+module.exports.tags = ["all", "poc", "matrix", "matrixUnoPOC"]

@@ -18,9 +18,17 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
       waitConfirmations: networkConfig[chainId].blockConfirmations,
     })
 
-    log("Verifying contract...")
+    const mockSanctionsList = await deploy("MockSanctionsList", {
+      from: deployer,
+      log: true,
+      waitConfirmations: networkConfig[chainId].blockConfirmations,
+    })
+    log("Verifying MockCurvePool...")
     await verify(mockCurvePool.address)
+
+    log("Verifying MockSanctionsList...")
+    await verify(mockSanctionsList.address)
   }
 }
 
-module.exports.tags = ["all", "mock", "curve"]
+module.exports.tags = ["all", "mocks", "matrix"]

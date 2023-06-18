@@ -57,10 +57,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     IERC20 private usdc;
     IERC20 private usdt;
 
-    /**@notice used to screen users prior to being allowed to stake
-     *@dev the address is the Mainnet Ethereum Chainaylsis SanctionsList contract */
-    ISanctionsList private sanctionsList =
-        ISanctionsList(0x40C57923924B5c5c5455c48D93317139ADDaC8fb);
+    /**@notice used to screen users prior to being allowed to stake */
+    ISanctionsList private sanctionsList;
 
     /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week
      *@dev each struct corresponds to a different week since the contract's inception */
@@ -130,11 +128,13 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         address asset,
         address poolAddress,
         address unoAddress,
+        address sanctionsAddress,
         address[3] memory stablecoins
     ) ERC4626(IERC20(asset)) ERC20("Matrix UNO", "xUNO") {
         stbt = IERC20(asset);
         pool = IStableSwap(poolAddress);
         uno = unoAddress;
+        sanctionsList = ISanctionsList(sanctionsAddress);
         stables = stablecoins;
         dai = IERC20(stables[0]);
         usdc = IERC20(stables[1]);
@@ -537,6 +537,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice returns addresses of DAI/UDSC/USDT used by this contract */
     function viewStables() public view returns(address[3] memory) {
         return stables;
+    }
+
+    /**@notice returns the sanctionsList contract address */
+    function viewSanctionsList() public view returns(address) {
+        return address(sanctionsList);
     }
 
     /**@notice this function lets you view the stablecoin balances of users

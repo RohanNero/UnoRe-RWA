@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**@title Mock Curve STBT/3CRV Pool
  *@author Rohan Nero
- *@notice This is a fake version of the real STBT/3CRV pool
- *@dev This pool allows users to swap STBT for USDC
- *@dev This pool must be sent Goerli USDC before the function will work */
+ *@notice This is a mock version of the real STBT/3CRV pool
+ *@dev This pool allows users to swap STBT for "USDC"
+ *@dev This pool must be sent Goerli "USDC" before the function will work */
 contract MockCurvePool {
     /**@notice Goerli STBT contract */
     IERC20 private stbt = IERC20(0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32);

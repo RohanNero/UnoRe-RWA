@@ -16,6 +16,7 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
     networkConfig[chainId]["stbtAddress"],
     networkConfig[chainId]["poolAddress"],
     networkConfig[chainId]["unoAddress"],
+    networkConfig[chainId]["sanctionsAddress"],
     networkConfig[chainId]["stables"],
   ]
   //console.log(args)
@@ -35,4 +36,4 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   }
 }
 
-module.exports.tags = ["all", "main", "uno", "matrixUno"]
+module.exports.tags = ["all", "main", "matrix", "matrixUno"]
