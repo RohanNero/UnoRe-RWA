@@ -107,7 +107,7 @@ describe("MatrixUno Unit Tests", function () {
   !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Ethereum Mainnet Fork tests", function () {
-        describe.only("stake", function () {
+        describe("stake", function () {
           it("STBT whale should have a high STBT balance", async function () {
             const initialBal = await stbt.balanceOf(sWhale._address, {
               gasLimit: 300000,
@@ -243,12 +243,12 @@ describe("MatrixUno Unit Tests", function () {
               vault.address
             )
             const usdcDeposit = 50000 * 1e6
-            console.log("whale usdc balance:", usdcBalance.toString())
-            console.log("vault usdc allowance:", usdcAllowance.toString())
-            console.log(
-              "initial vault usdc balance:",
-              initialVaultUsdcBalance.toString()
-            )
+            // console.log("whale usdc balance:", usdcBalance.toString())
+            // console.log("vault usdc allowance:", usdcAllowance.toString())
+            // console.log(
+            //   "initial vault usdc balance:",
+            //   initialVaultUsdcBalance.toString()
+            // )
 
             if (usdcAllowance < usdcDeposit) {
               await usdc
@@ -260,27 +260,27 @@ describe("MatrixUno Unit Tests", function () {
               vault.address
             )
             const totalClaimed = await vault.viewTotalClaimed()
-            console.log("updated usdc allowance:", updatedUsdcAllowance.toString())
-            console.log("total claimed:", totalClaimed.toString())
-            console.log((await vault.balanceOf(vault.address)).toString())
-            console.log("usdcDeposit:",usdcDeposit.toString())
+            // console.log("updated usdc allowance:", updatedUsdcAllowance.toString())
+            // console.log("total claimed:", totalClaimed.toString())
+            // console.log((await vault.balanceOf(vault.address)).toString())
+            // console.log("usdcDeposit:",usdcDeposit.toString())
             if (initialVaultUsdcBalance < usdcDeposit) {
               const shares = await vault
                 .connect(whale)
                 .stake(usdcDeposit, 1, { gasLimit: 300000 })
             }
-            console.log("staked!")
+            //console.log("staked!")
 
             const finalVaultUsdcBalance = await usdc.balanceOf(vault.address)
-            console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
+            //console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
           })
           // come back to this test later
         //   it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
           it("updates the user's balance for the staked stablecoin", async function () {
             const vaultBalance = await vault.viewStakedBalance(whale._address, 1)
             const totalClaimed = await vault.viewTotalClaimed()
-            console.log("whale usdc balance:", vaultBalance.toString())
-            console.log("total claimed:", totalClaimed.toString())
+            //console.log("whale usdc balance:", vaultBalance.toString())
+            //console.log("total claimed:", totalClaimed.toString())
             // eventually need to make > into = since unstake should be working properly
             assert.isTrue(vaultBalance >= 50000000000 || totalClaimed > 0)
           })
@@ -290,10 +290,10 @@ describe("MatrixUno Unit Tests", function () {
             const vaultSymbol = await vault.symbol()
             const slicedWhaleBalance = whalexUnoBalance.toString().slice(0, -18)
             const totalClaimed = await vault.viewTotalClaimed()
-            console.log("whale xUNO balance:", whalexUnoBalance.toString())
-            console.log("vault xUNO balance:", vaultxUnoBalance.toString())
-            console.log("vault shares symbol:", vaultSymbol.toString())
-            console.log("total claimed:", totalClaimed.toString())
+            // console.log("whale xUNO balance:", whalexUnoBalance.toString())
+            // console.log("vault xUNO balance:", vaultxUnoBalance.toString())
+            // console.log("vault shares symbol:", vaultSymbol.toString())
+            // console.log("total claimed:", totalClaimed.toString())
             assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
           })
         })

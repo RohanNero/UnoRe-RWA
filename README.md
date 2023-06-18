@@ -58,6 +58,8 @@ The `unstake()` flow is a little more complex involving an extra step to convert
 
 ### Testing
 
+Note: You can only test either the production vault or the POC vault on mainnet fork at one time, meaning when you run `yarn hardhat node`, you must pass `--tags matrixUno` or `--tags poc`. This is because if the contract address isnt the default first hardhat node address, it won't match the data payload we send to the STBT Moderator to update our permissions.
+
 Currently there are two seperate test flows being used, one on an Ethereum Mainnet Fork, and the other on Ethereum's Goerli testnet
 
 #### Begin testing Matrix - Uno Re flow
