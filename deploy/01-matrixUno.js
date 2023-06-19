@@ -18,6 +18,7 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
     networkConfig[chainId]["unoAddress"],
     networkConfig[chainId]["sanctionsAddress"],
     networkConfig[chainId]["stables"],
+    networkConfig[chainId]["interval"],
   ]
   //console.log(args)
   //console.log(deployer)

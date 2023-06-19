@@ -81,7 +81,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
 
     /**@notice each index corresponds to a week
      *@dev index 0 is the contract's first week of being deployed
-     *@dev starting at startingTimestamp, ending at startingTimestamp + SECONDS_IN_WEEK */
+     *@dev starting at i_startingTimestamp, ending at i_startingTimestamp +i_interval */
     weeklyRewardInfo[] private rewardInfoArray;
 
     /**@notice Array of the stablecoin addresses
@@ -101,10 +101,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     address private immutable uno;
 
     /**@notice the starting timestamp set once inside constructor */
-    uint private immutable startingTimestamp;
+    uint private immutable i_startingTimestamp;
 
-    /**@notice constant variable representing the number of seconds in a week */
-    uint private constant SECONDS_IN_WEEK = 604800;
+    /**@notice immutable variable representing the number of seconds in ani_interval
+      *@dev originally was constant variable set to one week (604800) */
+    uint private immutable i_interval;
 
     /**@notice last timestamp that performUpkeep() was called */
     uint private lastUpkeepTime;
@@ -129,7 +130,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         address poolAddress,
         address unoAddress,
         address sanctionsAddress,
-        address[3] memory stablecoins
+        address[3] memory stablecoins, 
+        uint interval
     ) ERC4626(IERC20(asset)) ERC20("Matrix UNO", "xUNO") {
         stbt = IERC20(asset);
         pool = IStableSwap(poolAddress);
@@ -139,11 +141,12 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         dai = IERC20(stables[0]);
         usdc = IERC20(stables[1]);
         usdt = IERC20(stables[2]);
-        startingTimestamp = block.timestamp;
+        i_startingTimestamp = block.timestamp;
         lastUpkeepTime = block.timestamp;
+        i_interval = interval;
         //rewardInfoArray[0].previousWeekBalance = 2e23;
         // 200,000 STBT with 18 decimals
-        rewardInfoArray.push(weeklyRewardInfo(0, 0, 2e23, 0, 0, 0, 0));
+        rewardInfoArray.push(weeklyRewardInfo(0, 0, 0, 0, 0, 0, 0));
     }
 
     /**@notice this function allows users to stake stablecoins for xUNO
@@ -345,39 +348,61 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         override
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
-        upkeepNeeded = (block.timestamp - lastUpkeepTime) > SECONDS_IN_WEEK;
+        upkeepNeeded = (block.timestamp - lastUpkeepTime) >i_interval;
     }
 
     /**@notice this function is called by Chainlink weekly to update values for reward calculation
      *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep(bytes calldata /* performData */) external override {
         // It's highly recommended to revalidate the upkeep in the performUpkeep function
-        if ((block.timestamp - lastUpkeepTime) < SECONDS_IN_WEEK) {
+        if ((block.timestamp - lastUpkeepTime) <i_interval) {
             revert MatrixUno__UpkeepNotReady();
         }
         lastUpkeepTime = block.timestamp;
         // Most important task performUpkeep does is to set the weeklyRewardInfo for the week
         // This is crucial because the weeklyRewardInfo is used in user's reward calculation
-
+    
         uint currentWeek = viewCurrentWeek();
         // set `currentBalance` for the current week
         uint currentStbt = stbt.balanceOf(address(this));
         rewardInfoArray[currentWeek - 1].currentBalance = currentStbt;
+         console.log("checkpoint 0");
         weeklyRewardInfo memory currentInfo = rewardInfoArray[currentWeek - 1];
         //`rewardsPerWeek` = (`currentBalance` + `claimedPerWeek` + `withdrawn` ) - (`lastWeekBalance` + `deposited`)
-        rewardInfoArray[currentWeek - 1].rewards =
-            (currentInfo.currentBalance +
+        console.log("checkpoint 1");
+        console.log("currentBalance:",currentInfo.currentBalance);
+        console.log("claimed:", currentInfo.claimed);
+        console.log("withdrawn:", currentInfo.withdrawn);
+        console.log("previous:",currentInfo.previousWeekBalance);
+        console.log("deposited:",currentInfo.deposited);
+        if((currentInfo.currentBalance +
+                currentInfo.claimed +
+                currentInfo.withdrawn) < (currentInfo.previousWeekBalance + currentInfo.deposited) ) {
+                     rewardInfoArray[currentWeek - 1].rewards = 0;
+        } else {
+             rewardInfoArray[currentWeek - 1].rewards = 
+              (currentInfo.currentBalance +
                 currentInfo.claimed +
                 currentInfo.withdrawn) -
             (currentInfo.previousWeekBalance + currentInfo.deposited);
+        }
+        
+        console.log("checkpoint 2");
         // push a new struct to the array with only the `previousWeekBalance`
         rewardInfoArray.push(weeklyRewardInfo(0, currentInfo.vaultAssetBalance, currentStbt, 0, 0, 0, 0));
+         console.log("checkpoint 3");
         // increment the `unaccountedRewards` variable
+        console.log("currentBalance:", currentInfo.currentBalance );
+        console.log("uno deposit:", unoDepositAmount);
+        console.log("rewards:", rewardInfoArray[currentWeek - 1].rewards);
         unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
+         console.log("checkpoint 4");
         if(unoDepositAmount == 0) {
             unaccountedRewards += rewardInfoArray[currentWeek - 1].rewards;
+             console.log("checkpoint 5");
         } else {
             unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
+             console.log("checkpoint 5.5");
         }
     }
 
@@ -506,9 +531,9 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     }
 
     /**@notice this function returns what week the contract is currently at
-     *@dev week 0 is the time frame from startingTimestamp to startingTimestamp + SECONDS_IN_WEEK */
+     *@dev week 0 is the time frame from i_startingTimestamp to i_startingTimestamp +i_interval */
     function viewCurrentWeek() public view returns (uint) {
-        return (block.timestamp - startingTimestamp) / SECONDS_IN_WEEK;
+        return (block.timestamp - i_startingTimestamp) /i_interval;
     }
 
     /**@notice this function allows users to view the amount of rewards they currently have earned */
@@ -594,13 +619,30 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
 
     /**@notice returns the vault's starting timestamp */
     function viewStartingtime() public view returns(uint) {
-        return startingTimestamp;
+        return i_startingTimestamp;
     }
 
     /**@notice returns the last time this contract had upkeep performed */
     function viewLastUpkeepTime() public view returns(uint) {
         return lastUpkeepTime;
     }
+
+    /**@notice returns the seconds in each rewards period */
+    function viewInterval() public view returns(uint) {
+        return i_interval;
+    }
+
+    /**@notice returns the portion of rewards that are unaccounted for */
+    function viewUnaccountedPortion() public view returns(uint) {
+        unoDepositAmount.divu(rewardInfoArray[currentWeek - 1]);
+        // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked. 
+        // Uno portion/unaccounted portion is 1/2 of total rewards
+        // 200,000 - 50,000 = 150,000 
+        // 150,000 / 300,000 = .5
+        // unaccounted portion = ((unoDepositAmount - totalStaked) / currentBalance) 
+        // unaccountedRewards = rewards * unaccountedPortion
+    }
+
 
     
     

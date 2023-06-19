@@ -76,42 +76,43 @@ developmentChains.includes(network.name)
           const initialUsdcBal = await usdc.balanceOf(deployer)
           const initialAssets = await stbt.balanceOf(deployer)
           const initialAllowance = await usdc.allowance(deployer, vault.address)
-          console.log("InitialShares:", initialShares.toString())
-          console.log("InitialUsdcBal:", initialUsdcBal.toString())
-          console.log("InitialAssets:", initialAssets.toString())
+          console.log("InitialUserShares:", initialShares.toString())
+          console.log("InitialUserUsdc:", initialUsdcBal.toString())
+          console.log("InitialUserAssets:", initialAssets.toString())
           console.log("InitialAllowance:", initialAllowance.toString())
-          console.log(deployer)
+          console.log("User:", deployer)
           /** APPROVE VAULT TO TAKE 50,000 USDC */
           if (initialAllowance < 5e10) {
             await usdc.approve(vault.address, 5e10)
           }
           console.log("approved!")
-          /** CALL STAKE WITH 50,000 USDC */
-          if (initialShares > 0) {
+          /** CALL STAKE WITH 50,000 USDC IF USER HAS NO SHARES */
+          if (initialShares == 0) {
             const stakeTx = await vault.stake(5e10, 1, {
               gasLimit: 300000
             })
             await stakeTx.wait(1)
+            console.log("staked!")
           }
-          console.log("staked!")
+          
 
           const finalShares = await vault.balanceOf(deployer)
           const finalAssets = await stbt.balanceOf(deployer)
 
-          console.log("FinalShares:", finalShares.toString())
-          console.log("FinalAssets:", finalAssets.toString())
+          console.log("FinalUserShares:", finalShares.toString())
+          console.log("FinalUserAssets:", finalAssets.toString())
         })
       })
       describe("unstake", function () {
-        it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
+        it.only("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
-          //console.log("InitialShares:", initialShares.toString())
-          //console.log("InitialVaultAssets:", initialVaultAssets.toString())
+          console.log("InitialShares:", initialShares.toString())
+          console.log("InitialVaultAssets:", initialVaultAssets.toString())
           const stbtTransfer = ethers.utils.parseUnits("2000", 18)
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
-          //console.log((initialVaultAssets - stbtDeposit).toString())
+          console.log((initialVaultAssets - stbtDeposit).toString())
           if (!initialShares == 0 && initialVaultAssets <= stbtDeposit) {
             const transferTx = await stbt.transfer(vault.address, stbtTransfer)
             await transferTx.wait(1)
@@ -120,10 +121,11 @@ developmentChains.includes(network.name)
             deployer,
             vault.address
           )
-          //console.log("InitialAllowance:", initialAllowance.toString())
+          console.log("InitialAllowance:", initialAllowance.toString())
           if (initialAllowance < xUnoTransfer) {
             const approveTx = await vault.approve(vault.address, xUnoTransfer)
             await approveTx.wait(3)
+            console.log("approved!")
           }
           console.log(
             initialVaultAssets > stbtDeposit && initialAllowance >= xUnoTransfer

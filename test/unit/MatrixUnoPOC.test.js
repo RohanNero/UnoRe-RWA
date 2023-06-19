@@ -16,7 +16,7 @@ const {
 } = require("../../helper-hardhat-config.js")
 const { assert, expect } = require("chai")
 
-describe.only("MatrixUnoPOC Unit Tests", function () {
+describe("MatrixUnoPOC Unit Tests", function () {
   let deployer,
     whale,
     matrixUNO,

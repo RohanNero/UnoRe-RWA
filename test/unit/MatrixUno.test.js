@@ -16,7 +16,7 @@ const {
 } = require("../../helper-hardhat-config.js")
 const { assert, expect } = require("chai")
 
-describe("MatrixUno Unit Tests", function () {
+describe.only("MatrixUno Unit Tests", function () {
   let deployer,
     whale,
     matrixUNO,
@@ -274,8 +274,6 @@ describe("MatrixUno Unit Tests", function () {
             const finalVaultUsdcBalance = await usdc.balanceOf(vault.address)
             //console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
           })
-          // come back to this test later
-        //   it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
           it("updates the user's balance for the staked stablecoin", async function () {
             const vaultBalance = await vault.viewStakedBalance(whale._address, 1)
             const totalClaimed = await vault.viewTotalClaimed()
@@ -295,6 +293,17 @@ describe("MatrixUno Unit Tests", function () {
             // console.log("vault shares symbol:", vaultSymbol.toString())
             // console.log("total claimed:", totalClaimed.toString())
             assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
+          })
+          // come back to this test later
+        // it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})       
+        })
+        describe.only("performUpkeep", function() {
+          it("should update reward info for the week", async function() {
+            const interval = await vault.viewInterval()
+            const week = await vault.viewCurrentWeek()
+            console.log("interval:", interval.toString())
+            console.log("currentWeek:", week.toString())
+            await vault.performUpkeep("0x")
           })
         })
         describe("unstake", function () {

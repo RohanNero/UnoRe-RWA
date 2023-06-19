@@ -11,6 +11,7 @@ const networkConfig = {
       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     ],
+    interval: "604800",
   },
   1337: {
     name: "localhost",
@@ -24,6 +25,7 @@ const networkConfig = {
       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     ],
+    interval: "60",
   },
   5: {
     name: "goerli",
@@ -37,6 +39,7 @@ const networkConfig = {
       "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f",
       "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     ],
+    interval: "420",
   },
   80001: {
     name: "mumbai",
