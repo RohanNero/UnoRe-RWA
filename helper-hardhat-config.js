@@ -31,7 +31,7 @@ const networkConfig = {
     name: "goerli",
     blockConfirmations: "5",
     stbtAddress: "0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32",
-    poolAddress: "0xC185462cDa787E00707b3E234e4763538fA15E8d",
+    poolAddress: "0x41C41C918ce557614AF177Bd4a6e2FD40331b25e",
     unoAddress: "0xe4A98D2bFD66Ce08128FdFFFC9070662E489a28E",
     sanctionsAddress: "0x8Bb392899952320BdEdb13B3f559FDc8013cB9B5",
     stables: [

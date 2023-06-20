@@ -1,14 +1,15 @@
 require("@nomiclabs/hardhat-etherscan")
-require("hardhat-deploy")
+require("@nomicfoundation/hardhat-network-helpers")
 require("@nomicfoundation/hardhat-chai-matchers")
 require("@nomiclabs/hardhat-ethers")
 require("@nomiclabs/hardhat-vyper")
-require("dotenv").config()
+require("hardhat-deploy")
 require("hardhat-contract-sizer")
 require("hardhat-gas-reporter")
 require("prettier")
 require("prettier-plugin-solidity")
 require("solidity-coverage")
+require("dotenv").config()
 
 const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL
 const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL

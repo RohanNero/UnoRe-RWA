@@ -89,12 +89,11 @@ developmentChains.includes(network.name)
           /** CALL STAKE WITH 50,000 USDC IF USER HAS NO SHARES */
           if (initialShares == 0) {
             const stakeTx = await vault.stake(5e10, 1, {
-              gasLimit: 300000
+              gasLimit: 300000,
             })
             await stakeTx.wait(1)
             console.log("staked!")
           }
-          
 
           const finalShares = await vault.balanceOf(deployer)
           const finalAssets = await stbt.balanceOf(deployer)
@@ -103,8 +102,37 @@ developmentChains.includes(network.name)
           console.log("FinalUserAssets:", finalAssets.toString())
         })
       })
-      describe("unstake", function () {
-        it.only("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
+      describe.only("performUpkeep", function () {
+        it("MOCK SENDING REWARDS", async function () {
+          const initialBal = await stbt.balanceOf(vault.address)
+          const unoDeposit = await vault.viewUnoDeposit()
+          const pool = await vault.viewPoolAddress()
+          console.log("initialBal:", initialBal.toString())
+          console.log("unoDeposit:", unoDeposit.toString())
+          console.log("pool:", pool.toString())
+          if (initialBal <= unoDeposit) {
+            await stbt.transfer(vault.address, (2e21).toString())
+          }
+          const finalBal = await stbt.balanceOf(vault.address)
+          console.log(finalBal.toString())
+        })
+        it("updates the rewardInfoArray", async function () {
+          const initialInfo = await vault.viewRewardInfo(0)
+          const returnVal = await vault.checkUpkeep("0x")
+          console.log(initialInfo.toString())
+          console.log("upkeepNeeded:", returnVal.upkeepNeeded)
+          if (returnVal.upkeepNeeded == true) {
+            await vault.performUpkeep("0x")
+            console.log("upkeep performed!")
+          } else {
+            console.log("upkeep not needed!")
+          }
+          const finalInfo = await vault.viewRewardInfo(0)
+          console.log(finalInfo.toString())
+        })
+      })
+      describe.only("unstake", function () {
+        it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
@@ -138,6 +166,7 @@ developmentChains.includes(network.name)
               gasLimit: 3000000,
             })
             await unstakeTx.wait(1)
+            console.log("unstaked!")
           }
         })
       })

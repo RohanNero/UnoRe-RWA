@@ -38,7 +38,6 @@ error MatrixUno__OnlyUno();
  *@notice this contract allows UNO users to earn native STBT yields from Matrixdock.
  *@dev This vault uses STBT as the asset and xUNO as the shares token*/
 contract MatrixUno is ERC4626, AutomationCompatibleInterface {
-
     /**@notice declare that we are using ABDK Math library for these variabels */
     using ABDKMath64x64 for uint;
     using ABDKMath64x64 for int128;
@@ -64,10 +63,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@dev each struct corresponds to a different week since the contract's inception */
     struct weeklyRewardInfo {
         uint rewards; // amount of STBT rewards earned by the vault during the week
-        uint vaultAssetBalance; // total amount of assets deposited into the vault
+        uint vaultAssetBalance; // total amount of assets DEPOSITED into the vault
         uint previousWeekBalance; // total STBT in the vault the previous week (last `performUpkeep()` call)
         uint claimed; // amount of STBT rewards that were claimed during the week
-        uint currentBalance; // total amount of assets in the vault, deposited or sent from MatrixPort
+        uint currentBalance; // total amount of assets in the vault, deposited or sent from MatrixPort as rewards
         uint deposited; // amount of STBT deposited into the vault during the week
         uint withdrawn; // amount of STBT withdrawn from the vault during the week
     }
@@ -91,6 +90,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice User stablecoin balances and week index of their last claim */
     mapping(address => claimInfo) private claimInfoMap;
 
+    /**@notice tracks the total amount of stablecoins staked
+     *@dev USDC/UDST were converted into 18 decimals */
+    uint private totalStaked;
+
     /**@notice tracks the total amount of STBT claimed by users */
     uint private totalClaimed;
 
@@ -104,18 +107,18 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     uint private immutable i_startingTimestamp;
 
     /**@notice immutable variable representing the number of seconds in ani_interval
-      *@dev originally was constant variable set to one week (604800) */
+     *@dev originally was constant variable set to one week (604800) */
     uint private immutable i_interval;
 
     /**@notice last timestamp that performUpkeep() was called */
     uint private lastUpkeepTime;
 
-    /**@notice the total amount of rewards earned by Uno Re as opposed to users 
-      *@dev Uno Re can claim this amount at any time*/
+    /**@notice the total amount of rewards earned by Uno Re as opposed to users
+     *@dev Uno Re can claim this amount at any time*/
     uint private unaccountedRewards;
 
     /**@notice emits when uno calls `UnoClaim()`
-      *@param amountClaimed is the amount of STBT sent to `uno` */
+     *@param amountClaimed is the amount of STBT sent to `uno` */
     event UnoClaim(uint amountClaimed);
 
     /**@notice need to provide the asset that is used in this vault
@@ -130,7 +133,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         address poolAddress,
         address unoAddress,
         address sanctionsAddress,
-        address[3] memory stablecoins, 
+        address[3] memory stablecoins,
         uint interval
     ) ERC4626(IERC20(asset)) ERC20("Matrix UNO", "xUNO") {
         stbt = IERC20(asset);
@@ -196,15 +199,16 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             transferFromAmount
         );
         uint totalRewards = _claim(msg.sender);
-        if(totalRewards > 0) {
+        if (totalRewards > 0) {
             totalClaimed += totalRewards;
             rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
             uint minimumReceive = _swap(totalRewards, token);
             // since user is staking, send only the rewards
             IERC20(stables[token]).transfer(msg.sender, minimumReceive);
-        } 
-        
+        }
+
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
+        totalStaked += transferFromAmount;
         // console.log("transferAmount:", transferAmount);
         // console.log(balanceOf(address(this)));
         // console.log("msg.sender:", msg.sender);
@@ -233,35 +237,41 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         if (token > 2) {
             revert MatrixUno__InvalidTokenId(token);
         }
+        // grab the xUNO from the user
         this.transferFrom(msg.sender, address(this), amount);
-        //uint stableBalance = claimInfoMap[msg.sender].balances[token];
-        //uint rewards; // minimumRecieved used instead
-        //  if(token > 0) {
-        //   balances[msg.sender][token] -= (amount / 1e12);
-        //  } else {
-        //   balances[msg.sender][token] -= amount;
-        //  }
-        //console.log("subtractAmount:", subtractAmount);
-
-        // calculate rewards earned by user
-        // uint claimedByOthers = totalClaimed - claimed[msg.sender];
-        // uint pot = viewRedeemable() + claimedByOthers;
-        // uint earned = pot / viewPortion();
+        console.log("unstake checkpoint 1");
+        // calculate rewards owed to user
         uint totalRewards = _claim(msg.sender);
-        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+        console.log("unstake checkpoint 2");
+        // swap STBT into stable and send to user
         uint minimumReceive = _swap(totalRewards, token);
-        // since user is unstaking, send the rewards plus the balance
-        IERC20(stables[token]).transfer(msg.sender, amount + minimumReceive);
-        // updating global variables
+        console.log("unstake checkpoint 3");
+        uint adjustedAmount;
         if (token > 0) {
-            claimInfoMap[msg.sender].balances[token] -= (amount / 1e12);
+            adjustedAmount = amount / 1e12;
         } else {
-            claimInfoMap[msg.sender].balances[token] -= amount;
+            adjustedAmount = amount;
         }
+        console.log("unstake checkpoint 4");
+        // since user is unstaking, send the rewards plus the balance
+        console.log("amount:", adjustedAmount);
+        console.log("minimumReceive:", minimumReceive);
+        console.log("transferAmount:", adjustedAmount + minimumReceive);
+        console.log("usdcBalance:", usdc.balanceOf(address(this)));
+        IERC20(stables[token]).transfer(
+            msg.sender,
+            adjustedAmount + minimumReceive
+        );
+        // updating global variables
+        console.log("unstake checkpoint 5");
+        console.log("currentWeek:", viewCurrentWeek());
+        rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+        console.log("unstake checkpoint 6");
         totalClaimed += totalRewards;
         claimInfoMap[msg.sender].totalAmountClaimed += totalRewards;
-
-        // swap STBT into stable and send to user
+        claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
+        totalStaked -= adjustedAmount;
+        console.log("unstake checkpoint 7");
         return amount + minimumReceive;
     }
 
@@ -281,14 +291,13 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
 
     /**@notice allows uno to claim the `unaccountedRewards` */
     function unoClaim() public {
-        if(msg.sender != uno) {
+        if (msg.sender != uno) {
             revert MatrixUno__OnlyUno();
         }
         stbt.transfer(uno, unaccountedRewards);
         emit UnoClaim(unaccountedRewards);
         unaccountedRewards = 0;
     }
-
 
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
      *@dev See {IERC4626-deposit}. */
@@ -348,62 +357,72 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         override
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
-        upkeepNeeded = (block.timestamp - lastUpkeepTime) >i_interval;
+        console.log("lastUpkeepTime:", lastUpkeepTime);
+        console.log("difference:", block.timestamp - lastUpkeepTime);
+        upkeepNeeded = (block.timestamp - lastUpkeepTime) > i_interval;
     }
 
     /**@notice this function is called by Chainlink weekly to update values for reward calculation
      *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep(bytes calldata /* performData */) external override {
         // It's highly recommended to revalidate the upkeep in the performUpkeep function
-        if ((block.timestamp - lastUpkeepTime) <i_interval) {
+        if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
         }
         lastUpkeepTime = block.timestamp;
         // Most important task performUpkeep does is to set the weeklyRewardInfo for the week
         // This is crucial because the weeklyRewardInfo is used in user's reward calculation
-    
+
         uint currentWeek = viewCurrentWeek();
         // set `currentBalance` for the current week
         uint currentStbt = stbt.balanceOf(address(this));
         rewardInfoArray[currentWeek - 1].currentBalance = currentStbt;
-         console.log("checkpoint 0");
+        console.log("checkpoint 0");
         weeklyRewardInfo memory currentInfo = rewardInfoArray[currentWeek - 1];
         //`rewardsPerWeek` = (`currentBalance` + `claimedPerWeek` + `withdrawn` ) - (`lastWeekBalance` + `deposited`)
         console.log("checkpoint 1");
-        console.log("currentBalance:",currentInfo.currentBalance);
+        console.log("currentBalance:", currentInfo.currentBalance);
         console.log("claimed:", currentInfo.claimed);
         console.log("withdrawn:", currentInfo.withdrawn);
-        console.log("previous:",currentInfo.previousWeekBalance);
-        console.log("deposited:",currentInfo.deposited);
-        if((currentInfo.currentBalance +
+        console.log("previous:", currentInfo.previousWeekBalance);
+        console.log("deposited:", currentInfo.deposited);
+        if (
+            (currentInfo.currentBalance +
                 currentInfo.claimed +
-                currentInfo.withdrawn) < (currentInfo.previousWeekBalance + currentInfo.deposited) ) {
-                     rewardInfoArray[currentWeek - 1].rewards = 0;
+                currentInfo.withdrawn) <
+            (currentInfo.previousWeekBalance + currentInfo.deposited)
+        ) {
+            rewardInfoArray[currentWeek - 1].rewards = 0;
         } else {
-             rewardInfoArray[currentWeek - 1].rewards = 
-              (currentInfo.currentBalance +
-                currentInfo.claimed +
-                currentInfo.withdrawn) -
-            (currentInfo.previousWeekBalance + currentInfo.deposited);
+            rewardInfoArray[currentWeek - 1].rewards =
+                (currentInfo.currentBalance +
+                    currentInfo.claimed +
+                    currentInfo.withdrawn) -
+                (currentInfo.previousWeekBalance + currentInfo.deposited);
+            unaccountedRewards += calculateUnaccountedRewards();
         }
-        
+
         console.log("checkpoint 2");
         // push a new struct to the array with only the `previousWeekBalance`
-        rewardInfoArray.push(weeklyRewardInfo(0, currentInfo.vaultAssetBalance, currentStbt, 0, 0, 0, 0));
-         console.log("checkpoint 3");
+        rewardInfoArray.push(
+            weeklyRewardInfo(
+                0,
+                currentInfo.vaultAssetBalance,
+                currentStbt,
+                0,
+                0,
+                0,
+                0
+            )
+        );
+        console.log("checkpoint 3");
         // increment the `unaccountedRewards` variable
-        console.log("currentBalance:", currentInfo.currentBalance );
+        console.log("currentBalance:", currentInfo.currentBalance);
         console.log("uno deposit:", unoDepositAmount);
         console.log("rewards:", rewardInfoArray[currentWeek - 1].rewards);
-        unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
-         console.log("checkpoint 4");
-        if(unoDepositAmount == 0) {
-            unaccountedRewards += rewardInfoArray[currentWeek - 1].rewards;
-             console.log("checkpoint 5");
-        } else {
-            unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards / ( currentInfo.currentBalance / unoDepositAmount));
-             console.log("checkpoint 5.5");
-        }
+        // unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards /
+        //     (currentInfo.currentBalance / unoDepositAmount));
+        console.log("checkpoint 4");
     }
 
     /** Internal and Private functions */
@@ -418,7 +437,9 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             int128 stakedPortion = viewPortionAt(i, addr);
             if (stakedPortion > 0) {
                 //uint userRewards = rewardInfoArray[i].rewards / stakedPortion;
-                uint userRewards = stakedPortion.mulu(rewardInfoArray[i].rewards);
+                uint userRewards = stakedPortion.mulu(
+                    rewardInfoArray[i].rewards
+                );
                 totalRewards += userRewards;
             }
         }
@@ -460,13 +481,40 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
 
     /** View / Pure functions */
 
+    /**@notice returns the curve pool address */
+    function viewPoolAddress() public view returns (address) {
+        return address(pool);
+    }
+
+    /**@notice returns the address that Uno Re will use to deposit/withdraw STBT */
+    function viewUnoAddress() public view returns (address) {
+        return uno;
+    }
+
+    /**@notice returns addresses of DAI/UDSC/USDT used by this contract */
+    function viewStables() public view returns (address[3] memory) {
+        return stables;
+    }
+
+    /**@notice returns the sanctionsList contract address */
+    function viewSanctionsList() public view returns (address) {
+        return address(sanctionsList);
+    }
+
     /**@notice returns the total amount of stablecoins in the vault */
-    function viewVaultStableBalance() public view returns (uint totalStaked) {
+    function viewVaultStableBalance()
+        public
+        view
+        returns (uint totalStableBal)
+    {
         uint daiBalance = dai.balanceOf(address(this));
         uint usdcBalance = usdc.balanceOf(address(this));
         uint usdtBalance = usdt.balanceOf(address(this));
         // Add 12 zeros to USDC and USDT because they only have 6 decimals
-        totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
+        totalStableBal =
+            daiBalance +
+            (usdcBalance * 1e12) +
+            (usdtBalance * 1e12);
     }
 
     /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins
@@ -487,17 +535,17 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint daiStaked = claimInfoMap[addr].balances[0];
         uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
         uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
-        uint totalStaked = daiStaked + usdcStaked + usdtStaked;
+        uint totalUserStaked = daiStaked + usdcStaked + usdtStaked;
         console.log("dai staked:", daiStaked);
         console.log("usdc staked:", usdcStaked);
         console.log("usdt staked:", usdtStaked);
-        console.log("total staked:", totalStaked);
+        console.log("total staked:", totalUserStaked);
         console.log(
             "vaultAssetBalance",
             rewardInfoArray[week].vaultAssetBalance
         );
         if (totalStaked > 0 && unoDepositAmount > 0) {
-             portion = totalStaked.divu(rewardInfoArray[viewCurrentWeek()].vaultAssetBalance);
+            portion = totalStaked.divu(rewardInfoArray[week].vaultAssetBalance);
         } else {
             portion = 0;
         }
@@ -507,33 +555,43 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice this function returns the amount of times that the users totalStaked goes into the unoDepositAmount currently
      *@dev essentially views what portion of the STBT is being represented by the user
      *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of unoDepositAmount) */
-    function viewCurrentPortion(
-        address addr
-    ) public view returns (int128 portion) {
-        uint daiStaked = claimInfoMap[addr].balances[0];
-        uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
-        uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
-        uint totalStaked = daiStaked + usdcStaked + usdtStaked;
-        console.log("dai staked:", daiStaked);
-        console.log("usdc staked:", usdcStaked);
-        console.log("usdt staked:", usdtStaked);
-        console.log("total staked:", totalStaked);
-        console.log(
-            "vaultAssetBalance",
-            rewardInfoArray[viewCurrentWeek()].vaultAssetBalance
-        );
-        if (totalStaked > 0 && unoDepositAmount > 0) {
-            portion = totalStaked.divu(rewardInfoArray[viewCurrentWeek()].vaultAssetBalance);
-        } else {
-            portion = 0;
-        }
-        //console.log("portion:", portion);
-    }
+    // function viewCurrentPortion(
+    //     address addr
+    // ) public view returns (int128 portion) {
+    //     uint daiStaked = claimInfoMap[addr].balances[0];
+    //     uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
+    //     uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
+    //     uint totalUserStaked = daiStaked + usdcStaked + usdtStaked;
+    //     console.log("dai staked:", daiStaked);
+    //     console.log("usdc staked:", usdcStaked);
+    //     console.log("usdt staked:", usdtStaked);
+    //     console.log("total staked:", totalUserStaked);
+    //     console.log(
+    //         "vaultAssetBalance",
+    //         rewardInfoArray[viewCurrentWeek()].vaultAssetBalance
+    //     );
+    //     if (totalStaked > 0 && unoDepositAmount > 0) {
+    //         portion = totalStaked.divu(
+    //             rewardInfoArray[viewCurrentWeek()].vaultAssetBalance
+    //         );
+    //     } else {
+    //         portion = 0;
+    //     }
+    //     //console.log("portion:", portion);
+    // }
 
     /**@notice this function returns what week the contract is currently at
      *@dev week 0 is the time frame from i_startingTimestamp to i_startingTimestamp +i_interval */
     function viewCurrentWeek() public view returns (uint) {
-        return (block.timestamp - i_startingTimestamp) /i_interval;
+        console.log("current:", block.timestamp);
+        console.log("starting:", i_startingTimestamp);
+        console.log("interval:", i_interval);
+        console.log("difference:", (block.timestamp - i_startingTimestamp));
+        console.log(
+            "return:",
+            (block.timestamp - i_startingTimestamp) / i_interval
+        );
+        return (block.timestamp - i_startingTimestamp) / i_interval;
     }
 
     /**@notice this function allows users to view the amount of rewards they currently have earned */
@@ -553,20 +611,12 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             viewTotalStakedBalance(msg.sender);
     }
 
-    /**@notice returns the rewardInfo struct for a given week 
-      *@param week corresponds to the rewardInfoArray index */
-      function viewRewardInfo(uint week) public view returns(weeklyRewardInfo memory) {
+    /**@notice returns the rewardInfo struct for a given week
+     *@param week corresponds to the rewardInfoArray index */
+    function viewRewardInfo(
+        uint week
+    ) public view returns (weeklyRewardInfo memory) {
         return rewardInfoArray[week];
-      }
-
-    /**@notice returns addresses of DAI/UDSC/USDT used by this contract */
-    function viewStables() public view returns(address[3] memory) {
-        return stables;
-    }
-
-    /**@notice returns the sanctionsList contract address */
-    function viewSanctionsList() public view returns(address) {
-        return address(sanctionsList);
     }
 
     /**@notice this function lets you view the stablecoin balances of users
@@ -583,22 +633,26 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@param user the owner of the balance you are viewing */
     function viewTotalStakedBalance(
         address user
-    ) public view returns (uint totalStaked) {
+    ) public view returns (uint totalUserStaked) {
         uint daiBalance = viewStakedBalance(user, 0);
         uint usdcBalance = viewStakedBalance(user, 1);
         uint usdtBalance = viewStakedBalance(user, 2);
         // Add 12 zeros to USDC and USDT because they only have 6 decimals
-        totalStaked = daiBalance + (usdcBalance * 1e12) + (usdtBalance * 1e12);
+        totalUserStaked =
+            daiBalance +
+            (usdcBalance * 1e12) +
+            (usdtBalance * 1e12);
     }
 
     /**@notice returns the last week a user has claimed
-      *@param user the address that has claimed */
-    function viewLastClaimed(address user) public view returns(uint16) {
+     *@param user the address that has claimed */
+    function viewLastClaimed(address user) public view returns (uint16) {
         return claimInfoMap[user].lastClaimedWeek;
     }
+
     /**@notice returns the amount a user has claimed
-      *@param user the address that has claimed */
-    function viewClaimedAmount(address user) public view returns(uint) {
+     *@param user the address that has claimed */
+    function viewClaimedAmount(address user) public view returns (uint) {
         return claimInfoMap[user].totalAmountClaimed;
     }
 
@@ -607,48 +661,56 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         _totalClaimed = totalClaimed;
     }
 
+    /**@notice this function returns the totalStaked variable */
+    function viewTotalStaked() public view returns (uint _totalStaked) {
+        _totalStaked = totalStaked;
+    }
+
     /**@notice returns the amount of STBT that Uno Re has deposited into the vault */
-    function viewUnoDeposit() public view returns(uint) {
+    function viewUnoDeposit() public view returns (uint) {
         return unoDepositAmount;
     }
 
-    /**@notice returns the address that Uno Re will use to deposit/withdraw STBT */
-    function viewUnoAddress() public view returns(address) {
-        return uno;
-    }
-
     /**@notice returns the vault's starting timestamp */
-    function viewStartingtime() public view returns(uint) {
+    function viewStartingtime() public view returns (uint) {
         return i_startingTimestamp;
     }
 
     /**@notice returns the last time this contract had upkeep performed */
-    function viewLastUpkeepTime() public view returns(uint) {
+    function viewLastUpkeepTime() public view returns (uint) {
         return lastUpkeepTime;
     }
 
     /**@notice returns the seconds in each rewards period */
-    function viewInterval() public view returns(uint) {
+    function viewInterval() public view returns (uint) {
         return i_interval;
     }
 
-    /**@notice returns the portion of rewards that are unaccounted for */
-    function viewUnaccountedPortion() public view returns(uint) {
-        unoDepositAmount.divu(rewardInfoArray[currentWeek - 1]);
-        // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked. 
+    /**@notice returns the portion of rewards that are unaccounted for
+     *@dev all unaccounted rewards are claimable by Uno Re's EOA */
+    function calculateUnaccountedRewards() public view returns (uint) {
+        uint currentWeek = viewCurrentWeek();
+        if (unoDepositAmount < totalStaked) {
+            return 0;
+        } else {
+            uint remainder = unoDepositAmount - totalStaked;
+            int128 portion = remainder.divu(
+                rewardInfoArray[currentWeek - 1].currentBalance
+            );
+            return portion.mulu(rewardInfoArray[currentWeek - 1].rewards);
+        }
+
+        // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked.
         // Uno portion/unaccounted portion is 1/2 of total rewards
-        // 200,000 - 50,000 = 150,000 
+        // 200,000 - 50,000 = 150,000
         // 150,000 / 300,000 = .5
-        // unaccounted portion = ((unoDepositAmount - totalStaked) / currentBalance) 
+        // unaccounted portion = ((unoDepositAmount - totalStaked) / currentBalance)
         // unaccountedRewards = rewards * unaccountedPortion
     }
 
-
-    
-    
-
-
-    
-
-
+    /**@notice returns the amount of rewards that can be claimed by uno since they dont belong to any user
+     *@dev current value of the `unaccountedRewards` variable */
+    function viewUnaccountedRewards() public view returns (uint) {
+        return unaccountedRewards;
+    }
 }
