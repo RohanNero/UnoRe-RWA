@@ -6,6 +6,8 @@ These are designs for new UNO RE staking pools that allow users to invest in rea
 
 ## Matrix - Uno
 
+This vault set up involves MatrixPort's STBT token, this token is pegged to $1 and earns the holders yield from US Treasury Bills. Users may hold the shares token, **xUNO**, for these yields alone, or they may also stake into an Uno Re SSIP for additional yield!
+
 ### Notes
 
 The POC vault logic is lacking a lot of the functionality present in the revised MatrixUno vault. Some of the functionality added in the new and improved vault contract is:
