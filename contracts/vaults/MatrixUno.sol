@@ -32,6 +32,8 @@ error MatrixUno__CannotClaimYet();
 error MatrixUno__SanctionedAddress();
 /**@notice used when calling `unoClaim` to ensure msg.sender is uno */
 error MatrixUno__OnlyUno();
+/**@notice used inside of `_swap()` to catch if the exchange fails */
+error MatrixUno__StableSwapFailed();
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -157,7 +159,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@param amount - the amount of stablecoin to deposit
      *@param token - the stablecoin to deposit (DAI = 0, USDC = 1, USDT = 2)
      */
-    function stake(uint amount, uint8 token) public returns (uint shares) {
+    function stake(
+        uint amount,
+        uint8 token,
+        uint minimumPercentage
+    ) public returns (uint shares) {
         /**@notice all the logic checks come before actually moving the tokens */
         if (amount == 0) {
             revert MatrixUno__ZeroAmountGiven();
@@ -202,13 +208,19 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         if (totalRewards > 0) {
             totalClaimed += totalRewards;
             rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
-            uint minimumReceive = _swap(totalRewards, token);
+            uint minimumReceive = _swap(totalRewards, token, minimumPercentage);
             // since user is staking, send only the rewards
             IERC20(stables[token]).transfer(msg.sender, minimumReceive);
         }
 
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
-        totalStaked += transferFromAmount;
+        // Updating `totalStaked` depending on how many decimals `token` has
+        if (token > 0) {
+            totalStaked += transferFromAmount * 1e12;
+        } else {
+            totalStaked += transferFromAmount;
+        }
+
         // console.log("transferAmount:", transferAmount);
         // console.log(balanceOf(address(this)));
         // console.log("msg.sender:", msg.sender);
@@ -222,7 +234,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@param amount - the amount of xUNO you want to return to the vault
      *@param token - the stablecoin you want your interest to be in
      *@dev (currently must match the deposited stable)*/
-    function unstake(uint amount, uint8 token) public returns (uint) {
+    function unstake(
+        uint amount,
+        uint8 token,
+        uint minimumPercentage
+    ) public returns (uint) {
         /** Steps to claim
       1. approve xUNO
       2. xUNO transferFrom to vault
@@ -244,7 +260,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint totalRewards = _claim(msg.sender);
         console.log("unstake checkpoint 2");
         // swap STBT into stable and send to user
-        uint received = _swap(totalRewards, token);
+        uint received = _swap(totalRewards, token, minimumPercentage);
         console.log("unstake checkpoint 3");
         uint adjustedAmount;
         if (token > 0) {
@@ -275,12 +291,12 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice allows users to claim their staking rewards without unstaking
      *@dev calculates the amount of rewards a user is owed and sends it to them
      *@dev this function is called by unstake */
-    function claim(uint8 token) public returns (uint) {
+    function claim(uint8 token, uint minimumPercentage) public returns (uint) {
         // calculate amount earned
         uint totalRewards = _claim(msg.sender);
         totalClaimed += totalRewards;
         rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
-        uint minimumReceive = _swap(totalRewards, token);
+        uint minimumReceive = _swap(totalRewards, token, minimumPercentage);
         // since user is claiming, send only the rewards
         IERC20(stables[token]).transfer(msg.sender, minimumReceive);
         return totalRewards;
@@ -443,32 +459,52 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         }
         console.log("for loop passed");
         console.log("totalRewards:", totalRewards);
+        // Temporarily adding 12 zeros during testing since it keeps returning with only 6 decimals instead of 18 (we want 18)
         return totalRewards;
     }
 
     /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool
      *@param earned is the total STBT rewards earned by the user
      *@param token corresponds to the `stables` array index */
-    function _swap(uint earned, uint8 token) private returns (uint) {
+    function _swap(
+        uint earned,
+        uint8 token,
+        uint minimumPercentage
+    ) private returns (uint) {
         // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
-        uint minimumReceive = earned * (99e16);
-        // 99% of the earned amount (.01)
+        uint minimumReceive;
+        int128 formatPercentage = minimumPercentage.fromUInt();
         if (token > 0) {
-            minimumReceive /= 1e30;
+            minimumReceive = formatPercentage.mulu(earned) / 1e14;
+            console.log("reached:", minimumReceive);
         } else {
-            minimumReceive /= 1e18;
+            minimumReceive = formatPercentage.mulu(earned) / 100;
         }
         console.log("SWAP");
         console.log("earned:", earned);
+        console.log("token:", token);
+        console.log("minimumPercentage:", minimumPercentage);
         console.log("minimumReceive:", minimumReceive);
         stbt.approve(address(pool), earned);
-        uint actualReceived = pool.exchange_underlying(
-            int128(0),
-            int128(uint128(token + 1)),
-            earned,
-            minimumReceive
-        );
-        return actualReceived;
+        try
+            pool.exchange_underlying(
+                int128(0),
+                int128(uint128(token + 1)),
+                earned,
+                minimumReceive
+            )
+        returns (uint actualReceived) {
+            return actualReceived;
+        } catch {
+            revert MatrixUno__StableSwapFailed();
+        }
+        // uint actualReceived = pool.exchange_underlying(
+        //     int128(0),
+        //     int128(uint128(token + 1)),
+        //     earned,
+        //     minimumReceive
+        // );
+        // return actualReceived;
     }
 
     /** View / Pure functions */
@@ -536,8 +572,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             "vaultAssetBalance",
             rewardInfoArray[week].vaultAssetBalance
         );
-        if (totalStaked > 0 && unoDepositAmount > 0) {
-            portion = totalStaked.divu(rewardInfoArray[week].vaultAssetBalance);
+        if (totalUserStaked > 0 && unoDepositAmount > 0) {
+            portion = totalUserStaked.divu(
+                rewardInfoArray[week].vaultAssetBalance
+            );
         } else {
             portion = 0;
         }

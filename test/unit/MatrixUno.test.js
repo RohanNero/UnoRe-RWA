@@ -226,12 +226,12 @@ describe.only("MatrixUno Unit Tests", function () {
               params: [whale._address],
             })
             await expect(
-              vault.connect(whale).stake(0, 1, { gasLimit: 300000 })
+              vault.connect(whale).stake(0, 1, 99, { gasLimit: 300000 })
             ).to.be.revertedWithCustomError(vault, "MatrixUno__ZeroAmountGiven")
           })
           it("reverts if `token` input is more than two", async function () {
             await expect(
-              vault.connect(whale).stake(777, 3, { gasLimit: 300000 })
+              vault.connect(whale).stake(777, 3, 99, { gasLimit: 300000 })
             ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
           })
           // The important one
@@ -267,7 +267,7 @@ describe.only("MatrixUno Unit Tests", function () {
             if (initialVaultUsdcBalance < usdcDeposit) {
               const shares = await vault
                 .connect(whale)
-                .stake(usdcDeposit, 1, { gasLimit: 300000 })
+                .stake(usdcDeposit, 1, 99, { gasLimit: 300000 })
             }
             //console.log("staked!")
 
@@ -340,12 +340,12 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("unstake", function () {
           it("reverts if `amount` input is zero", async function () {
             await expect(
-              vault.connect(whale).unstake(0, 1, { gasLimit: 300000 })
+              vault.connect(whale).unstake(0, 1, 99, { gasLimit: 300000 })
             ).to.be.revertedWithCustomError(vault, "MatrixUno__ZeroAmountGiven")
           })
           it("reverts if `token` input is more than two", async function () {
             await expect(
-              vault.connect(whale).stake(777, 3, { gasLimit: 300000 })
+              vault.connect(whale).stake(777, 3, 99, { gasLimit: 300000 })
             ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
           })
           it.only("transferFrom takes xUNO from user and stores it", async function () {
@@ -358,12 +358,16 @@ describe.only("MatrixUno Unit Tests", function () {
               whale._address,
               vault.address
             )
+            const currentWeek = await vault.viewCurrentWeek()
+            const rewardInfo = await vault.viewRewardInfo(currentWeek - 1)
+            const rewards = rewardInfo.rewards
             console.log("initial vault shares:", initialVaultShares.toString())
             console.log("initial vault assets:", initialVaultAssets.toString())
             console.log(
               "initial vault allowance:",
               initialVaultAllowance.toString()
             )
+            console.log("rewards:", rewards.toString())
 
             const whaleBalance = await vault.viewStakedBalance(
               whale._address,
@@ -385,7 +389,7 @@ describe.only("MatrixUno Unit Tests", function () {
             if (whaleBalance > 100000000 && totalClaimed == 0) {
               const claimTx = await vault
                 .connect(whale)
-                .unstake(xUnoDeposit, 1, { gasLimit: 3000000 })
+                .unstake(xUnoDeposit, 1, 99, { gasLimit: 3000000 })
               await claimTx.wait(1)
               console.log("unstaked!")
             }

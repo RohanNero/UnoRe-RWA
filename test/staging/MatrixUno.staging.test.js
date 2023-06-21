@@ -88,7 +88,7 @@ developmentChains.includes(network.name)
           console.log("approved!")
           /** CALL STAKE WITH 50,000 USDC IF USER HAS NO SHARES */
           if (initialShares == 0) {
-            const stakeTx = await vault.stake(5e10, 1, {
+            const stakeTx = await vault.stake(5e10, 1, 99, {
               gasLimit: 300000,
             })
             await stakeTx.wait(1)
@@ -163,7 +163,7 @@ developmentChains.includes(network.name)
             initialVaultAssets > stbtDeposit &&
             initialAllowance >= xUnoTransfer
           ) {
-            const unstakeTx = await vault.unstake(xUnoTransfer, 1, {
+            const unstakeTx = await vault.unstake(xUnoTransfer, 1, 99, {
               gasLimit: 3000000,
             })
             await unstakeTx.wait(1)
