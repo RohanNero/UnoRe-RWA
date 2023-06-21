@@ -31,7 +31,7 @@ developmentChains.includes(network.name)
           "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f"
         )
         vault = await ethers.getContract("MatrixUno")
-
+        console.log(vault.address)
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
       })
@@ -104,17 +104,18 @@ developmentChains.includes(network.name)
       })
       describe.only("performUpkeep", function () {
         it("MOCK SENDING REWARDS", async function () {
-          const initialBal = await stbt.balanceOf(vault.address)
-          const unoDeposit = await vault.viewUnoDeposit()
-          const pool = await vault.viewPoolAddress()
-          console.log("initialBal:", initialBal.toString())
-          console.log("unoDeposit:", unoDeposit.toString())
-          console.log("pool:", pool.toString())
-          if (initialBal <= unoDeposit) {
-            await stbt.transfer(vault.address, (2e21).toString())
+          const initialShares = await vault.balanceOf(deployer)
+          const initialVaultAssets = await stbt.balanceOf(vault.address)
+          console.log("InitialShares:", initialShares.toString())
+          console.log("InitialVaultAssets:", initialVaultAssets.toString())
+          const stbtTransfer = ethers.utils.parseUnits("2000", 18)
+          const stbtDeposit = ethers.utils.parseUnits("200000", 18)
+          console.log((initialVaultAssets - stbtDeposit).toString())
+          if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
+            const transferTx = await stbt.transfer(vault.address, stbtTransfer)
+            await transferTx.wait(1)
+            console.log("Mock rewards distributed!")
           }
-          const finalBal = await stbt.balanceOf(vault.address)
-          console.log(finalBal.toString())
         })
         it("updates the rewardInfoArray", async function () {
           const initialInfo = await vault.viewRewardInfo(0)
@@ -141,10 +142,10 @@ developmentChains.includes(network.name)
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
           console.log((initialVaultAssets - stbtDeposit).toString())
-          if (!initialShares == 0 && initialVaultAssets <= stbtDeposit) {
-            const transferTx = await stbt.transfer(vault.address, stbtTransfer)
-            await transferTx.wait(1)
-          }
+          // if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
+          //   const transferTx = await stbt.transfer(vault.address, stbtTransfer)
+          //   await transferTx.wait(1)
+          // }
           const initialAllowance = await vault.allowance(
             deployer,
             vault.address
@@ -168,6 +169,8 @@ developmentChains.includes(network.name)
             await unstakeTx.wait(1)
             console.log("unstaked!")
           }
+          const rewards = await vault.viewTotalClaimed()
+          console.log("totalClaimed:", rewards.toString())
         })
       })
     })

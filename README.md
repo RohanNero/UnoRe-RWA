@@ -58,7 +58,7 @@ The `unstake()` flow is a little more complex involving an extra step to convert
 
 ### Testing
 
-**Note:** You can only test either the production vault or the POC vault on mainnet fork at one time, meaning when you run `yarn hardhat node`, you must pass `--tags matrixUno` or `--tags poc`. This is because if the contract address isnt the default first hardhat node address, it won't match the data payload we send to the STBT Moderator to update our permissions. By default the `MatrixUnoPOC.test.js` unit tests have `.only` set to ensure they are the only unit tests that get called, to change this, move the `.only` from the `describe` *(line 19)* and put it on the `MatrixUno.test.js` `describe` *(also line 19)* instead.
+**Note:** You can only test either the production vault or the POC vault on mainnet fork at one time, meaning when you run `yarn hardhat node`, you must pass `--tags matrixUno` or `--tags poc`. This is because if the contract address isnt the default first hardhat node address, it won't match the data payload we send to the STBT Moderator to update our permissions. By default the `MatrixUnoPOC.test.js` unit tests have `.only` set to ensure they are the only unit tests that get called, to change this, move the `.only` from the `describe` _(line 19)_ and put it on the `MatrixUno.test.js` `describe` _(also line 19)_ instead.
 
 Currently there are two seperate test flows being used, one on an Ethereum Mainnet Fork, and the other on Ethereum's Goerli testnet
 
@@ -102,17 +102,19 @@ This will whitelist your contract and also transfer 1 million mock USDC to it. A
 If you see `false` console logged in the terminal, run the test command again. Sometimes the variables take longer than one block confirmation to get updated.
 
 #### Example contracts deployed on Goerli:
+
 #### POC
+
 - MatrixUno Vault [0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70](https://goerli.etherscan.io/address/0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70)
 - Mock Curve Pool [0xC185462cDa787E00707b3E234e4763538fA15E8d](https://goerli.etherscan.io/address/0xC185462cDa787E00707b3E234e4763538fA15E8d)
-#### Main 
 
-` MatrixUno Vault [0xa368C48526c8EE21b89ba2dfF18025E06Ff1FD20](https://goerli.etherscan.io/address/0xa368C48526c8EE21b89ba2dfF18025E06Ff1FD20#code)
+#### Main
+
+` MatrixUno Vault [0xcF8641aD48028788588070cDf405aF955cC26B1B](https://goerli.etherscan.io/address/0xcF8641aD48028788588070cDf405aF955cC26B1B#code)
 
 ### Current Developer Quickstart
 
-
-#### POC 
+#### POC
 
 `yarn hardhat node --tags poc`
 
@@ -129,6 +131,7 @@ If you see `false` console logged in the terminal, run the test command again. S
 3. **ABDK Math Library** is a math library that allows for precise calculations using fractions, decimals, or percentages
 4. **Chainalysis Sanctions List** is a contract that maintains a list of sanctioned addresses so that anyone can screen users before interacting with a function
 5. **Curve Finance** is a DeFi protocol that allows users to swap tokens in a permisionless manner
+
 ### Maple UNO
 
 The `Hades` pool interacts with the Maple Finance RWA pools
@@ -150,5 +153,3 @@ The `Loki` pool interacts with the STBT/3CRV Curve pool
 - [Curve Gauge Implementation](https://etherscan.io/address/0x5ae854b098727a9f1603a1e21c50d52dc834d846#code)
 - [3CRV token etherscan](https://etherscan.io/token/0x6c3f90f043a72fa612cbac8115ee7e52bde6e490)
 - [Curve medium guide](https://betterprogramming.pub/how-to-integrate-the-curve-fi-protocol-into-your-defi-protocol-e1d4c43f716d)
-
-

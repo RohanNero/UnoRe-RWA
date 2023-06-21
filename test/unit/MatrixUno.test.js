@@ -314,27 +314,27 @@ describe.only("MatrixUno Unit Tests", function () {
           })
           it("should update reward info for the week", async function () {
             const interval = await vault.viewInterval()
-            const week = await vault.viewCurrentWeek()
+            const initialWeek = await vault.viewCurrentWeek()
             const initialInfo = await vault.viewRewardInfo(0)
             console.log("interval:", interval.toString())
-            console.log("currentWeek:", week.toString())
+            console.log("initialWeek:", initialWeek.toString())
             console.log(
               "rewards, vaultAssetBalance, previousWeekBalance, claimed, currentBalance, deposited, withdrawn"
             )
-            console.log(initialInfo.toString())
+            console.log("initialInfo:", initialInfo.toString())
 
             const returnVal = await vault.checkUpkeep("0x")
             console.log("upkeepNeeded:", returnVal.upkeepNeeded)
-            if (returnVal.upkeepNeeded == true) {
-              const perform = await vault.performUpkeep("0x")
-              await perform.wait(1)
-              console.log("Upkeep performed!")
-            } else {
-              //await time.increase(60)
-              console.log("Upkeep not needed!")
+            if (returnVal.upkeepNeeded == false) {
+              await time.increase(840)
             }
+            const perform = await vault.performUpkeep("0x")
+            await perform.wait(1)
+            console.log("Upkeep Performed!")
+            const finalWeek = await vault.viewCurrentWeek()
             const finalInfo = await vault.viewRewardInfo(0)
-            console.log(finalInfo.toString())
+            console.log("finalWeek:", finalWeek.toString())
+            console.log("finalInfo:", finalInfo.toString())
           })
         })
         describe("unstake", function () {

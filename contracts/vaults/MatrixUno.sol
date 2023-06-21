@@ -244,7 +244,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint totalRewards = _claim(msg.sender);
         console.log("unstake checkpoint 2");
         // swap STBT into stable and send to user
-        uint minimumReceive = _swap(totalRewards, token);
+        uint received = _swap(totalRewards, token);
         console.log("unstake checkpoint 3");
         uint adjustedAmount;
         if (token > 0) {
@@ -253,15 +253,12 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             adjustedAmount = amount;
         }
         console.log("unstake checkpoint 4");
-        // since user is unstaking, send the rewards plus the balance
+        // since user is unstaking, send rewards plus the balance
         console.log("amount:", adjustedAmount);
-        console.log("minimumReceive:", minimumReceive);
-        console.log("transferAmount:", adjustedAmount + minimumReceive);
+        console.log("minimumReceive:", received);
+        console.log("transferAmount:", adjustedAmount + received);
         console.log("usdcBalance:", usdc.balanceOf(address(this)));
-        IERC20(stables[token]).transfer(
-            msg.sender,
-            adjustedAmount + minimumReceive
-        );
+        IERC20(stables[token]).transfer(msg.sender, adjustedAmount + received);
         // updating global variables
         console.log("unstake checkpoint 5");
         console.log("currentWeek:", viewCurrentWeek());
@@ -272,7 +269,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         totalStaked -= adjustedAmount;
         console.log("unstake checkpoint 7");
-        return amount + minimumReceive;
+        return amount + received;
     }
 
     /**@notice allows users to claim their staking rewards without unstaking
@@ -440,20 +437,19 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
                 uint userRewards = stakedPortion.mulu(
                     rewardInfoArray[i].rewards
                 );
+                console.log("userRewards:", userRewards);
                 totalRewards += userRewards;
             }
         }
-        //console.log("for loop passed");
+        console.log("for loop passed");
+        console.log("totalRewards:", totalRewards);
         return totalRewards;
     }
 
-    /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool */
-    function _swap(
-        uint earned,
-        uint8 token
-    ) private returns (uint _minimumReceive) {
-        // removed `stableBalance` since _swap no longer transfers the rewards to the user
-        //uint stableBalance = claimInfoMap[receiver].balances[token];
+    /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool
+     *@param earned is the total STBT rewards earned by the user
+     *@param token corresponds to the `stables` array index */
+    function _swap(uint earned, uint8 token) private returns (uint) {
         // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
         uint minimumReceive = earned * (99e16);
         // 99% of the earned amount (.01)
@@ -462,21 +458,17 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         } else {
             minimumReceive /= 1e18;
         }
-        // console.log("earned:", earned);
-        // console.log("minimumReceive:", minimumReceive);
+        console.log("SWAP");
+        console.log("earned:", earned);
+        console.log("minimumReceive:", minimumReceive);
         stbt.approve(address(pool), earned);
-        pool.exchange_underlying(
+        uint actualReceived = pool.exchange_underlying(
             int128(0),
             int128(uint128(token + 1)),
             earned,
             minimumReceive
         );
-        // finally transfer stablecoins to user
-        // IERC20(stables[token]).transfer(
-        //     receiver,
-        //     stableBalance + minimumReceive
-        // );
-        return minimumReceive;
+        return actualReceived;
     }
 
     /** View / Pure functions */
