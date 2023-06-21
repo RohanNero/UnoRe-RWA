@@ -113,9 +113,9 @@ If you see `false` console logged in the terminal, run the test command again. S
 
 #### Main
 
-- MatrixUno Vault [0xcF8641aD48028788588070cDf405aF955cC26B1B](https://goerli.etherscan.io/address/0xcF8641aD48028788588070cDf405aF955cC26B1B#code)
+- MatrixUno Vault [0xE0DAD4AF8bA89Dbae25BA138Dc982CC07ab48858](https://goerli.etherscan.io/address/0xE0DAD4AF8bA89Dbae25BA138Dc982CC07ab48858)
 
-- Mock Curve Pool [0x41C41C918ce557614AF177Bd4a6e2FD40331b25e](https://goerli.etherscan.io/address/0x41C41C918ce557614AF177Bd4a6e2FD40331b25e#code)
+- Mock Curve Pool [0x0451fa9D1eC8c5BC5fB03f2687AdB0Ee80729323](https://goerli.etherscan.io/address/0x0451fa9D1eC8c5BC5fB03f2687AdB0Ee80729323#code)
 
 ### Current Developer Quickstart
 
@@ -128,6 +128,8 @@ If you see `false` console logged in the terminal, run the test command again. S
 #### Main
 
 `yarn hardhat node --tags matrixUno`
+
+`yarn hardhat node --network localhost`
 
 ### External Resources
 

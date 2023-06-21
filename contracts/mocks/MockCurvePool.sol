@@ -32,5 +32,6 @@ contract MockCurvePool {
         stbt.transferFrom(msg.sender, address(this), _dx);
         /**@notice the amount is divided by 1e12 to remove 12 zeros since USDC only has 6 decimals */
         usdc.transfer(msg.sender, _min_dy);
+        return _min_dy;
     }
 }

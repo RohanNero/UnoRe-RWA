@@ -102,8 +102,8 @@ developmentChains.includes(network.name)
           console.log("FinalUserAssets:", finalAssets.toString())
         })
       })
-      describe.only("performUpkeep", function () {
-        it("MOCK SENDING REWARDS", async function () {
+      describe("performUpkeep", function () {
+        it.only("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
@@ -132,7 +132,7 @@ developmentChains.includes(network.name)
           console.log(finalInfo.toString())
         })
       })
-      describe.only("unstake", function () {
+      describe("unstake", function () {
         it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialVaultAssets = await stbt.balanceOf(vault.address)

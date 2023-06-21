@@ -123,6 +123,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@param amountClaimed is the amount of STBT sent to `uno` */
     event UnoClaim(uint amountClaimed);
 
+    /**@notice used for testing, remove after done testing. */
+    event transferInfo(uint _amount, uint _receive);
+    event actual(uint actualRec);
+
     /**@notice need to provide the asset that is used in this vault
      *@dev vault shares are an ERC20 called "Matrix UNO"/"xUNO", these represent a user's stablecoin stake into an UNO-RWA pool
      *@param asset - the IERC contract you wish to use as the vault asset, in this case STBT
@@ -275,7 +279,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         console.log("minimumReceive:", received);
         console.log("transferAmount:", adjustedAmount + received);
         console.log("usdcBalance:", usdc.balanceOf(address(this)));
-        IERC20(stables[token]).transfer(msg.sender, adjustedAmount + received);
         // updating global variables
         console.log("unstake checkpoint 5");
         console.log("currentWeek:", viewCurrentWeek());
@@ -286,6 +289,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         claimInfoMap[msg.sender].lastClaimWeek = uint16(viewCurrentWeek());
         totalStaked -= adjustedAmount;
+        emit transferInfo(adjustedAmount, received);
+        IERC20(stables[token]).transfer(msg.sender, adjustedAmount + received);
         console.log("unstake checkpoint 7");
         return amount + received;
     }
@@ -489,18 +494,21 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         console.log("minimumPercentage:", minimumPercentage);
         console.log("minimumReceive:", minimumReceive);
         stbt.approve(address(pool), earned);
-        try
-            pool.exchange_underlying(
-                int128(0),
-                int128(uint128(token + 1)),
-                earned,
-                minimumReceive
-            )
-        returns (uint actualReceived) {
-            return actualReceived;
-        } catch {
-            revert MatrixUno__StableSwapFailed();
-        }
+        //try
+        uint actualReceived = pool.exchange_underlying(
+            int128(0),
+            int128(uint128(token + 1)),
+            earned,
+            minimumReceive
+        );
+        //returns (uint actualReceived) {
+        console.log("try reached");
+        console.log("actual:", actualReceived);
+        emit actual(actualReceived);
+        return actualReceived;
+        //} catch {
+        //    revert MatrixUno__StableSwapFailed();
+        //}
         // uint actualReceived = pool.exchange_underlying(
         //     int128(0),
         //     int128(uint128(token + 1)),

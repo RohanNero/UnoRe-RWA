@@ -31,7 +31,7 @@ const networkConfig = {
     name: "goerli",
     blockConfirmations: "5",
     stbtAddress: "0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32",
-    poolAddress: "0x41C41C918ce557614AF177Bd4a6e2FD40331b25e",
+    poolAddress: "0x0451fa9D1eC8c5BC5fB03f2687AdB0Ee80729323",
     unoAddress: "0xe4A98D2bFD66Ce08128FdFFFC9070662E489a28E",
     sanctionsAddress: "0x8Bb392899952320BdEdb13B3f559FDc8013cB9B5",
     stables: [
@@ -39,7 +39,7 @@ const networkConfig = {
       "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f",
       "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     ],
-    interval: "840",
+    interval: "420",
   },
   80001: {
     name: "mumbai",
