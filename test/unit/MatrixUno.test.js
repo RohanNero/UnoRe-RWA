@@ -307,10 +307,10 @@ describe.only("MatrixUno Unit Tests", function () {
             const slicedVaultAssets = initialVaultAssets
               .toString()
               .slice(0, -18)
-            if (slicedVaultAssets < 200000) {
-              await stbt.connect(sWhale).transfer(vault.address, thousandStbt)
-              console.log("mock stbt rewards distributed!")
-            }
+            //if (slicedVaultAssets < 200000) {
+            await stbt.connect(sWhale).transfer(vault.address, thousandStbt)
+            console.log("mock stbt rewards distributed!")
+            //}
           })
           it("should update reward info for the week", async function () {
             const interval = await vault.viewInterval()
@@ -386,13 +386,13 @@ describe.only("MatrixUno Unit Tests", function () {
               (await vault.viewCurrentWeek()).toString()
             )
 
-            if (whaleBalance > 100000000 && totalClaimed == 0) {
-              const claimTx = await vault
-                .connect(whale)
-                .unstake(xUnoDeposit, 1, 99, { gasLimit: 3000000 })
-              await claimTx.wait(1)
-              console.log("unstaked!")
-            }
+            //if (whaleBalance > 100000000 && totalClaimed == 0) {
+            const claimTx = await vault
+              .connect(whale)
+              .unstake(xUnoDeposit, 1, 99, { gasLimit: 3000000 })
+            await claimTx.wait(1)
+            console.log("unstaked!")
+            //}
             // mock rewards sent, now time to test claiming to see if rewards are calculated correctly
             const finalVaultShares = await vault.balanceOf(vault.address)
             const finalVaultAssets = await stbt.balanceOf(vault.address)

@@ -76,7 +76,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim week */
     struct claimInfo {
         uint[3] balances;
-        uint16 lastClaimedWeek;
+        uint16 lastClaimWeek;
         uint totalAmountClaimed;
     }
 
@@ -214,6 +214,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         }
 
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
+        claimInfoMap[msg.sender].lastClaimWeek = uint16(viewCurrentWeek());
         // Updating `totalStaked` depending on how many decimals `token` has
         if (token > 0) {
             totalStaked += transferFromAmount * 1e12;
@@ -283,6 +284,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         totalClaimed += totalRewards;
         claimInfoMap[msg.sender].totalAmountClaimed += totalRewards;
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
+        claimInfoMap[msg.sender].lastClaimWeek = uint16(viewCurrentWeek());
         totalStaked -= adjustedAmount;
         console.log("unstake checkpoint 7");
         return amount + received;
@@ -296,6 +298,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint totalRewards = _claim(msg.sender);
         totalClaimed += totalRewards;
         rewardInfoArray[viewCurrentWeek()].claimed += totalRewards;
+        claimInfoMap[msg.sender].lastClaimWeek = uint16(viewCurrentWeek());
         uint minimumReceive = _swap(totalRewards, token, minimumPercentage);
         // since user is claiming, send only the rewards
         IERC20(stables[token]).transfer(msg.sender, minimumReceive);
@@ -443,7 +446,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice contains the reward calculation logic
      *@dev this function is called by `claim` and `unstake`  */
     function _claim(address addr) private view returns (uint) {
-        uint lastClaimWeek = claimInfoMap[addr].lastClaimedWeek;
+        uint lastClaimWeek = claimInfoMap[addr].lastClaimWeek;
         uint currentWeek = viewCurrentWeek();
         uint totalRewards = 0;
         for (uint i = lastClaimWeek; i < currentWeek; i++) {
@@ -677,7 +680,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice returns the last week a user has claimed
      *@param user the address that has claimed */
     function viewLastClaimed(address user) public view returns (uint16) {
-        return claimInfoMap[user].lastClaimedWeek;
+        return claimInfoMap[user].lastClaimWeek;
     }
 
     /**@notice returns the amount a user has claimed
