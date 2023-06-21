@@ -106,11 +106,14 @@ If you see `false` console logged in the terminal, run the test command again. S
 #### POC
 
 - MatrixUno Vault [0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70](https://goerli.etherscan.io/address/0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70)
+
 - Mock Curve Pool [0xC185462cDa787E00707b3E234e4763538fA15E8d](https://goerli.etherscan.io/address/0xC185462cDa787E00707b3E234e4763538fA15E8d)
 
 #### Main
 
-` MatrixUno Vault [0xcF8641aD48028788588070cDf405aF955cC26B1B](https://goerli.etherscan.io/address/0xcF8641aD48028788588070cDf405aF955cC26B1B#code)
+- MatrixUno Vault [0xcF8641aD48028788588070cDf405aF955cC26B1B](https://goerli.etherscan.io/address/0xcF8641aD48028788588070cDf405aF955cC26B1B#code)
+
+- Mock Curve Pool [0x41C41C918ce557614AF177Bd4a6e2FD40331b25e](https://goerli.etherscan.io/address/0x41C41C918ce557614AF177Bd4a6e2FD40331b25e#code)
 
 ### Current Developer Quickstart
 
