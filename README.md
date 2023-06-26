@@ -113,9 +113,9 @@ If you see `false` console logged in the terminal, run the test command again. S
 
 #### Main
 
-- MatrixUno Vault [0xE0DAD4AF8bA89Dbae25BA138Dc982CC07ab48858](https://goerli.etherscan.io/address/0xE0DAD4AF8bA89Dbae25BA138Dc982CC07ab48858)
+- MatrixUno Vault [0xd1E00a2e807392a5cD4De59F02214F2e9E182070](https://goerli.etherscan.io/address/0xd1E00a2e807392a5cD4De59F02214F2e9E182070)
 
-- Mock Curve Pool [0x0451fa9D1eC8c5BC5fB03f2687AdB0Ee80729323](https://goerli.etherscan.io/address/0x0451fa9D1eC8c5BC5fB03f2687AdB0Ee80729323#code)
+- Mock Curve Pool [0xA861038315c29987CE16F315dE6fCb099C115d68](https://goerli.etherscan.io/address/0xA861038315c29987CE16F315dE6fCb099C115d68#code)
 
 ### Current Developer Quickstart
 
