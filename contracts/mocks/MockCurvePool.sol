@@ -34,4 +34,9 @@ contract MockCurvePool {
         usdc.transfer(msg.sender, _min_dy);
         return _min_dy;
     }
+
+    /**@notice returns the return value from calling this function on the actual pool 23/6/25 */
+    function get_virtual_price() public pure returns (uint256) {
+        return 1008309935958532778;
+    }
 }

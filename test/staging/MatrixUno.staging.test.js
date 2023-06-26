@@ -45,7 +45,7 @@ developmentChains.includes(network.name)
        * 6. call unstake()
        * 7. Ensure the user gained USDC rewards
        */
-      describe.only("stake", function () {
+      describe("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
@@ -103,7 +103,7 @@ developmentChains.includes(network.name)
         })
       })
       describe("performUpkeep", function () {
-        it.only("MOCK SENDING REWARDS", async function () {
+        it("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
@@ -117,7 +117,7 @@ developmentChains.includes(network.name)
             console.log("Mock rewards distributed!")
           }
         })
-        it("updates the rewardInfoArray", async function () {
+        it.only("updates the rewardInfoArray", async function () {
           const initialInfo = await vault.viewRewardInfo(0)
           const returnVal = await vault.checkUpkeep("0x")
           console.log(initialInfo.toString())
@@ -132,7 +132,7 @@ developmentChains.includes(network.name)
           console.log(finalInfo.toString())
         })
       })
-      describe("unstake", function () {
+      describe.only("unstake", function () {
         it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -140,7 +140,8 @@ developmentChains.includes(network.name)
           console.log("InitialVaultAssets:", initialVaultAssets.toString())
           const stbtTransfer = ethers.utils.parseUnits("2000", 18)
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
-          const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
+          //const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
+          const xUnoTransfer = await vault.balanceOf(deployer)
           console.log((initialVaultAssets - stbtDeposit).toString())
           // if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
           //   const transferTx = await stbt.transfer(vault.address, stbtTransfer)

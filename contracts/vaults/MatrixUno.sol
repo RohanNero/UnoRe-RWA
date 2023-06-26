@@ -191,6 +191,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         }
         /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint transferFromAmount;
+        // Using Curve's virtual price
+        int128 conversionRate = viewConversionRate();
         //console.log("balanceOf:", balanceOf(address(this)));
         if (this.balanceOf(address(this)) < transferAmount) {
             if (token > 0) {
@@ -198,8 +200,14 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             } else {
                 transferFromAmount = this.balanceOf(address(this));
             }
+            transferAmount = conversionRate.mulu(this.balanceOf(address(this)));
         } else {
             transferFromAmount = amount;
+            if (token > 0) {
+                transferAmount = conversionRate.mulu(amount * 1e12);
+            } else {
+                transferAmount = conversionRate.mulu(amount);
+            }
         }
         //console.log("transferFrom:", transferFromAmount);
         /** Actually moving the tokens and updating balance */
@@ -216,7 +224,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             // since user is staking, send only the rewards
             IERC20(stables[token]).transfer(msg.sender, minimumReceive);
         }
-
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
         claimInfoMap[msg.sender].lastClaimWeek = uint16(viewCurrentWeek());
         // Updating `totalStaked` depending on how many decimals `token` has
@@ -225,7 +232,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         } else {
             totalStaked += transferFromAmount;
         }
-
         // console.log("transferAmount:", transferAmount);
         // console.log(balanceOf(address(this)));
         // console.log("msg.sender:", msg.sender);
@@ -273,8 +279,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         } else {
             adjustedAmount = amount;
         }
-        console.log("unstake checkpoint 4");
         // since user is unstaking, send rewards plus the balance
+        console.log("unstake checkpoint 4");
         console.log("amount:", adjustedAmount);
         console.log("minimumReceive:", received);
         console.log("transferAmount:", adjustedAmount + received);
@@ -753,5 +759,10 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@dev current value of the `unaccountedRewards` variable */
     function viewUnaccountedRewards() public view returns (uint) {
         return unaccountedRewards;
+    }
+
+    /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price */
+    function viewConversionRate() public view returns (int128 conversionRate) {
+        conversionRate = uint(1e18).divu(pool.get_virtual_price());
     }
 }
