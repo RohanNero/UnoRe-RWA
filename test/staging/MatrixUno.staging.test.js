@@ -123,7 +123,8 @@ developmentChains.includes(network.name)
           console.log(initialInfo.toString())
           console.log("upkeepNeeded:", returnVal.upkeepNeeded)
           if (returnVal.upkeepNeeded == true) {
-            await vault.performUpkeep("0x")
+            const upkeep = await vault.performUpkeep("0x")
+            await upkeep.wait(1)
             console.log("upkeep performed!")
           } else {
             console.log("upkeep not needed!")

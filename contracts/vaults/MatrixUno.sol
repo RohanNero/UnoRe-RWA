@@ -192,7 +192,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint transferFromAmount;
         // Using Curve's virtual price
-        int128 conversionRate = viewConversionRate();
+        int128 conversionRate = viewStakeConversionRate();
         //console.log("balanceOf:", balanceOf(address(this)));
         if (this.balanceOf(address(this)) < transferAmount) {
             if (token > 0) {
@@ -296,6 +296,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         claimInfoMap[msg.sender].lastClaimWeek = uint16(viewCurrentWeek());
         totalStaked -= adjustedAmount;
         emit transferInfo(adjustedAmount, received);
+        int128 conversionRate = viewUnstakeConversionRate();
+        adjustedAmount = conversionRate.mulu(adjustedAmount);
         IERC20(stables[token]).transfer(msg.sender, adjustedAmount + received);
         console.log("unstake checkpoint 7");
         return amount + received;
@@ -761,8 +763,21 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         return unaccountedRewards;
     }
 
-    /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price */
-    function viewConversionRate() public view returns (int128 conversionRate) {
+    /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price for `stake()` */
+    function viewStakeConversionRate()
+        public
+        view
+        returns (int128 conversionRate)
+    {
         conversionRate = uint(1e18).divu(pool.get_virtual_price());
+    }
+
+    /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price for `unstake()` */
+    function viewUnstakeConversionRate()
+        public
+        view
+        returns (int128 conversionRate)
+    {
+        conversionRate = pool.get_virtual_price().divu(uint256(1e18));
     }
 }
