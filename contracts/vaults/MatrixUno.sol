@@ -373,6 +373,13 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         return shares;
     }
 
+    /** Admin only functions (Uno's whitelisted EOA) */
+
+    /**@notice this function allows uno to set the SSIP address */
+    function setSSIP(address ssipAddress) public {
+        // ssip = SSIP(ssipAddress);
+    }
+
     /** Chainlink Automation functions */
 
     /**@notice this function will call `performUpkeep()` when upkeepNeeded is true
@@ -457,7 +464,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /** Internal and Private functions */
 
     /**@notice contains the reward calculation logic
-     *@dev this function is called by `claim` and `unstake`  */
+     *@dev this function is called by `claim`, `stake`, and `unstake`  */
     function _claim(address addr) private view returns (uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimWeek;
         uint currentWeek = viewCurrentWeek();
