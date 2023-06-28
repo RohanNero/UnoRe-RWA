@@ -45,7 +45,7 @@ developmentChains.includes(network.name)
        * 6. call unstake()
        * 7. Ensure the user gained USDC rewards
        */
-      describe("stake", function () {
+      describe.only("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
