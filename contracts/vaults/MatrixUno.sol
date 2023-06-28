@@ -219,11 +219,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             transferFromAmount
         );
         // Calling `claim`
-        (uint totalRewards, uint totalSRewards) = claim(
-            msg.sender,
-            token,
-            minimumPercentage
-        );
+        claim(msg.sender, token, minimumPercentage);
         // Increment balance and `totalStaked` on `stake()`
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
         if (token > 0) {
@@ -268,11 +264,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         this.transferFrom(msg.sender, address(this), amount);
         console.log("unstake checkpoint 1");
         // calculate rewards owed to user
-        (uint totalRewards, uint totalSRewards) = claim(
-            msg.sender,
-            token,
-            minimumPercentage
-        );
+        claim(msg.sender, token, minimumPercentage);
         console.log("unstake checkpoint 2");
         // swap STBT into stable and send to user
         uint adjustedAmount;
@@ -377,15 +369,15 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             "ERC4626: deposit more than max"
         );
 
-        uint256 shares = previewDeposit(assets);
-        _deposit(_msgSender(), receiver, assets, shares);
+        //uint256 shares = previewDeposit(assets);
+        _deposit(_msgSender(), receiver, assets, 0);
         /**@notice custom MatrixUno logic to track STBT deposited by Uno Re */
         if (receiver == address(this) && msg.sender == uno) {
             unoDepositAmount += assets;
         }
         rewardInfoArray[viewCurrentWeek()].deposited += assets;
         rewardInfoArray[viewCurrentWeek()].vaultAssetBalance += assets;
-        return shares;
+        return assets;
     }
 
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
@@ -399,16 +391,14 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             assets <= maxWithdraw(owner),
             "ERC4626: withdraw more than max"
         );
-
-        uint256 shares = previewWithdraw(assets);
-        _withdraw(_msgSender(), receiver, owner, assets, shares);
+        _withdraw(_msgSender(), receiver, owner, assets, 0);
         /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
         if (msg.sender == uno) {
             unoDepositAmount -= assets;
         }
         rewardInfoArray[viewCurrentWeek()].withdrawn += assets;
         rewardInfoArray[viewCurrentWeek()].vaultAssetBalance -= assets;
-        return shares;
+        return assets;
     }
 
     /** Admin only functions (Uno's whitelisted EOA) */
@@ -574,6 +564,36 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         //     minimumReceive
         // );
         // return actualReceived;
+    }
+
+    /**@notice native ERC-4626 function */
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256
+    ) internal override {
+        // slither-disable-next-line reentrancy-no-eth
+        stbt.transferFrom(caller, address(this), assets);
+        _mint(receiver, assets);
+        // inherited event, currently emitting with assets for assets and shares since 1:1 peg.
+        emit Deposit(caller, receiver, assets, assets);
+    }
+
+    /**@notice native ERC-4626 function */
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256
+    ) internal override {
+        // if (caller != owner) {
+        //     _spendAllowance(owner, caller, shares);
+        // }
+        _burn(owner, assets);
+        stbt.transfer(receiver, assets);
+        emit Withdraw(caller, receiver, owner, assets, assets);
     }
 
     /** View / Pure functions */
