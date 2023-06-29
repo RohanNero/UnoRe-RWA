@@ -125,6 +125,12 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
      *@param amountClaimed is the amount of STBT sent to `uno` */
     event UnoClaim(uint amountClaimed);
 
+    /**@notice emitted when perform upkeep is called */
+    event UpkeepPerformed(weeklyRewardInfo info);
+
+    /**@notice emitted when `claim` is called */
+    event Claim(uint totalRewards, uint totalSRewards);
+
     /**@notice used for testing, remove after done testing. */
     event transferInfo(uint _amount, uint _receive);
     event actual(uint actualRec);
@@ -345,6 +351,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         }
         claimInfoMap[addr].totalAmountClaimed += totalRewards;
         claimInfoMap[addr].lastClaimWeek = uint16(viewCurrentWeek());
+        emit Claim(totalRewards, totalSRewards);
         return (totalRewards, totalSRewards);
     }
 
@@ -364,19 +371,16 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint256 assets,
         address receiver
     ) public virtual override returns (uint256) {
-        require(
-            assets <= maxDeposit(receiver),
-            "ERC4626: deposit more than max"
-        );
-
         //uint256 shares = previewDeposit(assets);
         _deposit(_msgSender(), receiver, assets, 0);
+        claim(msg.sender, 1, 97);
         /**@notice custom MatrixUno logic to track STBT deposited by Uno Re */
         if (receiver == address(this) && msg.sender == uno) {
             unoDepositAmount += assets;
         }
         rewardInfoArray[viewCurrentWeek()].deposited += assets;
         rewardInfoArray[viewCurrentWeek()].vaultAssetBalance += assets;
+        claimInfoMap[msg.sender].balances[3] += assets;
         return assets;
     }
 
@@ -392,12 +396,14 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             "ERC4626: withdraw more than max"
         );
         _withdraw(_msgSender(), receiver, owner, assets, 0);
+        claim(msg.sender, 1, 97);
         /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
         if (msg.sender == uno) {
             unoDepositAmount -= assets;
         }
         rewardInfoArray[viewCurrentWeek()].withdrawn += assets;
         rewardInfoArray[viewCurrentWeek()].vaultAssetBalance -= assets;
+        claimInfoMap[msg.sender].balances[3] -= assets;
         return assets;
     }
 
@@ -487,6 +493,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         // unaccountedRewards += (rewardInfoArray[currentWeek - 1].rewards /
         //     (currentInfo.currentBalance / unoDepositAmount));
         console.log("checkpoint 4");
+        emit UpkeepPerformed(rewardInfoArray[currentWeek - 1]);
     }
 
     /** Internal and Private functions */
@@ -573,7 +580,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint256 assets,
         uint256
     ) internal override {
-        // slither-disable-next-line reentrancy-no-eth
         stbt.transferFrom(caller, address(this), assets);
         _mint(receiver, assets);
         // inherited event, currently emitting with assets for assets and shares since 1:1 peg.

@@ -15,6 +15,7 @@ const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL
 const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL
 const FUJI_RPC_URL = process.env.FUJI_RPC_URL
 const PRIVATE_KEY = process.env.PRIVATE_KEY
+const USER_PRIVATE_KEY = process.env.USER_PRIVATE_KEY
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 const SNOWTRACE_API_KEY = process.env.SNOWTRACE_API_KEY
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
@@ -66,6 +67,7 @@ module.exports = {
   },
   namedAccounts: {
     deployer: 0,
+    user: 1,
   },
   gasReporter: {
     enabled: false,
@@ -85,7 +87,7 @@ module.exports = {
       chainId: 5,
       blockConfirmations: 5,
       url: GOERLI_RPC_URL,
-      accounts: [PRIVATE_KEY],
+      accounts: [PRIVATE_KEY, USER_PRIVATE_KEY],
     },
     mumbai: {
       chainId: 80001,

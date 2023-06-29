@@ -1,4 +1,4 @@
-const { network, ethers } = require("hardhat")
+const { network, ethers, getNamedAccounts } = require("hardhat")
 const hre = require("hardhat")
 const { setCode } = require("@nomicfoundation/hardhat-network-helpers")
 const {
@@ -19,9 +19,12 @@ const { assert, expect } = require("chai")
 developmentChains.includes(network.name)
   ? describe.skip
   : describe("Matrix Uno Goerli Staging tests", function () {
-      let deployer, stbt, usdc, vault
+      let deployer, stbt, usdc, vault, user
       beforeEach(async function () {
-        deployer = (await getNamedAccounts()).deployer
+        ;[deployer, user] = await ethers.getSigners()
+        //deployer = (await getNamedAccounts()).deployer
+        //{ deployer, user } = await getNamedAccounts();
+        console.log("user:", user.address)
         stbt = await ethers.getContractAt(
           stbtAbi,
           "0x0f539454d2Effd45E9bFeD7C57B2D48bFd04CB32"
@@ -45,13 +48,13 @@ developmentChains.includes(network.name)
        * 6. call unstake()
        * 7. Ensure the user gained USDC rewards
        */
-      describe.only("stake", function () {
+      describe("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           const initialStbtAllowance = await stbt.allowance(
-            deployer,
+            deployer.address,
             vault.address
           )
           console.log("initialSTBTAllowance:", initialStbtAllowance.toString())
@@ -71,16 +74,19 @@ developmentChains.includes(network.name)
           const finalVaultShares = await vault.balanceOf(vault.address)
           console.log("FinalVaultShares:", finalVaultShares.toString())
         })
-        it("allows users to stake stablecoins for xUNO", async function () {
-          const initialShares = await vault.balanceOf(deployer)
-          const initialUsdcBal = await usdc.balanceOf(deployer)
-          const initialAssets = await stbt.balanceOf(deployer)
-          const initialAllowance = await usdc.allowance(deployer, vault.address)
+        it.only("allows users to stake stablecoins for xUNO", async function () {
+          const initialShares = await vault.balanceOf(deployer.address)
+          const initialUsdcBal = await usdc.balanceOf(deployer.address)
+          const initialAssets = await stbt.balanceOf(deployer.address)
+          const initialAllowance = await usdc.allowance(
+            deployer.address,
+            vault.address
+          )
           console.log("InitialUserShares:", initialShares.toString())
           console.log("InitialUserUsdc:", initialUsdcBal.toString())
           console.log("InitialUserAssets:", initialAssets.toString())
           console.log("InitialAllowance:", initialAllowance.toString())
-          console.log("User:", deployer)
+          console.log("User:", deployer.address)
           /** APPROVE VAULT TO TAKE 50,000 USDC */
           if (initialAllowance < 5e10) {
             await usdc.approve(vault.address, 5e10)
@@ -95,8 +101,8 @@ developmentChains.includes(network.name)
             console.log("staked!")
           }
 
-          const finalShares = await vault.balanceOf(deployer)
-          const finalAssets = await stbt.balanceOf(deployer)
+          const finalShares = await vault.balanceOf(deployer.address)
+          const finalAssets = await stbt.balanceOf(deployer.address)
 
           console.log("FinalUserShares:", finalShares.toString())
           console.log("FinalUserAssets:", finalAssets.toString())
@@ -104,7 +110,7 @@ developmentChains.includes(network.name)
       })
       describe("performUpkeep", function () {
         it("MOCK SENDING REWARDS", async function () {
-          const initialShares = await vault.balanceOf(deployer)
+          const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
           console.log("InitialVaultAssets:", initialVaultAssets.toString())
@@ -133,23 +139,23 @@ developmentChains.includes(network.name)
           console.log(finalInfo.toString())
         })
       })
-      describe.only("unstake", function () {
+      describe("unstake", function () {
         it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
-          const initialShares = await vault.balanceOf(deployer)
+          const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
           console.log("InitialVaultAssets:", initialVaultAssets.toString())
           const stbtTransfer = ethers.utils.parseUnits("2000", 18)
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           //const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
-          const xUnoTransfer = await vault.balanceOf(deployer)
+          const xUnoTransfer = await vault.balanceOf(deployer.address)
           console.log((initialVaultAssets - stbtDeposit).toString())
           // if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
           //   const transferTx = await stbt.transfer(vault.address, stbtTransfer)
           //   await transferTx.wait(1)
           // }
           const initialAllowance = await vault.allowance(
-            deployer,
+            deployer.address,
             vault.address
           )
           console.log("InitialAllowance:", initialAllowance.toString())
@@ -173,6 +179,69 @@ developmentChains.includes(network.name)
           }
           const rewards = await vault.viewTotalClaimed()
           console.log("totalClaimed:", rewards.toString())
+        })
+      })
+      describe("deposit", function () {
+        it("allows a user to deposit stbt for xUNO", async function () {
+          const initialVaultShares = await vault.balanceOf(vault.address)
+          console.log("InitialVaultShares:", initialVaultShares.toString())
+          const stbtDeposit = ethers.utils.parseUnits("50000", 18)
+          const initialStbtAllowance = await stbt.allowance(
+            user.address,
+            vault.address
+          )
+          console.log("initialSTBTAllowance:", initialStbtAllowance.toString())
+          /** APPROVE VAULT TO TAKE STBT */
+          if (initialStbtAllowance < stbtDeposit) {
+            await stbt.connect(user).approve(vault.address, stbtDeposit)
+          }
+          /** DEPOSIT THE STBT */
+          console.log("reached")
+          const depositTx = await vault
+            .connect(user)
+            .deposit(stbtDeposit, user.address, {
+              gasLimit: 3000000,
+            })
+          await depositTx.wait(1)
+          console.log("deposited!")
+          const finalVaultShares = await vault.balanceOf(vault.address)
+          console.log("FinalVaultShares:", finalVaultShares.toString())
+        })
+      })
+      describe("withdraw", function () {
+        it("should allow user to withdraw their stbt and earn rewards", async function () {
+          const { user } = await getNamedAccounts()
+          const initialShares = await vault.balanceOf(user)
+          const initialVaultAssets = await stbt.balanceOf(vault.address)
+          console.log("InitialShares:", initialShares.toString())
+          console.log("InitialVaultAssets:", initialVaultAssets.toString())
+          const stbtTransfer = ethers.utils.parseUnits("2000", 18)
+          const stbtDeposit = ethers.utils.parseUnits("200000", 18)
+          const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
+          //const xUnoTransfer = await vault.balanceOf(deployer)
+          // console.log((initialVaultAssets - stbtDeposit).toString())
+          const initialAllowance = await vault.allowance(user, vault.address)
+
+          if (initialAllowance < xUnoTransfer) {
+            const approveTx = await vault
+              .connect(user)
+              .approve(vault.address, xUnoTransfer)
+            await approveTx.wait(3)
+            console.log("approved!")
+          }
+          console.log("InitialAllowance:", initialAllowance.toString())
+          const unstakeTx = await vault
+            .connect(user)
+            .withdraw(xUnoTransfer, user.address, {
+              gasLimit: 3000000,
+            })
+          await unstakeTx.wait(1)
+          console.log("unstaked!")
+          const rewards = await vault.viewTotalClaimed()
+          console.log("totalClaimed:", rewards.toString())
+          console.log(
+            initialVaultAssets > stbtDeposit && initialAllowance >= xUnoTransfer
+          )
         })
       })
     })
