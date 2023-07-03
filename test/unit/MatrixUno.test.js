@@ -249,12 +249,11 @@ describe.only("MatrixUno Unit Tests", function () {
             //   "initial vault usdc balance:",
             //   initialVaultUsdcBalance.toString()
             // )
-
-            if (usdcAllowance < usdcDeposit) {
-              await usdc
-                .connect(whale)
-                .approve(vault.address, usdcDeposit.toString())
-            }
+            //if (usdcAllowance < usdcDeposit) {
+            await usdc
+              .connect(whale)
+              .approve(vault.address, usdcDeposit.toString())
+            //}
             const updatedUsdcAllowance = await usdc.allowance(
               whale._address,
               vault.address
@@ -264,11 +263,11 @@ describe.only("MatrixUno Unit Tests", function () {
             // console.log("total claimed:", totalClaimed.toString())
             // console.log((await vault.balanceOf(vault.address)).toString())
             // console.log("usdcDeposit:",usdcDeposit.toString())
-            if (initialVaultUsdcBalance < usdcDeposit) {
-              const shares = await vault
-                .connect(whale)
-                .stake(usdcDeposit, 1, 99, { gasLimit: 300000 })
-            }
+            //if (initialVaultUsdcBalance < usdcDeposit) {
+            const shares = await vault
+              .connect(whale)
+              .stake(usdcDeposit, 1, 99, { gasLimit: 300000 })
+            //}
             //console.log("staked!")
 
             const finalVaultUsdcBalance = await usdc.balanceOf(vault.address)
@@ -377,12 +376,12 @@ describe.only("MatrixUno Unit Tests", function () {
             const totalClaimed = await vault.viewTotalClaimed()
             console.log("totalClaimed:", totalClaimed.toString())
             console.log("approve:", initialVaultAllowance < xUnoDeposit)
-            if (initialVaultAllowance < xUnoDeposit) {
-              const approveAmount = xUnoDeposit.sub(initialVaultAllowance)
-              console.log("approveAmount:", approveAmount.toString())
-              await vault.connect(whale).approve(vault.address, approveAmount)
-              console.log("approved!")
-            }
+            // if (initialVaultAllowance < xUnoDeposit) {
+            const approveAmount = xUnoDeposit.sub(initialVaultAllowance)
+            console.log("approveAmount:", approveAmount.toString())
+            await vault.connect(whale).approve(vault.address, approveAmount)
+            console.log("approved!")
+            //}
             const vaultAllowance = await vault.allowance(
               whale._address,
               vault.address

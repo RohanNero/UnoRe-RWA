@@ -287,10 +287,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         console.log("currentWeek:", viewCurrentWeek());
         // updating global variables
         uint initialVaultBalance = claimInfoMap[msg.sender].balances[token];
-        claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
+
         totalStaked -= adjustedAmount;
         int128 conversionRate = viewUnstakeConversionRate();
         adjustedAmount = conversionRate.mulu(adjustedAmount);
+        console.log("initialVaultBalance:", initialVaultBalance);
         console.log("adjustedAmount:", adjustedAmount);
         // temporary fix to the adjustedAmount being slightly larger than user balance
         // right now the math is probably causing this due to rounding or something
@@ -300,8 +301,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
                 adjustedAmount - initialVaultBalance
             );
             adjustedAmount = initialVaultBalance;
-            console.log("initialVaultBalance:", initialVaultBalance);
         }
+        claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         IERC20(stables[token]).transfer(msg.sender, initialVaultBalance);
         console.log("unstake checkpoint 7");
         // return total amount of stable received
@@ -920,6 +921,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         returns (int128 conversionRate)
     {
         conversionRate = uint(1e18).divu(pool.get_virtual_price());
+        console.log("stake rate:", uint128(conversionRate));
     }
 
     /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price for `unstake()` */
@@ -929,5 +931,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         returns (int128 conversionRate)
     {
         conversionRate = pool.get_virtual_price().divu(uint256(1e18));
+        console.log("unstake rate:", uint128(conversionRate));
     }
 }
