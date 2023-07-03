@@ -107,7 +107,7 @@ describe.only("MatrixUno Unit Tests", function () {
   !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Ethereum Mainnet Fork tests", function () {
-        describe.only("stake", function () {
+        describe("stake", function () {
           it("STBT whale should have a high STBT balance", async function () {
             const initialBal = await stbt.balanceOf(sWhale._address, {
               gasLimit: 300000,
@@ -300,7 +300,7 @@ describe.only("MatrixUno Unit Tests", function () {
           // come back to this test later
           // it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
         })
-        describe.only("performUpkeep", function () {
+        describe("performUpkeep", function () {
           it("MOCK SENDING REWARDS", async function () {
             const initialVaultAssets = await stbt.balanceOf(vault.address)
             const thousandStbt = ethers.utils.parseUnits("1000", 18)
@@ -337,7 +337,7 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("finalInfo:", finalInfo.toString())
           })
         })
-        describe.only("unstake", function () {
+        describe("unstake", function () {
           it("reverts if `amount` input is zero", async function () {
             await expect(
               vault.connect(whale).unstake(0, 1, 99, { gasLimit: 300000 })
@@ -424,6 +424,17 @@ describe.only("MatrixUno Unit Tests", function () {
           // it("vault exchanges stbt for stablecoin", async function () {})
           // it("vault transfers stablecoin to user", async function () {})
           // it("emits the `stablesClaimed` event", async function () {})
+        })
+        describe("viewVaultStableBalance", function () {
+          it("returns the total stable balance of the vault", async function () {
+            const bal = await vault.viewVaultStableBalance()
+            console.log("bal:", bal.toString())
+            //console.log(whale)
+            await usdc.connect(whale).transfer(vault.address, 777)
+            const updatedBal = await vault.viewVaultStableBalance()
+            console.log("updatedBal:", updatedBal.toString())
+            assert.isAbove(updatedBal, bal)
+          })
         })
       })
 })

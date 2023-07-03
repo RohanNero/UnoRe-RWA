@@ -635,7 +635,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         return address(sanctionsList);
     }
 
-    /**@notice returns the total amount of stablecoins in the vault */
+    /**@notice returns the total amount of stablecoins in the vault
+     *@dev this views balance using ERC-20 balanceOf so it shows even coins sent directly to this contract (lost coins)*/
     function viewVaultStableBalance()
         public
         view
