@@ -35,6 +35,8 @@ error MatrixUno__OnlyUno();
 error MatrixUno__StableSwapFailed();
 /**@notice used inside of `claim` to ensure the sender is claiming for themselves */
 error MatrixUno__AddrMustBeSender(address sender, address addr);
+/**@notice used inside `viewPortionAt()` to ensure the function doesn't try to access out-of-bounds index */
+error MatrixUno__InvalidWeek(uint week);
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -288,7 +290,6 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         // updating global variables
         uint initialVaultBalance = claimInfoMap[msg.sender].balances[token];
 
-        totalStaked -= adjustedAmount;
         int128 conversionRate = viewUnstakeConversionRate();
         adjustedAmount = conversionRate.mulu(adjustedAmount);
         console.log("initialVaultBalance:", initialVaultBalance);
@@ -303,6 +304,11 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             adjustedAmount = initialVaultBalance;
         }
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
+        if (token > 0) {
+            totalStaked -= adjustedAmount * 1e12;
+        } else {
+            totalStaked -= adjustedAmount;
+        }
         IERC20(stables[token]).transfer(msg.sender, initialVaultBalance);
         console.log("unstake checkpoint 7");
         // return total amount of stable received
@@ -447,6 +453,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice this function is called by Chainlink weekly to update values for reward calculation
      *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep(bytes calldata /* performData */) external override {
+        console.log("performUpkeep reached");
         // It's highly recommended to revalidate the upkeep in the performUpkeep function
         if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
@@ -669,6 +676,9 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint week,
         address addr
     ) public view returns (int128 portion, int128 sPortion) {
+        if (week >= rewardInfoArray.length) {
+            revert MatrixUno__InvalidWeek(week);
+        }
         uint daiStaked = claimInfoMap[addr].balances[0];
         uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
         uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
@@ -773,7 +783,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         return (block.timestamp - i_startingTimestamp) / i_interval;
     }
 
-    /**@notice this function allows users to view the amount of rewards they currently have earned */
+    /**@notice allows users to view the amount of rewards they currently can claim */
     function viewRewards(address addr) public view returns (uint, uint) {
         uint lastClaimWeek = claimInfoMap[addr].lastClaimWeek;
         uint currentWeek = viewCurrentWeek();
@@ -889,17 +899,20 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
     /**@notice returns the portion of rewards that are unaccounted for
      *@dev all unaccounted rewards are claimable by Uno Re's EOA */
     function calculateUnaccountedRewards() public view returns (uint) {
+        console.log("calculateUnnacountedRewards reached!");
         uint currentWeek = viewCurrentWeek();
-        if (unoDepositAmount < totalStaked) {
+        console.log("currentWeek:", currentWeek);
+        console.log("totalStaked:", totalStaked);
+        if (unoDepositAmount <= totalStaked) {
             return 0;
         } else {
             uint remainder = unoDepositAmount - totalStaked;
+            console.log("remainder:", remainder);
             int128 portion = remainder.divu(
                 rewardInfoArray[currentWeek - 1].currentBalance
             );
             return portion.mulu(rewardInfoArray[currentWeek - 1].rewards);
         }
-
         // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked.
         // Uno portion/unaccounted portion is 1/2 of total rewards
         // 200,000 - 50,000 = 150,000

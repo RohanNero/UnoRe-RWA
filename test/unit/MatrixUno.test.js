@@ -336,6 +336,162 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("finalInfo:", finalInfo.toString())
           })
         })
+
+        // VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS //
+        describe("viewPoolAddress", function () {
+          it("returns the curve pool address", async function () {
+            const value = await vault.viewPoolAddress()
+            assert.equal(value, 0x892d701d94a43bdbcb5ea28891daca2fa22a690b)
+          })
+        })
+        describe("viewUnoAddress", function () {
+          it("returns Uno's EOA address", async function () {
+            const value = await vault.viewUnoAddress()
+            assert.equal(value, 0x81bd585940501b583fd092bc8397f2119a96e5ba)
+          })
+        })
+        describe("viewStables", function () {
+          it("returns addresses of DAI/UDSC/USDT used by this contract", async function () {
+            const value = await vault.viewStables()
+            assert.equal(value[0], 0x6b175474e89094c44da98b954eedeac495271d0f)
+            assert.equal(value[1], 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48)
+            assert.equal(value[2], 0xdac17f958d2ee523a2206206994597c13d831ec7)
+          })
+        })
+        describe("viewSanctionsList", function () {
+          it("returns the sanctionsList contract address", async function () {
+            const value = await vault.viewSanctionsList()
+            assert.equal(value, 0x40c57923924b5c5c5455c48d93317139addac8fb)
+          })
+        })
+        describe("viewVaultStableBalance", function () {
+          it("returns the total stable balance of the vault", async function () {
+            const bal = await vault.viewVaultStableBalance()
+            console.log("bal:", bal.toString())
+            await usdc.connect(whale).transfer(vault.address, 777)
+            const updatedBal = await vault.viewVaultStableBalance()
+            console.log("updatedBal:", updatedBal.toString())
+            assert.isAbove(updatedBal, bal)
+          })
+        })
+        describe("viewPortionAt", function () {
+          it("returns amount of times that users totalStaked goes into vaultAssetBalance at given week", async function () {
+            const value = await vault.viewPortionAt(0, whale._address)
+            console.log(value.toString())
+            console.log(value[0] / 2 ** 64)
+            //assert.equal(value[0])
+          })
+        })
+        // describe("viewCurrentWeek", function () {
+        //   it("returns what week the contract is currently at", async function () {
+        //     let week = 1
+        //     const value = await vault.viewCurrentWeek()
+        //     console.log("value:", value.toString())
+        //     console.log("week:", week)
+        //     assert.equal(week, value)
+        //     week++
+        //   })
+        // })
+        describe("viewRewards", function () {
+          it("returns amount of rewards a user earns", async function () {
+            const value = await vault.viewRewards(whale._address)
+            console.log(value.toString())
+            assert.isTrue(value[0] >= 249999999999999999999)
+          })
+        })
+        describe("viewRewardInfo", function () {
+          it("returns the rewardInfo for given week", async function () {
+            const value = await vault.viewRewardInfo(0)
+            assert.isTrue(999999999999999999999 >= value[0])
+          })
+        })
+        describe("viewStakedBalance", function () {
+          it("view the stablecoin balances of users", async function () {
+            const value = await vault.viewStakedBalance(whale._address, 1)
+            assert.equal(value, 5e10)
+          })
+        })
+        describe("viewTotalStakedBalance", function () {
+          it("view total amount a user has staked", async function () {
+            const value = await vault.viewStakedBalance(whale._address, 1)
+            assert.equal(value, 5e10)
+          })
+        })
+        describe("viewLastClaimed", function () {
+          it("returns the last week a user has claimed", async function () {
+            const currentWeek = await vault.viewCurrentWeek()
+            const value = await vault.viewLastClaimed(whale._address)
+            assert.equal(value, currentWeek.sub(1))
+          })
+        })
+        describe("viewClaimedAmount", function () {
+          it("returns the amount a user has claimed", async function () {
+            const value = await vault.viewClaimedAmount(whale._address)
+            const totalClaimed = await vault.viewTotalClaimed()
+            assert.equal(value.toString(), totalClaimed)
+          })
+        })
+        describe("viewTotalClaimed", function () {
+          it("returns the totalClaimed variable", async function () {
+            const value = await vault.viewTotalClaimed()
+            const totalClaimed = await vault.viewClaimedAmount(whale._address)
+            assert.equal(value.toString(), totalClaimed)
+          })
+        })
+        describe("viewTotalStaked", function () {
+          it("returns the totalStaked variable", async function () {
+            const value = await vault.viewTotalStaked()
+            assert.equal(value, 50000000000000000000000)
+          })
+        })
+        describe("viewUnoDeposit", function () {
+          it("returns the amount of STBT that Uno Re has deposited into the vault", async function () {
+            const value = await vault.viewUnoDeposit()
+            assert.equal(value, 200000000000000000000000)
+          })
+        })
+        describe("viewStartingtime", function () {
+          it("returns the vault's starting timestamp", async function () {
+            const value = await vault.viewStartingtime()
+            const lastUpkeep = await vault.viewLastUpkeepTime()
+            assert.isBelow(value, lastUpkeep)
+          })
+        })
+        describe("viewLastUpkeepTime", function () {
+          it("returns the last time this contract had upkeep performed", async function () {
+            const value = await vault.viewLastUpkeepTime()
+            const startingTime = await vault.viewStartingtime()
+            assert.isAbove(value, startingTime)
+          })
+        })
+        describe("viewInterval", function () {
+          it("returns the seconds in each rewards period", async function () {
+            const value = await vault.viewInterval()
+            assert.equal(value, 840)
+          })
+        })
+        describe("viewUnaccountedRewards", function () {
+          it("returns the amount of rewards that can be claimed by uno", async function () {
+            const value = await vault.viewUnaccountedRewards()
+            await vault.connect(sWhale).unoClaim()
+            const updatedValue = await vault.viewUnaccountedRewards()
+            console.log(value.toString())
+            console.log(updatedValue.toString())
+            assert.isAbove(value, updatedValue)
+          })
+        })
+        describe("viewStakeConversionRate", function () {
+          it("returns the current stake STBT / stablecoin conversion", async function () {
+            const value = await vault.viewStakeConversionRate()
+            console.log(value.toString())
+          })
+        })
+        describe("viewUnstakeConversionRate", function () {
+          it("returns the current unstake STBT / stablecoin conversion", async function () {
+            const value = await vault.viewUnstakeConversionRate()
+            console.log(value.toString())
+          })
+        })
         describe("unstake", function () {
           it("reverts if `amount` input is zero", async function () {
             await expect(
@@ -423,97 +579,6 @@ describe.only("MatrixUno Unit Tests", function () {
           // it("vault exchanges stbt for stablecoin", async function () {})
           // it("vault transfers stablecoin to user", async function () {})
           // it("emits the `stablesClaimed` event", async function () {})
-        })
-        // VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS //
-        describe("viewPoolAddress", function () {
-          it("returns the curve pool address", async function () {
-            const value = await vault.viewPoolAddress()
-            assert.equal(value, 0x892d701d94a43bdbcb5ea28891daca2fa22a690b)
-          })
-        })
-        describe("viewUnoAddress", function () {
-          it("returns Uno's EOA address", async function () {
-            const value = await vault.viewUnoAddress()
-            assert.equal(value, 0x81bd585940501b583fd092bc8397f2119a96e5ba)
-          })
-        })
-        describe("viewStables", function () {
-          it("returns addresses of DAI/UDSC/USDT used by this contract", async function () {
-            const value = await vault.viewStables()
-            assert.equal(value[0], 0x6b175474e89094c44da98b954eedeac495271d0f)
-            assert.equal(value[1], 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48)
-            assert.equal(value[2], 0xdac17f958d2ee523a2206206994597c13d831ec7)
-          })
-        })
-        describe("viewSanctionsList", function () {
-          it("returns the sanctionsList contract address", async function () {
-            const value = await vault.viewSanctionsList()
-            assert.equal(value, 0x40c57923924b5c5c5455c48d93317139addac8fb)
-          })
-        })
-        describe("viewVaultStableBalance", function () {
-          it("returns the total stable balance of the vault", async function () {
-            const bal = await vault.viewVaultStableBalance()
-            console.log("bal:", bal.toString())
-            await usdc.connect(whale).transfer(vault.address, 777)
-            const updatedBal = await vault.viewVaultStableBalance()
-            console.log("updatedBal:", updatedBal.toString())
-            assert.isAbove(updatedBal, bal)
-          })
-        })
-        // describe.only("viewPortionAt", function () {
-        //   it("returns amount of times that users totalStaked goes into vaultAssetBalance at given week", async function () {})
-        // })
-        describe("viewCurrentWeek", function () {
-          it("returns what week the contract is currently at", async function () {})
-        })
-        describe("viewRewards", function () {
-          it("returns amount of rewards a user earns", async function () {})
-        })
-        describe("viewRewardInfo", function () {
-          it("returns the rewardInfo for given week", async function () {})
-        })
-        describe("viewStakedBalance", function () {
-          it("view the stablecoin balances of users", async function () {})
-        })
-        describe("viewTotalStakedBalance", function () {
-          it("view total amount a user has staked", async function () {})
-        })
-        describe("viewLastClaimed", function () {
-          it("returns the last week a user has claimed", async function () {})
-        })
-        describe("viewClaimedAmount", function () {
-          it("returns the amount a user has claimed", async function () {})
-        })
-        describe("viewTotalClaimed", function () {
-          it("returns the totalClaimed variable", async function () {})
-        })
-        describe("viewTotalStaked", function () {
-          it("returns the totalStaked variable", async function () {})
-        })
-        describe("viewUnoDeposit", function () {
-          it("returns the amount of STBT that Uno Re has deposited into the vault", async function () {})
-        })
-        describe("viewStartingtime", function () {
-          it("returns the vault's starting timestamp", async function () {})
-        })
-        describe("viewLastUpkeepTime", function () {
-          it("returns the last time this contract had upkeep performed", async function () {})
-        })
-        describe("viewInterval", function () {
-          it("returns the seconds in each rewards period", async function () {})
-        })
-        describe("calculateUnaccountedRewards", function () {
-          it("returns the portion of rewards that are unaccounted for", async function () {})
-        })
-        describe("viewUnaccountedRewards", function () {
-          it("returns the amount of rewards that can be claimed by uno", async function () {})
-        })
-        describe("viewStakeConversionRate", function () {
-          it("returns the current stake STBT / stablecoin conversion", async function () {})
-        })
-        describe("viewUnstakeConversionRate", function () {
-          it("returns the current unstake STBT / stablecoin conversion", async function () {})
         })
       })
 })
