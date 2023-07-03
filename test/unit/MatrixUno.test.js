@@ -337,7 +337,7 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("finalInfo:", finalInfo.toString())
           })
         })
-        describe("unstake", function () {
+        describe.only("unstake", function () {
           it("reverts if `amount` input is zero", async function () {
             await expect(
               vault.connect(whale).unstake(0, 1, 99, { gasLimit: 300000 })
@@ -348,7 +348,7 @@ describe.only("MatrixUno Unit Tests", function () {
               vault.connect(whale).stake(777, 3, 99, { gasLimit: 300000 })
             ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
           })
-          it.only("transferFrom takes xUNO from user and stores it", async function () {
+          it("transferFrom takes xUNO from user and stores it", async function () {
             // To simulate the `claim` function call earning rewards,
             // I will transfer 1000 STBT from the STBT whale to the vault
             const initialVaultShares = await vault.balanceOf(vault.address)
@@ -368,29 +368,36 @@ describe.only("MatrixUno Unit Tests", function () {
               initialVaultAllowance.toString()
             )
             console.log("rewards:", rewards.toString())
-
             const whaleBalance = await vault.viewStakedBalance(
               whale._address,
               1
             )
+            const whaleShares = await vault.balanceOf(whale._address)
+            console.log("whaleShares:", whaleShares.toString())
             const totalClaimed = await vault.viewTotalClaimed()
             console.log("totalClaimed:", totalClaimed.toString())
+            console.log("approve:", initialVaultAllowance < xUnoDeposit)
             if (initialVaultAllowance < xUnoDeposit) {
               const approveAmount = xUnoDeposit.sub(initialVaultAllowance)
-
+              console.log("approveAmount:", approveAmount.toString())
               await vault.connect(whale).approve(vault.address, approveAmount)
+              console.log("approved!")
             }
+            const vaultAllowance = await vault.allowance(
+              whale._address,
+              vault.address
+            )
+            console.log("vaultAllowance:", vaultAllowance.toString())
             console.log("whale vault balance:", whaleBalance.toString())
             console.log(
               "currentWeek:",
               (await vault.viewCurrentWeek()).toString()
             )
-
             //if (whaleBalance > 100000000 && totalClaimed == 0) {
-            const claimTx = await vault
+            const unstakeTx = await vault
               .connect(whale)
-              .unstake(xUnoDeposit, 1, 99, { gasLimit: 3000000 })
-            await claimTx.wait(1)
+              .unstake(whaleShares, 1, 99, { gasLimit: 3000000 })
+            await unstakeTx.wait(1)
             console.log("unstaked!")
             //}
             // mock rewards sent, now time to test claiming to see if rewards are calculated correctly
@@ -401,7 +408,6 @@ describe.only("MatrixUno Unit Tests", function () {
               1
             )
             const finalTotalClaimed = await vault.viewTotalClaimed()
-
             console.log("final vault shares:  ", finalVaultShares.toString())
             console.log("final vault assets:", finalVaultAssets.toString())
             console.log(

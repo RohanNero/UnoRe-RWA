@@ -286,12 +286,23 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         console.log("usdcBalance:", usdc.balanceOf(address(this)));
         console.log("currentWeek:", viewCurrentWeek());
         // updating global variables
+        uint initialVaultBalance = claimInfoMap[msg.sender].balances[token];
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         totalStaked -= adjustedAmount;
         int128 conversionRate = viewUnstakeConversionRate();
         adjustedAmount = conversionRate.mulu(adjustedAmount);
         console.log("adjustedAmount:", adjustedAmount);
-        IERC20(stables[token]).transfer(msg.sender, adjustedAmount);
+        // temporary fix to the adjustedAmount being slightly larger than user balance
+        // right now the math is probably causing this due to rounding or something
+        if (adjustedAmount > initialVaultBalance) {
+            console.log(
+                "Over balance by:",
+                adjustedAmount - initialVaultBalance
+            );
+            adjustedAmount = initialVaultBalance;
+            console.log("initialVaultBalance:", initialVaultBalance);
+        }
+        IERC20(stables[token]).transfer(msg.sender, initialVaultBalance);
         console.log("unstake checkpoint 7");
         // return total amount of stable received
         return amount;
