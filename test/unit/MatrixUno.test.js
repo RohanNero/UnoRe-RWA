@@ -424,6 +424,20 @@ describe.only("MatrixUno Unit Tests", function () {
           // it("vault transfers stablecoin to user", async function () {})
           // it("emits the `stablesClaimed` event", async function () {})
         })
+        describe("viewPoolAddress", function () {
+          it("returns the curve pool address", async function () {})
+        })
+        describe("viewUnoAddress", function () {
+          it("returns the Uno token address", async function () {})
+        })
+        describe("viewStables", function () {
+          it("returns addresses of DAI/UDSC/USDT used by this contract", async function () {})
+        })
+        describe("viewSanctionsList", function () {
+          it("returns the sanctionsList contract address", async function () {
+            // Add test logic here
+          })
+        })
         describe("viewVaultStableBalance", function () {
           it("returns the total stable balance of the vault", async function () {
             const bal = await vault.viewVaultStableBalance()
@@ -434,6 +448,60 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("updatedBal:", updatedBal.toString())
             assert.isAbove(updatedBal, bal)
           })
+        })
+        describe("viewPortionAt", function () {
+          it("returns amount of times that users totalStaked goes into vaultAssetBalance at given week", async function () {})
+        })
+        describe("viewCurrentWeek", function () {
+          it("returns what week the contract is currently at", async function () {})
+        })
+        describe("viewRewards", function () {
+          it("returns amount of rewards a user earns", async function () {})
+        })
+        describe("viewRewardInfo", function () {
+          it("returns the rewardInfo for given week", async function () {})
+        })
+        describe("viewStakedBalance", function () {
+          it("view the stablecoin balances of users", async function () {})
+        })
+        describe("viewTotalStakedBalance", function () {
+          it("view total amount a user has staked", async function () {})
+        })
+        describe("viewLastClaimed", function () {
+          it("returns the last week a user has claimed", async function () {})
+        })
+        describe("viewClaimedAmount", function () {
+          it("returns the amount a user has claimed", async function () {})
+        })
+        describe("viewTotalClaimed", function () {
+          it("returns the totalClaimed variable", async function () {})
+        })
+        describe("viewTotalStaked", function () {
+          it("returns the totalStaked variable", async function () {})
+        })
+        describe("viewUnoDeposit", function () {
+          it("returns the amount of STBT that Uno Re has deposited into the vault", async function () {})
+        })
+        describe("viewStartingtime", function () {
+          it("returns the vault's starting timestamp", async function () {})
+        })
+        describe("viewLastUpkeepTime", function () {
+          it("returns the last time this contract had upkeep performed", async function () {})
+        })
+        describe("viewInterval", function () {
+          it("returns the seconds in each rewards period", async function () {})
+        })
+        describe("calculateUnaccountedRewards", function () {
+          it("returns the portion of rewards that are unaccounted for", async function () {})
+        })
+        describe("viewUnaccountedRewards", function () {
+          it("returns the amount of rewards that can be claimed by uno", async function () {})
+        })
+        describe("viewStakeConversionRate", function () {
+          it("returns the current stake STBT / stablecoin conversion", async function () {})
+        })
+        describe("viewUnstakeConversionRate", function () {
+          it("returns the current unstake STBT / stablecoin conversion", async function () {})
         })
       })
 })
