@@ -424,34 +424,46 @@ describe.only("MatrixUno Unit Tests", function () {
           // it("vault transfers stablecoin to user", async function () {})
           // it("emits the `stablesClaimed` event", async function () {})
         })
+        // VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS //
         describe("viewPoolAddress", function () {
-          it("returns the curve pool address", async function () {})
+          it("returns the curve pool address", async function () {
+            const value = await vault.viewPoolAddress()
+            assert.equal(value, 0x892d701d94a43bdbcb5ea28891daca2fa22a690b)
+          })
         })
         describe("viewUnoAddress", function () {
-          it("returns the Uno token address", async function () {})
+          it("returns Uno's EOA address", async function () {
+            const value = await vault.viewUnoAddress()
+            assert.equal(value, 0x81bd585940501b583fd092bc8397f2119a96e5ba)
+          })
         })
         describe("viewStables", function () {
-          it("returns addresses of DAI/UDSC/USDT used by this contract", async function () {})
+          it("returns addresses of DAI/UDSC/USDT used by this contract", async function () {
+            const value = await vault.viewStables()
+            assert.equal(value[0], 0x6b175474e89094c44da98b954eedeac495271d0f)
+            assert.equal(value[1], 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48)
+            assert.equal(value[2], 0xdac17f958d2ee523a2206206994597c13d831ec7)
+          })
         })
         describe("viewSanctionsList", function () {
           it("returns the sanctionsList contract address", async function () {
-            // Add test logic here
+            const value = await vault.viewSanctionsList()
+            assert.equal(value, 0x40c57923924b5c5c5455c48d93317139addac8fb)
           })
         })
         describe("viewVaultStableBalance", function () {
           it("returns the total stable balance of the vault", async function () {
             const bal = await vault.viewVaultStableBalance()
             console.log("bal:", bal.toString())
-            //console.log(whale)
             await usdc.connect(whale).transfer(vault.address, 777)
             const updatedBal = await vault.viewVaultStableBalance()
             console.log("updatedBal:", updatedBal.toString())
             assert.isAbove(updatedBal, bal)
           })
         })
-        describe("viewPortionAt", function () {
-          it("returns amount of times that users totalStaked goes into vaultAssetBalance at given week", async function () {})
-        })
+        // describe.only("viewPortionAt", function () {
+        //   it("returns amount of times that users totalStaked goes into vaultAssetBalance at given week", async function () {})
+        // })
         describe("viewCurrentWeek", function () {
           it("returns what week the contract is currently at", async function () {})
         })
