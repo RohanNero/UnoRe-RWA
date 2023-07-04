@@ -380,6 +380,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         }
         stbt.transfer(uno, unaccountedRewards);
         emit UnoClaim(unaccountedRewards);
+        rewardInfoArray[viewCurrentWeek()].claimed += unaccountedRewards;
         unaccountedRewards = 0;
     }
 

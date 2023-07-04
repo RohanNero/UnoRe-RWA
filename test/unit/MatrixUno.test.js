@@ -315,12 +315,12 @@ describe.only("MatrixUno Unit Tests", function () {
             const interval = await vault.viewInterval()
             const initialWeek = await vault.viewCurrentWeek()
             const initialInfo = await vault.viewRewardInfo(initialWeek)
-            console.log("interval:", interval.toString())
-            console.log("initialWeek:", initialWeek.toString())
-            console.log(
-              "rewards, vaultAssetBalance, previousWeekBalance, claimed, currentBalance, deposited, withdrawn"
-            )
-            console.log("initialInfo:", initialInfo.toString())
+            // console.log("interval:", interval.toString())
+            // console.log("initialWeek:", initialWeek.toString())
+            // console.log(
+            //   "rewards, vaultAssetBalance, previousWeekBalance, claimed, currentBalance, deposited, withdrawn"
+            // )
+            // console.log("initialInfo:", initialInfo.toString())
 
             const returnVal = await vault.checkUpkeep("0x")
             console.log("upkeepNeeded:", returnVal.upkeepNeeded)
@@ -329,13 +329,13 @@ describe.only("MatrixUno Unit Tests", function () {
             }
             const perform = await vault.performUpkeep("0x")
             await perform.wait(1)
-            console.log("Upkeep Performed!")
+            //console.log("Upkeep Performed!")
             const finalWeek = await vault.viewCurrentWeek()
             const finalInfo = await vault.viewRewardInfo(initialWeek)
             const nextWeekInfo = await vault.viewRewardInfo(finalWeek)
-            console.log("finalWeek:", finalWeek.toString())
-            console.log("finalInfo:", finalInfo.toString())
-            console.log("nextWeekInfo:", nextWeekInfo.toString())
+            // console.log("finalWeek:", finalWeek.toString())
+            // console.log("finalInfo:", finalInfo.toString())
+            // console.log("nextWeekInfo:", nextWeekInfo.toString())
           })
         })
 
@@ -369,18 +369,18 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("viewVaultStableBalance", function () {
           it("returns the total stable balance of the vault", async function () {
             const bal = await vault.viewVaultStableBalance()
-            console.log("bal:", bal.toString())
             await usdc.connect(whale).transfer(vault.address, 777)
             const updatedBal = await vault.viewVaultStableBalance()
-            console.log("updatedBal:", updatedBal.toString())
+            // console.log("bal:", bal.toString())
+            // console.log("updatedBal:", updatedBal.toString())
             assert.isAbove(updatedBal, bal)
           })
         })
         describe("viewPortionAt", function () {
           it("returns amount of times that users totalStaked goes into vaultAssetBalance at given week", async function () {
             const value = await vault.viewPortionAt(0, whale._address)
-            console.log(value.toString())
-            console.log(value[0] / 2 ** 64)
+            // console.log(value.toString())
+            // console.log(value[0] / 2 ** 64)
             //assert.equal(value[0])
           })
         })
@@ -397,7 +397,7 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("viewRewards", function () {
           it("returns amount of rewards a user earns", async function () {
             const value = await vault.viewRewards(whale._address)
-            console.log(value.toString())
+            //console.log(value.toString())
             assert.isTrue(value[0] >= 249999999999999999999)
           })
         })
@@ -475,23 +475,29 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("viewUnaccountedRewards", function () {
           it("returns the amount of rewards that can be claimed by uno", async function () {
             const value = await vault.viewUnaccountedRewards()
-            //await vault.connect(sWhale).unoClaim()
+            await vault.connect(sWhale).unoClaim()
             const updatedValue = await vault.viewUnaccountedRewards()
-            console.log(value.toString())
-            console.log(updatedValue.toString())
-            //assert.isAbove(value, updatedValue)
+            // console.log(value.toString())
+            // console.log(updatedValue.toString())
+            assert.isAbove(value, updatedValue)
           })
         })
         describe("viewStakeConversionRate", function () {
           it("returns the current stake STBT / stablecoin conversion", async function () {
             const value = await vault.viewStakeConversionRate()
-            console.log(value.toString())
+            const unstakeValue = await vault.viewUnstakeConversionRate()
+            const number = (value / 2 ** 64) * (unstakeValue / 2 ** 64)
+            //console.log(number.toString())
+            assert.approximately(number, 1, 0.5)
           })
         })
         describe("viewUnstakeConversionRate", function () {
           it("returns the current unstake STBT / stablecoin conversion", async function () {
             const value = await vault.viewUnstakeConversionRate()
-            console.log(value.toString())
+            const stakeValue = await vault.viewStakeConversionRate()
+            const number = (value / 2 ** 64) * (stakeValue / 2 ** 64)
+            //console.log(number.toString())
+            assert.approximately(number, 1, 0.5)
           })
         })
         describe("unstake", function () {
