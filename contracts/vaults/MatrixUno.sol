@@ -70,8 +70,8 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
         uint rewards; // amount of STBT rewards earned by the vault during the week
         uint vaultAssetBalance; // total amount of assets DEPOSITED into the vault
         uint previousWeekBalance; // total STBT in the vault the previous week (last `performUpkeep()` call)
+        uint currentBalance; // TOTAL AMOUNT of assets in the vault, deposited or sent from MatrixPort as rewards (balanceOf)
         uint claimed; // amount of STBT rewards that were claimed during the week
-        uint currentBalance; // total amount of assets in the vault, deposited or sent from MatrixPort as rewards
         uint deposited; // amount of STBT deposited into the vault during the week
         uint withdrawn; // amount of STBT withdrawn from the vault during the week
     }
@@ -913,6 +913,7 @@ contract MatrixUno is ERC4626, AutomationCompatibleInterface {
             );
             return portion.mulu(rewardInfoArray[currentWeek - 1].rewards);
         }
+
         // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked.
         // Uno portion/unaccounted portion is 1/2 of total rewards
         // 200,000 - 50,000 = 150,000
