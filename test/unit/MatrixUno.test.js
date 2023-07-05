@@ -313,14 +313,14 @@ describe.only("MatrixUno Unit Tests", function () {
           })
           it("should update reward info for the week", async function () {
             const interval = await vault.viewInterval()
-            const initialWeek = await vault.viewCurrentWeek()
+            const initialWeek = await vault.viewCurrentPeriod()
             const initialInfo = await vault.viewRewardInfo(initialWeek)
-            // console.log("interval:", interval.toString())
-            // console.log("initialWeek:", initialWeek.toString())
-            // console.log(
-            //   "rewards, vaultAssetBalance, previousWeekBalance, claimed, currentBalance, deposited, withdrawn"
-            // )
-            // console.log("initialInfo:", initialInfo.toString())
+            console.log("interval:", interval.toString())
+            console.log("initialWeek:", initialWeek.toString())
+            console.log(
+              "rewards, vaultAssetBalance, previousWeekBalance, claimed, currentBalance, deposited, withdrawn"
+            )
+            console.log("initialInfo:", initialInfo.toString())
 
             const returnVal = await vault.checkUpkeep("0x")
             console.log("upkeepNeeded:", returnVal.upkeepNeeded)
@@ -330,12 +330,12 @@ describe.only("MatrixUno Unit Tests", function () {
             const perform = await vault.performUpkeep("0x")
             await perform.wait(1)
             //console.log("Upkeep Performed!")
-            const finalWeek = await vault.viewCurrentWeek()
+            const finalWeek = await vault.viewCurrentPeriod()
             const finalInfo = await vault.viewRewardInfo(initialWeek)
             const nextWeekInfo = await vault.viewRewardInfo(finalWeek)
-            // console.log("finalWeek:", finalWeek.toString())
-            // console.log("finalInfo:", finalInfo.toString())
-            // console.log("nextWeekInfo:", nextWeekInfo.toString())
+            console.log("finalWeek:", finalWeek.toString())
+            console.log("finalInfo:", finalInfo.toString())
+            console.log("nextWeekInfo:", nextWeekInfo.toString())
           })
         })
 
@@ -384,10 +384,10 @@ describe.only("MatrixUno Unit Tests", function () {
             //assert.equal(value[0])
           })
         })
-        // describe("viewCurrentWeek", function () {
+        // describe("viewCurrentPeriod", function () {
         //   it("returns what week the contract is currently at", async function () {
         //     let week = 1
-        //     const value = await vault.viewCurrentWeek()
+        //     const value = await vault.viewCurrentPeriod()
         //     console.log("value:", value.toString())
         //     console.log("week:", week)
         //     assert.equal(week, value)
@@ -421,7 +421,7 @@ describe.only("MatrixUno Unit Tests", function () {
         })
         describe("viewLastClaimed", function () {
           it("returns the last week a user has claimed", async function () {
-            const currentWeek = await vault.viewCurrentWeek()
+            const currentWeek = await vault.viewCurrentPeriod()
             const value = await vault.viewLastClaimed(whale._address)
             assert.equal(value, currentWeek.sub(1))
           })
@@ -521,7 +521,7 @@ describe.only("MatrixUno Unit Tests", function () {
               whale._address,
               vault.address
             )
-            const currentWeek = await vault.viewCurrentWeek()
+            const currentWeek = await vault.viewCurrentPeriod()
             const rewardInfo = await vault.viewRewardInfo(currentWeek - 1)
             const rewards = rewardInfo.rewards
             console.log("initial vault shares:", initialVaultShares.toString())
@@ -554,7 +554,7 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("whale vault balance:", whaleBalance.toString())
             console.log(
               "currentWeek:",
-              (await vault.viewCurrentWeek()).toString()
+              (await vault.viewCurrentPeriod()).toString()
             )
             //if (whaleBalance > 100000000 && totalClaimed == 0) {
             const unstakeTx = await vault

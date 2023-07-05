@@ -37,9 +37,9 @@ const networkConfig = {
     stables: [
       "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
       "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f",
-      "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108",
     ],
-    interval: "1800",
+    interval: "420",
   },
   80001: {
     name: "mumbai",

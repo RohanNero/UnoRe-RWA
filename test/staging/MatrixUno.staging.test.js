@@ -34,7 +34,7 @@ developmentChains.includes(network.name)
           "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f"
         )
         vault = await ethers.getContract("MatrixUno")
-        console.log(vault.address)
+        console.log("vault:", vault.address)
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
       })
@@ -74,7 +74,7 @@ developmentChains.includes(network.name)
           const finalVaultShares = await vault.balanceOf(vault.address)
           console.log("FinalVaultShares:", finalVaultShares.toString())
         })
-        it.only("allows users to stake stablecoins for xUNO", async function () {
+        it("allows users to stake stablecoins for xUNO", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialUsdcBal = await usdc.balanceOf(deployer.address)
           const initialAssets = await stbt.balanceOf(deployer.address)
@@ -117,13 +117,13 @@ developmentChains.includes(network.name)
           const stbtTransfer = ethers.utils.parseUnits("2000", 18)
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           console.log((initialVaultAssets - stbtDeposit).toString())
-          if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
-            const transferTx = await stbt.transfer(vault.address, stbtTransfer)
-            await transferTx.wait(1)
-            console.log("Mock rewards distributed!")
-          }
+          //if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
+          const transferTx = await stbt.transfer(vault.address, stbtTransfer)
+          await transferTx.wait(1)
+          console.log("Mock rewards distributed!")
+          //}
         })
-        it.only("updates the rewardInfoArray", async function () {
+        it("updates the rewardInfoArray", async function () {
           const initialInfo = await vault.viewRewardInfo(0)
           const returnVal = await vault.checkUpkeep("0x")
           console.log(initialInfo.toString())
@@ -139,7 +139,7 @@ developmentChains.includes(network.name)
           console.log(finalInfo.toString())
         })
       })
-      describe("unstake", function () {
+      describe.only("unstake", function () {
         it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -208,7 +208,7 @@ developmentChains.includes(network.name)
           console.log("FinalVaultShares:", finalVaultShares.toString())
         })
       })
-      describe("withdraw", function () {
+      describe.only("withdraw", function () {
         it("should allow user to withdraw their stbt and earn rewards", async function () {
           const { user } = await getNamedAccounts()
           const initialShares = await vault.balanceOf(user)

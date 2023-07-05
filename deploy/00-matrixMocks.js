@@ -23,11 +23,21 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
       log: true,
       waitConfirmations: networkConfig[chainId].blockConfirmations,
     })
+
+    const mockUSDT = await deploy("MockUSDT", {
+      from: deployer,
+      log: true,
+      waitConfirmations: networkConfig[chainId].blockConfirmations,
+    })
+
     log("Verifying MockCurvePool...")
     await verify(mockCurvePool.address)
 
     log("Verifying MockSanctionsList...")
     await verify(mockSanctionsList.address)
+
+    log("Verifying MockUSDT...")
+    await verify(mockUSDT.address)
   }
 }
 
