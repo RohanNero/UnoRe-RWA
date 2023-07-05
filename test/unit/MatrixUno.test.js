@@ -325,7 +325,7 @@ describe.only("MatrixUno Unit Tests", function () {
             const returnVal = await vault.checkUpkeep("0x")
             console.log("upkeepNeeded:", returnVal.upkeepNeeded)
             if (returnVal.upkeepNeeded == false) {
-              await time.increase(840)
+              await time.increase(86400)
             }
             const perform = await vault.performUpkeep("0x")
             await perform.wait(1)
@@ -469,7 +469,7 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("viewInterval", function () {
           it("returns the seconds in each rewards period", async function () {
             const value = await vault.viewInterval()
-            assert.equal(value, 840)
+            assert.equal(value, 86400)
           })
         })
         describe("viewUnaccountedRewards", function () {
