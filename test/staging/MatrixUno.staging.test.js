@@ -48,7 +48,7 @@ developmentChains.includes(network.name)
        * 6. call unstake()
        * 7. Ensure the user gained USDC rewards
        */
-      describe("stake", function () {
+      describe.only("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
@@ -109,7 +109,7 @@ developmentChains.includes(network.name)
         })
       })
       describe("performUpkeep", function () {
-        it("MOCK SENDING REWARDS", async function () {
+        it.only("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
@@ -139,7 +139,7 @@ developmentChains.includes(network.name)
           console.log(finalInfo.toString())
         })
       })
-      describe.only("unstake", function () {
+      describe("unstake", function () {
         it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -208,7 +208,7 @@ developmentChains.includes(network.name)
           console.log("FinalVaultShares:", finalVaultShares.toString())
         })
       })
-      describe.only("withdraw", function () {
+      describe("withdraw", function () {
         it("should allow user to withdraw their stbt and earn rewards", async function () {
           const { user } = await getNamedAccounts()
           const initialShares = await vault.balanceOf(user)
