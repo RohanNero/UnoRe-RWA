@@ -528,18 +528,20 @@ describe.only("MatrixUno Unit Tests", function () {
               vault.connect(whale).stake(777, 3, 99, { gasLimit: 300000 })
             ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
           })
-          it("transferFrom takes xUNO from user and stores it", async function () {
+          it.only("transferFrom takes xUNO from user and stores it", async function () {
             // To simulate the `claim` function call earning rewards,
             // I will transfer 1000 STBT from the STBT whale to the vault
             const initialVaultShares = await vault.balanceOf(vault.target)
             const initialVaultAssets = await stbt.balanceOf(vault.target)
-            const xUnoDeposit = ethers.utils.parseUnits("50000", 18)
+            const xUnoDeposit = ethers.parseUnits("50000", 18)
             const initialVaultAllowance = await vault.allowance(
               whale.address,
               vault.target
             )
             const currentWeek = await vault.viewCurrentPeriod()
-            const rewardInfo = await vault.viewRewardInfo(currentWeek - 1)
+            const rewardInfo = await vault.viewRewardInfo(
+              Number(currentWeek) - 1
+            )
             const rewards = rewardInfo.rewards
             console.log("initial vault shares:", initialVaultShares.toString())
             console.log("initial vault assets:", initialVaultAssets.toString())
@@ -554,12 +556,18 @@ describe.only("MatrixUno Unit Tests", function () {
             const totalClaimed = await vault.viewTotalClaimed()
             console.log("totalClaimed:", totalClaimed.toString())
             console.log("approve:", initialVaultAllowance < xUnoDeposit)
-            // if (initialVaultAllowance < xUnoDeposit) {
-            const approveAmount = xUnoDeposit.sub(initialVaultAllowance)
-            console.log("approveAmount:", approveAmount.toString())
-            await vault.connect(whale).approve(vault.target, approveAmount)
-            console.log("approved!")
-            //}
+            if (initialVaultAllowance < xUnoDeposit) {
+              const approveAmount =
+                Number(xUnoDeposit) - Number(initialVaultAllowance)
+
+              console.log("approveAmount:", approveAmount.toString())
+              const convertedAmount = approveAmount.toLocaleString("fullwide", {
+                useGrouping: false,
+              })
+              console.log("string amount:", convertedAmount)
+              await vault.connect(whale).approve(vault.target, convertedAmount)
+              console.log("approved!")
+            }
             const vaultAllowance = await vault.allowance(
               whale.address,
               vault.target
