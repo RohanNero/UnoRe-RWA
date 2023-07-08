@@ -49,7 +49,7 @@ developmentChains.includes(network.name)
        * 7. Ensure the user gained USDC rewards
        */
       describe.only("stake", function () {
-        it("initial STBT deposit mints 200,000 xUNO", async function () {
+        it.only("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
@@ -109,7 +109,7 @@ developmentChains.includes(network.name)
         })
       })
       describe("performUpkeep", function () {
-        it.only("MOCK SENDING REWARDS", async function () {
+        it("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())

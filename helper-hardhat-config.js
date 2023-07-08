@@ -35,11 +35,11 @@ const networkConfig = {
     unoAddress: "0xe4A98D2bFD66Ce08128FdFFFC9070662E489a28E",
     sanctionsAddress: "0x8Bb392899952320BdEdb13B3f559FDc8013cB9B5",
     stables: [
-      "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
+      "0x3Df6dB83F269B9017a68e39f0AE4be6e0a052003",
       "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f",
       "0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108",
     ],
-    interval: "420",
+    interval: "86400",
   },
   80001: {
     name: "mumbai",

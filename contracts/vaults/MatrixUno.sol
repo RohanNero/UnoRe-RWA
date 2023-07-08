@@ -133,6 +133,12 @@ contract MatrixUno is ERC4626 {
     /**@notice emitted when `claim` is called */
     event Claim(uint totalRewards, uint totalSRewards);
 
+    /**@notice emitted when user stakes */
+    event Stake(uint amount, address staker);
+
+    /**@notice emitted when user unstakes */
+    event Unstake(uint amount, address unstaker);
+
     /**@notice used for testing, remove after done testing. */
     event transferInfo(uint _amount, uint _receive);
     event actual(uint actualRec);
@@ -243,6 +249,7 @@ contract MatrixUno is ERC4626 {
         this.transfer(msg.sender, transferAmount);
         //console.log("transferred");
         // return shares
+        emit Stake(transferFromAmount, msg.sender);
         shares = transferAmount;
     }
 
@@ -314,6 +321,7 @@ contract MatrixUno is ERC4626 {
         IERC20(stables[token]).transfer(msg.sender, initialVaultBalance);
         console.log("unstake checkpoint 7");
         // return total amount of stable received
+        emit Unstake(initialVaultBalance, msg.sender);
         return amount;
     }
 
