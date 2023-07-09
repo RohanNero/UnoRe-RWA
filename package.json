@@ -1,29 +1,10 @@
 {
-  "devDependencies": {
-    "@chainlink/contracts": "^0.6.1",
-    "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
-    "@nomicfoundation/hardhat-ethers": "^3.0.2",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
-    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
-    "@nomiclabs/hardhat-etherscan": "^3.1.1",
-    "@nomiclabs/hardhat-vyper": "^3.0.3",
-    "@openzeppelin/contracts": "^4.8.1",
-    "@openzeppelin/contracts-upgradeable": "^4.8.1",
-    "@pinata/sdk": "^1.2.1",
-    "abdk-libraries-solidity": "^3.2.0",
-    "chai": "^4.3.6",
-    "dotenv": "^16.0.3",
-    "ethers": "^6.6.2",
-    "fs": "^0.0.1-security",
-    "fs-extra": "^11.1.0",
-    "ganache-cli": "^6.12.2",
-    "hardhat": "^2.12.0",
-    "hardhat-contract-sizer": "^2.6.1",
-    "hardhat-deploy": "^0.11.18",
-    "hardhat-gas-reporter": "^1.0.9",
-    "path": "^0.12.7",
-    "prettier": "^2.7.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.24",
-    "solidity-coverage": "^0.8.2"
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.2",
+    "abdk-libraries-solidity": "^3.2.0"
+  },
+  "scripts": {
+    "mainnetTests": "forge test --fork-url https://mainnet.infura.io/v3/f18ea15fd54544a0b9b3a06c5624e665 --match-path test/MatrixUnoMainnet.t.sol -vvv",
+    "tests": "forge test --match-path test/MatrixUno.t.sol -vvv"
   }
 }
