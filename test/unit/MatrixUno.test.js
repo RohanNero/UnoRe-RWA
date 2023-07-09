@@ -42,7 +42,7 @@ describe.only("MatrixUno Unit Tests", function () {
     //console.log(network)
 
     // USDC whale
-    const provider = new JsonRpcProvider("http://localhost:8545")
+    //const provider = new JsonRpcProvider("http://localhost:8545")
     // await provider.send("hardhat_impersonateAccount", [
     //   "0x171cda359aa49E46Dec45F375ad6c256fdFBD420",
     // ])
