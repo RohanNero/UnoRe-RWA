@@ -143,6 +143,14 @@ contract MatrixUno is ERC4626 {
     event transferInfo(uint _amount, uint _receive);
     event actual(uint actualRec);
 
+    /**@notice used to check if the rewards are due to be updated */
+    modifier calculateRewards() {
+        if (this.checkUpkeep()) {
+            this.performUpkeep();
+        }
+        _;
+    }
+
     /**@notice need to provide the asset that is used in this vault
      *@dev vault shares are an ERC20 called "Matrix UNO"/"xUNO", these represent a user's stablecoin stake into an UNO-RWA pool
      *@param asset - the IERC contract you wish to use as the vault asset, in this case STBT
@@ -185,7 +193,7 @@ contract MatrixUno is ERC4626 {
         uint amount,
         uint8 token,
         uint minimumPercentage
-    ) public returns (uint shares) {
+    ) public calculateRewards returns (uint shares) {
         /**@notice all the logic checks come before actually moving the tokens */
         if (amount == 0) {
             revert MatrixUno__ZeroAmountGiven();
@@ -262,7 +270,7 @@ contract MatrixUno is ERC4626 {
         uint amount,
         uint8 token,
         uint minimumPercentage
-    ) public returns (uint) {
+    ) public calculateRewards returns (uint) {
         /** Steps to claim
       1. approve xUNO
       2. xUNO transferFrom to vault
@@ -401,7 +409,7 @@ contract MatrixUno is ERC4626 {
     function deposit(
         uint256 assets,
         address receiver
-    ) public virtual override returns (uint256) {
+    ) public virtual override calculateRewards returns (uint256) {
         //uint256 shares = previewDeposit(assets);
         _deposit(_msgSender(), receiver, assets, 0);
         claim(msg.sender, 1, 97);
@@ -421,7 +429,7 @@ contract MatrixUno is ERC4626 {
         uint256 assets,
         address receiver,
         address owner
-    ) public virtual override returns (uint256) {
+    ) public virtual override calculateRewards returns (uint256) {
         require(
             assets <= maxWithdraw(owner),
             "ERC4626: withdraw more than max"
@@ -448,21 +456,15 @@ contract MatrixUno is ERC4626 {
     /**@notice this function will call `performUpkeep()` when upkeepNeeded is true
      *@dev returns true when one week has passed since the last `performUpkeep()` call
      */
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    )
-        external
-        view
-        returns (bool upkeepNeeded, bytes memory /* performData */)
-    {
+    function checkUpkeep() external view returns (bool upkeepNeeded) {
         console.log("lastUpkeepTime:", lastUpkeepTime);
         console.log("difference:", block.timestamp - lastUpkeepTime);
-        upkeepNeeded = (block.timestamp - lastUpkeepTime) > i_interval;
+        upkeepNeeded = (block.timestamp - lastUpkeepTime) >= i_interval;
     }
 
     /**@notice this function is called by Chainlink weekly to update values for reward calculation
      *@dev is only called once `checkUpkeep()` returns true */
-    function performUpkeep(bytes calldata /* performData */) external {
+    function performUpkeep() external {
         console.log("performUpkeep reached");
         uint length = rewardInfoArray.length;
         console.log("length:", length);

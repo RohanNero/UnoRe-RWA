@@ -339,12 +339,12 @@ describe.only("MatrixUno Unit Tests", function () {
             )
             console.log("initialInfo:", initialInfo.toString())
 
-            const returnVal = await vault.checkUpkeep("0x")
-            console.log("upkeepNeeded:", returnVal.upkeepNeeded)
-            if (returnVal.upkeepNeeded == false) {
+            const returnVal = await vault.checkUpkeep()
+            console.log("upkeepNeeded:", returnVal)
+            if (returnVal == false) {
               await time.increase(86400)
             }
-            const perform = await vault.performUpkeep("0x")
+            const perform = await vault.performUpkeep()
             await perform.wait(1)
             //console.log("Upkeep Performed!")
             const finalWeek = await vault.viewCurrentPeriod()
