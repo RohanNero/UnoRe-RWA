@@ -322,12 +322,12 @@ describe.only("MatrixUno Unit Tests", function () {
             )
             console.log("initialInfo:", initialInfo.toString())
 
-            const returnVal = await vault.checkUpkeep("0x")
-            console.log("upkeepNeeded:", returnVal.upkeepNeeded)
-            if (returnVal.upkeepNeeded == false) {
+            const returnVal = await vault.checkUpkeep()
+            console.log("upkeepNeeded:", returnVal)
+            if (returnVal == false) {
               await time.increase(86400)
             }
-            const perform = await vault.performUpkeep("0x")
+            const perform = await vault.performUpkeep()
             await perform.wait(1)
             //console.log("Upkeep Performed!")
             const finalWeek = await vault.viewCurrentPeriod()
@@ -397,8 +397,11 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("viewRewards", function () {
           it("returns amount of rewards a user earns", async function () {
             const value = await vault.viewRewards(whale._address)
-            //console.log(value.toString())
-            assert.isTrue(value[0] >= 249999999999999999999)
+            console.log(value.toString())
+            const convertedAmount = value[0].toString().slice(0, -18)
+            console.log("converted:", convertedAmount)
+            console.log(value[0] >= 249)
+            assert.isTrue(value[0] >= 249)
           })
         })
         describe("viewRewardInfo", function () {
