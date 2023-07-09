@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../Curve/interfaces/IStableSwap.sol";
 /**@notice uses to screen addresses prior to staking */
 import "../interfaces/ISanctionsList.sol";
+/**@notice uses to interact with SSIP */
+import "../interfaces/ISingleSidedInsurancePool.sol";
 /**@notice used in testing to ensure values are set correctly */
 import "hardhat/console.sol";
 /**@notice used in reward calculation math */
@@ -61,6 +63,9 @@ contract MatrixUno is ERC4626 {
 
     /**@notice used to screen users prior to being allowed to stake */
     ISanctionsList private sanctionsList;
+
+    /**@notice used to interact with the SSIP */
+    ISingleSidedInsurancePool private ssip;
 
     /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week
      *@dev each struct corresponds to a different week since the contract's inception */
@@ -246,6 +251,7 @@ contract MatrixUno is ERC4626 {
         claim(msg.sender, token, minimumPercentage);
         // Increment balance and `totalStaked` on `stake()`
         claimInfoMap[msg.sender].balances[token] += transferFromAmount;
+        claimInfoMap[msg.sender].balances[4] += transferAmount;
         if (token > 0) {
             totalStaked += transferFromAmount * 1e12;
         } else {
@@ -306,7 +312,6 @@ contract MatrixUno is ERC4626 {
         console.log("currentPeriod:", rewardInfoArray.length - 1);
         // updating global variables
         uint initialVaultBalance = claimInfoMap[msg.sender].balances[token];
-
         int128 conversionRate = viewUnstakeConversionRate();
         adjustedAmount = conversionRate.mulu(adjustedAmount);
         console.log("initialVaultBalance:", initialVaultBalance);
@@ -321,6 +326,7 @@ contract MatrixUno is ERC4626 {
             adjustedAmount = initialVaultBalance;
         }
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
+        claimInfoMap[msg.sender].balances[4] -= amount;
         if (token > 0) {
             totalStaked -= adjustedAmount * 1e12;
         } else {
@@ -340,7 +346,7 @@ contract MatrixUno is ERC4626 {
         address addr,
         uint8 token,
         uint minimumPercentage
-    ) public returns (uint, uint) {
+    ) public calculateRewards returns (uint, uint) {
         // ensure msg.sender == addr or that this contract is calling
         if (msg.sender != addr && msg.sender != address(this)) {
             revert MatrixUno__AddrMustBeSender(msg.sender, addr);
@@ -393,7 +399,7 @@ contract MatrixUno is ERC4626 {
     }
 
     /**@notice allows uno to claim the `unaccountedRewards` */
-    function unoClaim() public {
+    function unoClaim() public calculateRewards {
         if (msg.sender != uno) {
             revert MatrixUno__OnlyUno();
         }
@@ -450,7 +456,7 @@ contract MatrixUno is ERC4626 {
 
     /**@notice this function allows uno to set the SSIP address */
     function setSSIP(address ssipAddress) public {
-        // ssip = SSIP(ssipAddress);
+        ssip = ISingleSidedInsurancePool(ssipAddress);
     }
 
     /**@notice this function will call `performUpkeep()` when upkeepNeeded is true
@@ -462,7 +468,7 @@ contract MatrixUno is ERC4626 {
         upkeepNeeded = (block.timestamp - lastUpkeepTime) >= i_interval;
     }
 
-    /**@notice this function is called by Chainlink weekly to update values for reward calculation
+    /**@notice this function is called by core functions after `interval` passes to update values for reward calculation
      *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep() external {
         console.log("performUpkeep reached");
@@ -603,9 +609,9 @@ contract MatrixUno is ERC4626 {
         uint256 assets,
         uint256
     ) internal override {
-        // if (caller != owner) {
-        //     _spendAllowance(owner, caller, shares);
-        // }
+        if (caller != owner) {
+            _spendAllowance(owner, caller, assets);
+        }
         _burn(owner, assets);
         stbt.transfer(receiver, assets);
         emit Withdraw(caller, receiver, owner, assets, assets);
@@ -669,16 +675,18 @@ contract MatrixUno is ERC4626 {
         if (week >= rewardInfoArray.length) {
             revert MatrixUno__InvalidWeek(week);
         }
-        uint daiStaked = claimInfoMap[addr].balances[0];
-        uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
-        uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
+        // uint daiStaked = claimInfoMap[addr].balances[0];
+        // uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
+        // uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
         uint stbtDeposited = claimInfoMap[addr].balances[3];
-        uint totalUserStaked = daiStaked + usdcStaked + usdtStaked;
-        console.log("dai staked:", daiStaked);
-        console.log("usdc staked:", usdcStaked);
-        console.log("usdt staked:", usdtStaked);
+        uint xunoBalance = claimInfoMap[addr].balances[4];
+        //uint totalUserStaked = daiStaked + usdcStaked + usdtStaked;
+        // console.log("dai staked:", daiStaked);
+        // console.log("usdc staked:", usdcStaked);
+        // console.log("usdt staked:", usdtStaked);
         console.log("stbt deposit:", stbtDeposited);
-        console.log("total staked:", totalUserStaked);
+        console.log("xUno balance:", xunoBalance);
+        //console.log("total staked:", totalUserStaked);
         console.log(
             "vaultAssetBalance",
             rewardInfoArray[week].vaultAssetBalance
@@ -687,10 +695,8 @@ contract MatrixUno is ERC4626 {
         if (msg.sender == uno) {
             stbtDeposited -= unoDepositAmount;
         }
-        if (totalUserStaked > 0 && unoDepositAmount > 0) {
-            portion = totalUserStaked.divu(
-                rewardInfoArray[week].vaultAssetBalance
-            );
+        if (xunoBalance > 0 && unoDepositAmount > 0) {
+            portion = xunoBalance.divu(rewardInfoArray[week].vaultAssetBalance);
         } else {
             portion = 0;
         }
@@ -708,50 +714,6 @@ contract MatrixUno is ERC4626 {
     function viewCurrentPeriod() public view returns (uint) {
         return rewardInfoArray.length - 1;
     }
-
-    /**@notice this function returns the amount of times that the users totalStaked goes into the unoDepositAmount currently
-     *@dev essentially views what portion of the STBT is being represented by the user
-     *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of unoDepositAmount) */
-    // function viewCurrentPortion(
-    //     address addr
-    // ) public view returns (int128 portion) {
-    //     uint daiStaked = claimInfoMap[addr].balances[0];
-    //     uint usdcStaked = claimInfoMap[addr].balances[1] * 1e12;
-    //     uint usdtStaked = claimInfoMap[addr].balances[2] * 1e12;
-    //     uint totalUserStaked = daiStaked + usdcStaked + usdtStaked;
-    //     console.log("dai staked:", daiStaked);
-    //     console.log("usdc staked:", usdcStaked);
-    //     console.log("usdt staked:", usdtStaked);
-    //     console.log("total staked:", totalUserStaked);
-    //     console.log(
-    //         "vaultAssetBalance",
-    //         rewardInfoArray[rewardInfoArray.length - 1].vaultAssetBalance
-    //     );
-    //     if (totalStaked > 0 && unoDepositAmount > 0) {
-    //         portion = totalStaked.divu(
-    //             rewardInfoArray[rewardInfoArray.length - 1].vaultAssetBalance
-    //         );
-    //     } else {
-    //         portion = 0;
-    //     }
-    //     //console.log("portion:", portion);
-    // }
-
-    // DEPRECIATED, USE LENGTH OF REWARD ARRAY INSTEAD
-
-    // /**@notice this function returns what week the contract is currently at
-    //  *@dev week 0 is the time frame from i_startingTimestamp to i_startingTimestamp +i_interval */
-    // function rewardInfoArray.length - 1 public view returns (uint) {
-    //     console.log("current:", block.timestamp);
-    //     console.log("starting:", i_startingTimestamp);
-    //     console.log("interval:", i_interval);
-    //     console.log("difference:", (block.timestamp - i_startingTimestamp));
-    //     console.log(
-    //         "return:",
-    //         (block.timestamp - i_startingTimestamp) / i_interval
-    //     );
-    //     return (block.timestamp - i_startingTimestamp) / i_interval;
-    // }
 
     /**@notice allows users to view the amount of rewards they currently can claim */
     function viewRewards(address addr) public view returns (uint, uint) {
