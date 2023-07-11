@@ -37,6 +37,8 @@ error MatrixUno__StableSwapFailed();
 error MatrixUno__AddrMustBeSender(address sender, address addr);
 /**@notice used inside `viewPortionAt()` to ensure the function doesn't try to access out-of-bounds index */
 error MatrixUno__InvalidWeek(uint week);
+/**@notice used when users try to transfer tokens */
+error MatrixUno__InsufficientBalance(uint value, uint totalBalance);
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -158,7 +160,49 @@ contract MatrixUno is ERC4626 {
     }
 
     /**@notice used to update balances during ERC-20 transfers */
-    modifier updatesBalance(uint, uint[3]) {
+    modifier updatesBalance(
+        address from,
+        address to,
+        uint value,
+        uint8[4] memory tokens
+    ) {
+        if (value > viewTotalBalance(from)) {
+            revert MatrixUno__InsufficientBalance(
+                value,
+                viewTotalBalance(from)
+            );
+        }
+        uint remaining = value;
+        // First token index
+        if (remaining > viewBalance(from, tokens[0])) {
+            remaining -= viewBalance(from, tokens[0]);
+            claimInfoMap[from].balances[tokens[0]] = 0;
+        } else {
+            claimInfoMap[from].balances[tokens[0]] -= remaining;
+            remaining = 0;
+        }
+        // Second token index
+        if (remaining > viewBalance(from, tokens[1])) {
+            remaining -= viewBalance(from, tokens[1]);
+            claimInfoMap[from].balances[tokens[1]] = 0;
+        } else if (remaining > 0) {
+            claimInfoMap[from].balances[tokens[1]] -= remaining;
+            remaining = 0;
+        }
+        // Third token index
+        if (remaining > viewBalance(from, tokens[2])) {
+            remaining -= viewBalance(from, tokens[2]);
+            claimInfoMap[from].balances[tokens[2]] = 0;
+        } else if (remaining > 0) {
+            claimInfoMap[from].balances[tokens[2]] -= remaining;
+            remaining = 0;
+        }
+        // Fourth token index
+        // Since totalbalance is assumed to be more than value, we don't need to check it on the last token
+        if (remaining > 0) {
+            claimInfoMap[from].balances[tokens[3]] -= remaining;
+            remaining = 0;
+        }
         _;
     }
 
@@ -462,11 +506,31 @@ contract MatrixUno is ERC4626 {
 
     // ERC-20 functions
 
-    /**@notice  */
+    /**@notice overridden transfer function to include `updatesBalance` modifier */
     function transfer(
         address to,
         uint256 value
-    ) public virtual override updatesBalance([0, 1, 2, 3]) returns (bool) {
+    )
+        public
+        virtual
+        override
+        updatesBalance(msg.sender, to, value, [0, 1, 2, 3])
+        returns (bool)
+    {
+        address owner = _msgSender();
+        _transfer(owner, to, value);
+        return true;
+    }
+
+    /**@notice transfer but this allows you to choose the tokens you want to spend
+     *@dev tokens correspond to the stables and STBT, if you provide 0,1,2,3 as tokens input
+     * then first your DAI balance will be decremented, but if its not enough to cover the value of the transfer,
+     * then next your USDC balance will be decremented, then USDT and finally STBT. (DAI = 0, USDC = 1, USDT = 2, STBT = 3) */
+    function smartTransfer(
+        address to,
+        uint256 value,
+        uint8[4] memory tokens
+    ) public updatesBalance(msg.sender, to, value, tokens) returns (bool) {
         address owner = _msgSender();
         _transfer(owner, to, value);
         return true;
@@ -772,29 +836,42 @@ contract MatrixUno is ERC4626 {
         return rewardInfoArray[week];
     }
 
-    /**@notice this function lets you view the stablecoin balances of users
+    /**@notice this function lets you view the balances of users
+     *@dev DAI = 0, USDC = 1, USDT = 2, STBT = 3, xUNO = 4
      *@param user the owner of the balance you are viewing
-     *@param token is the tokenId of the stablecoin you want to view  */
-    function viewStakedBalance(
+     *@param token is the tokenId of the token you want to view  */
+    function viewBalance(
         address user,
         uint8 token
     ) public view returns (uint256 balance) {
+        if (token > 4) {
+            revert MatrixUno__InvalidTokenId(token);
+        }
         balance = claimInfoMap[user].balances[token];
     }
 
     /**@notice this function returns the total amount of stablecoins a user has deposited
      *@param user the owner of the balance you are viewing */
-    function viewTotalStakedBalance(
+    function viewTotalStableBalance(
         address user
     ) public view returns (uint totalUserStaked) {
-        uint daiBalance = viewStakedBalance(user, 0);
-        uint usdcBalance = viewStakedBalance(user, 1);
-        uint usdtBalance = viewStakedBalance(user, 2);
+        uint daiBalance = viewBalance(user, 0);
+        uint usdcBalance = viewBalance(user, 1);
+        uint usdtBalance = viewBalance(user, 2);
         // Add 12 zeros to USDC and USDT because they only have 6 decimals
         totalUserStaked =
             daiBalance +
             (usdcBalance * 1e12) +
             (usdtBalance * 1e12);
+    }
+
+    /**@notice this function returns the total amount of stablecoins + STBT a user has deposited */
+    function viewTotalBalance(
+        address addr
+    ) public view returns (uint totalBalance) {
+        uint totalStable = viewTotalStableBalance(addr);
+        uint totalStbt = viewBalance(addr, 3);
+        return totalStable + totalStbt;
     }
 
     /**@notice returns the last week a user has claimed
