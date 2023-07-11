@@ -9,7 +9,7 @@ contract MockSTBT is ERC20 {
         _mint(msg.sender, 1000000 ether);
     }
 
-    function getMockSTBT(uint amount) public {
+    function getMockSTBT(uint256 amount) public {
         _mint(msg.sender, amount);
     }
 }

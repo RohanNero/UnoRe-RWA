@@ -142,6 +142,8 @@ interface ISTBT is IERC20, IERC20Metadata, IERC1594, IERC1643, IERC1644 {
         uint64 expiryTime; // default:0 validated forever
     }
 
+    function permissions(address) external view returns (Permission memory);
+
     function setIssuer(address _issuer) external;
 
     function setController(address _controller) external;
@@ -159,8 +161,8 @@ interface ISTBT is IERC20, IERC20Metadata, IERC1594, IERC1643, IERC1644 {
 
     function distributeInterests(
         int256 _distributedInterest,
-        uint interestFromTime,
-        uint interestToTime
+        uint256 interestFromTime,
+        uint256 interestToTime
     ) external;
 
     function increaseAllowance(

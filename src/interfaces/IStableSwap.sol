@@ -3,40 +3,19 @@ pragma solidity ^0.8.0;
 
 interface IStableSwap {
     event TokenExchange(
-        address indexed buyer,
-        int128 sold_id,
-        uint256 tokens_sold,
-        int128 bought_id,
-        uint256 tokens_bought
+        address indexed buyer, int128 sold_id, uint256 tokens_sold, int128 bought_id, uint256 tokens_bought
     );
 
     event AddLiquidity(
-        address indexed provider,
-        uint256[3] token_amounts,
-        uint256[3] fees,
-        uint256 invariant,
-        uint256 token_supply
+        address indexed provider, uint256[3] token_amounts, uint256[3] fees, uint256 invariant, uint256 token_supply
     );
 
-    event RemoveLiquidity(
-        address indexed provider,
-        uint256[3] token_amounts,
-        uint256[3] fees,
-        uint256 token_supply
-    );
+    event RemoveLiquidity(address indexed provider, uint256[3] token_amounts, uint256[3] fees, uint256 token_supply);
 
-    event RemoveLiquidityOne(
-        address indexed provider,
-        uint256 token_amount,
-        uint256 coin_amount
-    );
+    event RemoveLiquidityOne(address indexed provider, uint256 token_amount, uint256 coin_amount);
 
     event RemoveLiquidityImbalance(
-        address indexed provider,
-        uint256[3] token_amounts,
-        uint256[3] fees,
-        uint256 invariant,
-        uint256 token_supply
+        address indexed provider, uint256[3] token_amounts, uint256[3] fees, uint256 invariant, uint256 token_supply
     );
 
     event CommitNewAdmin(uint256 deadline, address admin);
@@ -45,62 +24,30 @@ interface IStableSwap {
     event CommitNewFee(uint256 deadline, uint256 fee, uint256 admin_fee);
     event NewFee(uint256 fee, uint256 admin_fee);
 
-    event RampA(
-        uint256 old_A,
-        uint256 new_A,
-        uint256 initial_time,
-        uint256 future_time
-    );
+    event RampA(uint256 old_A, uint256 new_A, uint256 initial_time, uint256 future_time);
     event StopRampA(uint256 A, uint256 t);
 
     function A() external view returns (uint256);
 
     function get_virtual_price() external view returns (uint256);
 
-    function calc_token_amount(
-        uint256[3] calldata amounts,
-        bool deposit
-    ) external view returns (uint256);
+    function calc_token_amount(uint256[3] calldata amounts, bool deposit) external view returns (uint256);
 
-    function add_liquidity(
-        uint256[3] calldata amounts,
-        uint256 min_mint_amount
-    ) external;
+    function add_liquidity(uint256[3] calldata amounts, uint256 min_mint_amount) external;
 
-    function get_dy(
-        int128 i,
-        int128 j,
-        uint256 dx
-    ) external view returns (uint256);
+    function get_dy(int128 i, int128 j, uint256 dx) external view returns (uint256);
 
-    function get_dy_underlying(
-        int128 i,
-        int128 j,
-        uint256 dx
-    ) external view returns (uint256);
+    function get_dy_underlying(int128 i, int128 j, uint256 dx) external view returns (uint256);
 
     function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external;
 
-    function remove_liquidity(
-        uint256 _amount,
-        uint256[3] calldata min_amounts
-    ) external;
+    function remove_liquidity(uint256 _amount, uint256[3] calldata min_amounts) external;
 
-    function remove_liquidity_imbalance(
-        uint256[3] calldata amounts,
-        uint256 max_burn_amount
-    ) external;
+    function remove_liquidity_imbalance(uint256[3] calldata amounts, uint256 max_burn_amount) external;
 
-    function calc_withdraw_one_coin(
-        uint256 _token_amount,
-        int128 i
-    ) external view returns (uint256);
+    function calc_withdraw_one_coin(uint256 _token_amount, int128 i) external view returns (uint256);
 
-    function remove_liquidity_one_coin(
-        uint256 _token_amount,
-        int128 i,
-        uint256 min_amount
-    ) external;
+    function remove_liquidity_one_coin(uint256 _token_amount, int128 i, uint256 min_amount) external;
 
     function ramp_A(uint256 _future_A, uint256 _future_time) external;
 

@@ -7,16 +7,24 @@ import "./interfaces/IERC20Like.sol";
  * @title Small Library to standardize erc20 token interactions.
  */
 library ERC20Helper {
-
-    /**************************************************************************************************************************************/
-    /*** Internal Functions                                                                                                             ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * Internal Functions                                                                                                             **
+     */
+    /**
+     *
+     */
 
     function transfer(address token_, address to_, uint256 amount_) internal returns (bool success_) {
         return _call(token_, abi.encodeWithSelector(IERC20Like.transfer.selector, to_, amount_));
     }
 
-    function transferFrom(address token_, address from_, address to_, uint256 amount_) internal returns (bool success_) {
+    function transferFrom(address token_, address from_, address to_, uint256 amount_)
+        internal
+        returns (bool success_)
+    {
         return _call(token_, abi.encodeWithSelector(IERC20Like.transferFrom.selector, from_, to_, amount_));
     }
 
@@ -35,9 +43,8 @@ library ERC20Helper {
         if (token_.code.length == uint256(0)) return false;
 
         bytes memory returnData;
-        ( success_, returnData ) = token_.call(data_);
+        (success_, returnData) = token_.call(data_);
 
         return success_ && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
     }
-
 }

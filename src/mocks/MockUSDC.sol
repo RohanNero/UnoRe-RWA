@@ -9,8 +9,10 @@ contract MockUSDC is ERC20 {
         _mint(msg.sender, 1000000 ether);
     }
 
-    /**@notice mints `amount` of mUNO and transfers it to msg.sender */
-    function getMockUSDC(uint amount) public {
+    /**
+     * @notice mints `amount` of mUNO and transfers it to msg.sender
+     */
+    function getMockUSDC(uint256 amount) public {
         _mint(msg.sender, amount);
     }
 }

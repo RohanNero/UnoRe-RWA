@@ -5,4 +5,6 @@ libs = ["lib"]
 remappings=["@openzeppelin/=node_modules/@openzeppelin",
 "abdk-libraries-solidity/=node_modules/abdk-libraries-solidity"]
 
+eth_rpc_url = "https://mainnet.infura.io/v3/f18ea15fd54544a0b9b3a06c5624e665"
+fork_block_number = 17372500
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

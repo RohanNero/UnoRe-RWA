@@ -5,10 +5,15 @@ import "./IERC20.sol";
 
 /// @title A standard for tokenized Vaults with a single underlying ERC-20 token.
 interface IERC4626 is IERC20 {
-
-    /**************************************************************************************************************************************/
-    /*** Events                                                                                                                         ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * Events                                                                                                                         **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev   `caller_` has exchanged `assets_` for `shares_` and transferred them to `owner_`.
@@ -29,11 +34,19 @@ interface IERC4626 is IERC20 {
      *  @param assets_   The amount of assets withdrawn.
      *  @param shares_   The amount of shares burned.
      */
-    event Withdraw(address indexed caller_, address indexed receiver_, address indexed owner_, uint256 assets_, uint256 shares_);
+    event Withdraw(
+        address indexed caller_, address indexed receiver_, address indexed owner_, uint256 assets_, uint256 shares_
+    );
 
-    /**************************************************************************************************************************************/
-    /*** State Variables                                                                                                                ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * State Variables                                                                                                                **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    The address of the underlying asset used by the Vault.
@@ -43,9 +56,15 @@ interface IERC4626 is IERC20 {
      */
     function asset() external view returns (address asset_);
 
-    /**************************************************************************************************************************************/
-    /*** State Changing Functions                                                                                                       ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * State Changing Functions                                                                                                       **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    Mints `shares_` to `receiver_` by depositing `assets_` into the Vault.
@@ -89,9 +108,15 @@ interface IERC4626 is IERC20 {
      */
     function withdraw(uint256 assets_, address receiver_, address owner_) external returns (uint256 shares_);
 
-    /**************************************************************************************************************************************/
-    /*** View Functions                                                                                                                 ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * View Functions                                                                                                                 **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    The amount of `assets_` the `shares_` are currently equivalent to.
@@ -194,5 +219,4 @@ interface IERC4626 is IERC20 {
      *  @return totalAssets_ The total amount of assets the Vault manages.
      */
     function totalAssets() external view returns (uint256 totalAssets_);
-
 }

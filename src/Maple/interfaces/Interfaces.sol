@@ -2,29 +2,23 @@
 pragma solidity 0.8.7;
 
 interface IERC20Like {
-
     function balanceOf(address account_) external view returns (uint256 balance_);
 
     function decimals() external view returns (uint8 decimals_);
 
     function totalSupply() external view returns (uint256 totalSupply_);
-
 }
 
 interface ILoanManagerLike {
-
-    function acceptNewTerms(
-        address loan_,
-        address refinancer_,
-        uint256 deadline_,
-        bytes[] calldata calls_
-    ) external;
+    function acceptNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external;
 
     function assetsUnderManagement() external view returns (uint256 assetsUnderManagement_);
 
     function claim(address loan_, bool hasSufficientCover_) external;
 
-    function finishCollateralLiquidation(address loan_) external returns (uint256 remainingLosses_, uint256 serviceFee_);
+    function finishCollateralLiquidation(address loan_)
+        external
+        returns (uint256 remainingLosses_, uint256 serviceFee_);
 
     function fund(address loan_) external;
 
@@ -36,22 +30,20 @@ interface ILoanManagerLike {
 
     function impairLoan(address loan_, bool isGovernor_) external;
 
-    function triggerDefault(address loan_, address liquidatorFactory_) external returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 platformFees_);
+    function triggerDefault(address loan_, address liquidatorFactory_)
+        external
+        returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 platformFees_);
 
     function unrealizedLosses() external view returns (uint256 unrealizedLosses_);
-
 }
 
 interface ILoanManagerInitializerLike {
-
     function encodeArguments(address pool_) external pure returns (bytes memory calldata_);
 
     function decodeArguments(bytes calldata calldata_) external pure returns (address pool_);
-
 }
 
 interface ILiquidatorLike {
-
     function collateralRemaining() external view returns (uint256 collateralRemaining_);
 
     function liquidatePortion(uint256 swapAmount_, uint256 maxReturnAmount_, bytes calldata data_) external;
@@ -59,11 +51,9 @@ interface ILiquidatorLike {
     function pullFunds(address token_, address destination_, uint256 amount_) external;
 
     function setCollateralRemaining(uint256 collateralAmount_) external;
-
 }
 
 interface IMapleGlobalsLike {
-
     function bootstrapMint(address asset_) external view returns (uint256 bootstrapMint_);
 
     function getLatestPrice(address asset_) external view returns (uint256 price_);
@@ -80,11 +70,20 @@ interface IMapleGlobalsLike {
 
     function isPoolDeployer(address poolDeployer_) external view returns (bool isPoolDeployer_);
 
-    function isValidScheduledCall(address caller_, address contract_, bytes32 functionId_, bytes calldata callData_) external view returns (bool isValid_);
+    function isValidScheduledCall(address caller_, address contract_, bytes32 functionId_, bytes calldata callData_)
+        external
+        view
+        returns (bool isValid_);
 
-    function platformManagementFeeRate(address poolManager_) external view returns (uint256 platformManagementFeeRate_);
+    function platformManagementFeeRate(address poolManager_)
+        external
+        view
+        returns (uint256 platformManagementFeeRate_);
 
-    function maxCoverLiquidationPercent(address poolManager_) external view returns (uint256 maxCoverLiquidationPercent_);
+    function maxCoverLiquidationPercent(address poolManager_)
+        external
+        view
+        returns (uint256 maxCoverLiquidationPercent_);
 
     function migrationAdmin() external view returns (address migrationAdmin_);
 
@@ -99,14 +98,14 @@ interface IMapleGlobalsLike {
     function transferOwnedPoolManager(address fromPoolDelegate_, address toPoolDelegate_) external;
 
     function unscheduleCall(address caller_, bytes32 functionId_, bytes calldata callData_) external;
-
 }
 
 interface IMapleLoanLike {
-
     function acceptLender() external;
 
-    function acceptNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_) external returns (bytes32 refinanceCommitment_);
+    function acceptNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
+        external
+        returns (bytes32 refinanceCommitment_);
 
     function batchClaimFunds(uint256[] memory amounts_, address[] memory destinations_) external;
 
@@ -116,7 +115,7 @@ interface IMapleLoanLike {
 
     function collateral() external view returns (uint256 collateral);
 
-    function collateralAsset() external view returns(address asset_);
+    function collateralAsset() external view returns (address asset_);
 
     function feeManager() external view returns (address feeManager_);
 
@@ -124,24 +123,17 @@ interface IMapleLoanLike {
 
     function fundLoan(address lender_) external returns (uint256 fundsLent_);
 
-    function getClosingPaymentBreakdown() external view returns (
-        uint256 principal_,
-        uint256 interest_,
-        uint256 delegateServiceFee_,
-        uint256 platformServiceFee_
-    );
+    function getClosingPaymentBreakdown()
+        external
+        view
+        returns (uint256 principal_, uint256 interest_, uint256 delegateServiceFee_, uint256 platformServiceFee_);
 
-    function getNextPaymentDetailedBreakdown() external view returns (
-        uint256 principal_,
-        uint256[3] memory interest_,
-        uint256[2] memory fees_
-    );
+    function getNextPaymentDetailedBreakdown()
+        external
+        view
+        returns (uint256 principal_, uint256[3] memory interest_, uint256[2] memory fees_);
 
-    function getNextPaymentBreakdown() external view returns (
-        uint256 principal_,
-        uint256 interest_,
-        uint256 fees_
-    );
+    function getNextPaymentBreakdown() external view returns (uint256 principal_, uint256 interest_, uint256 fees_);
 
     function getUnaccountedAmount(address asset_) external view returns (uint256 unaccountedAmount_);
 
@@ -171,7 +163,9 @@ interface IMapleLoanLike {
 
     function removeLoanImpairment() external;
 
-    function repossess(address destination_) external returns (uint256 collateralRepossessed_, uint256 fundsRepossessed_);
+    function repossess(address destination_)
+        external
+        returns (uint256 collateralRepossessed_, uint256 fundsRepossessed_);
 
     function setPendingLender(address pendingLender_) external;
 
@@ -180,14 +174,15 @@ interface IMapleLoanLike {
     function impairLoan() external;
 
     function unimpairedPaymentDueDate() external view returns (uint256 unimpairedPaymentDueDate_);
-
 }
 
 interface IMapleLoanV3Like {
-
     function acceptLender() external;
 
-    function getNextPaymentBreakdown() external view returns (uint256 principal_, uint256 interest_, uint256, uint256);
+    function getNextPaymentBreakdown()
+        external
+        view
+        returns (uint256 principal_, uint256 interest_, uint256, uint256);
 
     function nextPaymentDueDate() external view returns (uint256 nextPaymentDueDate_);
 
@@ -198,29 +193,21 @@ interface IMapleLoanV3Like {
     function refinanceInterest() external view returns (uint256 refinanceInterest_);
 
     function setPendingLender(address pendingLender_) external;
-
 }
 
 interface IMapleProxyFactoryLike {
-
     function mapleGlobals() external view returns (address mapleGlobals_);
-
 }
 
 interface ILoanFactoryLike {
-
     function isLoan(address loan_) external view returns (bool isLoan_);
-
 }
 
 interface IPoolDelegateCoverLike {
-
     function moveFunds(uint256 amount_, address recipient_) external;
-
 }
 
 interface IPoolLike is IERC20Like {
-
     function allowance(address owner_, address spender_) external view returns (uint256 allowance_);
 
     function asset() external view returns (address asset_);
@@ -242,14 +229,15 @@ interface IPoolLike is IERC20Like {
     function processExit(uint256 shares_, uint256 assets_, address receiver_, address owner_) external;
 
     function redeem(uint256 shares_, address receiver_, address owner_) external returns (uint256 assets_);
-
 }
 
 interface IPoolManagerLike {
-
     function addLoanManager(address loanManager_) external;
 
-    function canCall(bytes32 functionId_, address caller_, bytes memory data_) external view returns (bool canCall_, string memory errorMessage_);
+    function canCall(bytes32 functionId_, address caller_, bytes memory data_)
+        external
+        view
+        returns (bool canCall_, string memory errorMessage_);
 
     function convertToExitShares(uint256 assets_) external view returns (uint256 shares_);
 
@@ -259,7 +247,10 @@ interface IPoolManagerLike {
 
     function fund(uint256 principalAmount_, address loan_, address loanManager_) external;
 
-    function getEscrowParams(address owner_, uint256 shares_) external view returns (uint256 escrowShares_, address escrow_);
+    function getEscrowParams(address owner_, uint256 shares_)
+        external
+        view
+        returns (uint256 escrowShares_, address escrow_);
 
     function globals() external view returns (address globals_);
 
@@ -279,9 +270,13 @@ interface IPoolManagerLike {
 
     function previewWithdraw(address owner_, uint256 assets_) external view returns (uint256 shares_);
 
-    function processRedeem(uint256 shares_, address owner_, address sender_) external returns (uint256 redeemableShares_, uint256 resultingAssets_);
+    function processRedeem(uint256 shares_, address owner_, address sender_)
+        external
+        returns (uint256 redeemableShares_, uint256 resultingAssets_);
 
-    function processWithdraw(uint256 assets_, address owner_, address sender_) external returns (uint256 redeemableShares_, uint256 resultingAssets_);
+    function processWithdraw(uint256 assets_, address owner_, address sender_)
+        external
+        returns (uint256 redeemableShares_, uint256 resultingAssets_);
 
     function poolDelegate() external view returns (address poolDelegate_);
 
@@ -302,19 +297,21 @@ interface IPoolManagerLike {
     function unrealizedLosses() external view returns (uint256 unrealizedLosses_);
 
     function withdrawalManager() external view returns (address withdrawalManager_);
-
 }
 
 interface IWithdrawalManagerInitializerLike {
+    function encodeArguments(address pool_, uint256 cycleDuration_, uint256 windowDuration_)
+        external
+        pure
+        returns (bytes memory calldata_);
 
-    function encodeArguments(address pool_, uint256 cycleDuration_, uint256 windowDuration_) external pure returns (bytes memory calldata_);
-
-    function decodeArguments(bytes calldata calldata_) external pure returns (address pool_, uint256 cycleDuration_, uint256 windowDuration_);
-
+    function decodeArguments(bytes calldata calldata_)
+        external
+        pure
+        returns (address pool_, uint256 cycleDuration_, uint256 windowDuration_);
 }
 
 interface IWithdrawalManagerLike {
-
     function addShares(uint256 shares_, address owner_) external;
 
     function isInExitWindow(address owner_) external view returns (bool isInExitWindow_);
@@ -323,12 +320,19 @@ interface IWithdrawalManagerLike {
 
     function lockedShares(address owner_) external view returns (uint256 lockedShares_);
 
-    function previewRedeem(address owner_, uint256 shares) external view returns (uint256 redeemableShares, uint256 resultingAssets_);
+    function previewRedeem(address owner_, uint256 shares)
+        external
+        view
+        returns (uint256 redeemableShares, uint256 resultingAssets_);
 
-    function previewWithdraw(address owner_, uint256 assets_) external view returns (uint256 redeemableAssets_, uint256 resultingShares_);
+    function previewWithdraw(address owner_, uint256 assets_)
+        external
+        view
+        returns (uint256 redeemableAssets_, uint256 resultingShares_);
 
-    function processExit(uint256 shares_, address account_) external returns (uint256 redeemableShares_, uint256 resultingAssets_);
+    function processExit(uint256 shares_, address account_)
+        external
+        returns (uint256 redeemableShares_, uint256 resultingAssets_);
 
     function removeShares(uint256 shares_, address owner_) external returns (uint256 sharesReturned_);
-
 }

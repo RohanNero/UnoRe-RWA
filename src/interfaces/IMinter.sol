@@ -18,8 +18,5 @@ interface IMinter {
 
     function minted(address arg0, address arg1) external view returns (uint256);
 
-    function allowed_to_mint_for(
-        address arg0,
-        address arg1
-    ) external view returns (bool);
+    function allowed_to_mint_for(address arg0, address arg1) external view returns (bool);
 }

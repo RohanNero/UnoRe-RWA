@@ -3,10 +3,15 @@ pragma solidity ^0.8.7;
 
 /// @title Interface of the ERC20 standard as defined in the EIP, including EIP-2612 permit functionality.
 interface IERC20 {
-
-    /**************************************************************************************************************************************/
-    /*** Events                                                                                                                         ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * Events                                                                                                                         **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev   Emitted when one account has set the allowance of another account over their tokens.
@@ -24,9 +29,15 @@ interface IERC20 {
      */
     event Transfer(address indexed owner_, address indexed recipient_, uint256 amount_);
 
-    /**************************************************************************************************************************************/
-    /*** External Functions                                                                                                             ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * External Functions                                                                                                             **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    Function that allows one account to set the allowance of another account over their tokens.
@@ -65,7 +76,15 @@ interface IERC20 {
      *  @param r_        ECDSA signature r component.
      *  @param s_        ECDSA signature s component.
      */
-    function permit(address owner_, address spender_, uint amount_, uint deadline_, uint8 v_, bytes32 r_, bytes32 s_) external;
+    function permit(
+        address owner_,
+        address spender_,
+        uint256 amount_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) external;
 
     /**
      *  @dev    Moves an amount of tokens from `msg.sender` to a specified account.
@@ -87,9 +106,15 @@ interface IERC20 {
      */
     function transferFrom(address owner_, address recipient_, uint256 amount_) external returns (bool success_);
 
-    /**************************************************************************************************************************************/
-    /*** View Functions                                                                                                                 ***/
-    /**************************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * View Functions                                                                                                                 **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    Returns the allowance that one account has given another over their tokens.
@@ -125,9 +150,9 @@ interface IERC20 {
     function name() external view returns (string memory name_);
 
     /**
-      *  @dev    Returns the nonce for the given owner.
-      *  @param  owner_  The address of the owner account.
-      *  @return nonce_ The nonce for the given owner.
+     *  @dev    Returns the nonce for the given owner.
+     *  @param  owner_  The address of the owner account.
+     *  @return nonce_ The nonce for the given owner.
      */
     function nonces(address owner_) external view returns (uint256 nonce_);
 
@@ -148,5 +173,4 @@ interface IERC20 {
      *  @return totalSupply_ The total amount of tokens in existence.
      */
     function totalSupply() external view returns (uint256 totalSupply_);
-
 }

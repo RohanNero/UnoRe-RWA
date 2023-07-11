@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
+pragma experimental ABIEncoderV2;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
@@ -14,8 +15,14 @@ import "../src/interfaces/ISTBT.sol";
 import "../src/interfaces/ISTBTModerator.sol";
 
 contract MatrixUNOTest is Test {
+    struct Permission {
+        bool sendAllowed; // default: true
+        bool receiveAllowed;
+        // Address holder’s KYC will be validated till this time, after that the holder needs to re-KYC.
+        uint64 expiryTime; // default:0 validated forever
+    }
     address public whale = 0x171cda359aa49E46Dec45F375ad6c256fdFBD420;
-    address public sWhale = 0x39c81B01650323E6D1006aD4526389D778f52256;
+    address public sWhale = 0x81BD585940501b583fD092BC8397F2119A96E5ba;
     address public eWhale = 0x868daB0b8E21EC0a48b726A1ccf25826c78C6d7F;
     address public stbtModeratorExecutor =
         0xd32a1441872774f30EC9C453983cf5C95a720123;
@@ -34,6 +41,7 @@ contract MatrixUNOTest is Test {
     ISTBTModerator public stbtModerator =
         ISTBTModerator(0x22276A1BD16bc3052b362C2e0f65aacE04ed6F99);
     MatrixUno public matrixUno;
+    address vault;
     uint256 public interval = 604800;
 
     function setUp() public {
@@ -49,6 +57,7 @@ contract MatrixUNOTest is Test {
             ],
             interval
         );
+        vault = address(matrixUno);
     }
 
     function testHighBalance() public {
@@ -58,27 +67,57 @@ contract MatrixUNOTest is Test {
         assertGt(initialBal, 100000 ether);
     }
 
-    // function testStake() public {
-    //     matrixUno.stake(1 ether, 0, 1);
-    //     // assertEq(counter.number(), 1);
+    // function testsetPermission() public {
+    //     //"allow moderator to update the vault's STBT permissions"
+    //     //Permission calldata prePermissions = stbt.permissions(vault);
+    //     //console.log("prepermissions:", prePermissions);
+    //     // going to have to setPermission through `execute` function call
+    //     //  if (prePermissions.sendAllowed == false) {
+    //     uint fiveEther = 5 ether;
+    //     vm.startPrank(eWhale);
+    //     payable(stbtModeratorProposer).transfer(fiveEther);
+    //     payable(stbtModeratorExecutor).transfer(fiveEther);
+    //     vm.stopPrank();
+    //     vm.prank(stbtModeratorProposer);
+    //     stbtModerator.schedule(
+    //         address(stbt),
+    //         0,
+    //         "0x47e640c000000000000000000000000097fd63d049089cd70d9d139ccf9338c81372de68000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+    //         0x0000000000000000000000000000000000000000000000000000000000000000,
+    //         0x3235363030376561343437613862653633303530396531623764396132326335,
+    //         0
+    //     );
+    //     vm.prank(stbtModeratorExecutor);
+    //     stbtModerator.execute(
+    //         address(stbt),
+    //         0,
+    //         "0x47e640c000000000000000000000000097fd63d049089cd70d9d139ccf9338c81372de68000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+    //         0x0000000000000000000000000000000000000000000000000000000000000000,
+    //         0x3235363030376561343437613862653633303530396531623764396132326335
+    //     );
+    //     // }
+
+    //     //  Permission calldata postPermissions = stbt.permissions(vault);
+    //     //assertTrue(postPermissions.receiveAllowed);
     // }
 
-    // function testDeposit(uint96 amount) public {
-    //     uint256 balanceBefore = mockSTBT.balanceOf(address(matrixUno));
-    //     mockSTBT.getMockSTBT(amount);
-    //     mockSTBT.approve(address(matrixUno), amount);
-    //     matrixUno.deposit(amount, address(mockSTBT));
-    //     uint256 balanceAfter = mockSTBT.balanceOf(address(matrixUno));
-    //     assertEq(balanceAfter, balanceBefore + amount);
-    // }
+    function testWhaleDeposit() public {
+        uint256 stbtBalance = stbt.balanceOf(sWhale);
+        console.log(stbtBalance);
+        uint256 stbtAllowance = stbt.allowance(sWhale, address(matrixUno));
+        uint stbtDeposit = 1 ether;
+        uint256 matrixUnoStbtBalance = stbt.balanceOf(address(matrixUno));
 
-    // function testZeroDepositError() public {
-    //     vm.expectRevert(MatrixUno.MatrixUno__ZeroAmountGiven.selector);
-    //     matrixUno.stake(0, 1, 99);
-    // }
-
-    // function testSetNumber(uint256 x) public {
-    //     counter.setNumber(x);
-    //     assertEq(counter.number(), x);
-    // }
+        if (stbtAllowance < stbtDeposit) {
+            vm.prank(sWhale);
+            stbt.approve(address(matrixUno), stbtDeposit);
+        }
+        uint256 half = stbtDeposit / 2;
+        if (matrixUnoStbtBalance < half) {
+            vm.prank(sWhale);
+            matrixUno.deposit(stbtDeposit, address(matrixUno));
+        }
+        uint256 endingmatrixUnoStbtBalance = stbt.balanceOf(address(matrixUno));
+        assertGe(endingmatrixUnoStbtBalance, half);
+    }
 }

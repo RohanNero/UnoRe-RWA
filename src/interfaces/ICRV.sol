@@ -3,11 +3,7 @@ pragma solidity ^0.8.0;
 
 interface ICRV {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
-    event Approval(
-        address indexed _owner,
-        address indexed _spender,
-        uint256 _value
-    );
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
     event UpdateMiningParameters(uint256 time, uint256 rate, uint256 supply);
     event SetMinter(address minter);
     event SetAdmin(address admin);
@@ -20,10 +16,7 @@ interface ICRV {
 
     function available_supply() external view returns (uint256);
 
-    function mintable_in_timeframe(
-        uint256 start,
-        uint256 end
-    ) external view returns (uint256);
+    function mintable_in_timeframe(uint256 start, uint256 end) external view returns (uint256);
 
     function set_minter(address _minter) external;
 
@@ -31,18 +24,11 @@ interface ICRV {
 
     function totalSupply() external view returns (uint256);
 
-    function allowance(
-        address _owner,
-        address _spender
-    ) external view returns (uint256);
+    function allowance(address _owner, address _spender) external view returns (uint256);
 
     function transfer(address _to, uint256 _value) external returns (bool);
 
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _value
-    ) external returns (bool);
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool);
 
     function approve(address _spender, uint256 _value) external returns (bool);
 

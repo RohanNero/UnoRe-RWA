@@ -9,8 +9,10 @@ contract MockUSDT is ERC20 {
         _mint(msg.sender, 1000000 ether);
     }
 
-    /**@notice mints `amount` of mUSDT and transfers it to msg.sender */
-    function getMockUSDT(uint amount) public {
+    /**
+     * @notice mints `amount` of mUSDT and transfers it to msg.sender
+     */
+    function getMockUSDT(uint256 amount) public {
         _mint(msg.sender, amount);
     }
 }

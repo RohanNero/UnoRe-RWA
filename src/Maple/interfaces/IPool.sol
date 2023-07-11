@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { IERC20 } from "./IERC20.sol";
+import {IERC20} from "./IERC20.sol";
 
-import { IERC4626 } from "./IERC4626.sol";
+import {IERC4626} from "./IERC4626.sol";
 
 interface IPool is IERC20, IERC4626 {
-
-    /******************************************************************************************************************************/
-    /*** Events                                                                                                                 ***/
-    /******************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * Events                                                                                                                 **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev   Initial shares amount was minted to the zero address to prevent the first depositor frontrunning exploit.
@@ -19,7 +24,13 @@ interface IPool is IERC20, IERC4626 {
      *  @param shares_              The amount of shares that would have been minted to the user if it was not the first deposit.
      *  @param bootStrapMintAmount_ The amount of shares that was minted to the zero address to protect the first depositor.
      */
-    event BootstrapMintPerformed(address indexed caller_, address indexed receiver_, uint256 assets_, uint256 shares_, uint256 bootStrapMintAmount_);
+    event BootstrapMintPerformed(
+        address indexed caller_,
+        address indexed receiver_,
+        uint256 assets_,
+        uint256 shares_,
+        uint256 bootStrapMintAmount_
+    );
 
     /**
      *  @dev   `newOwner_` has accepted the transferral of RDT ownership from `previousOwner_`.
@@ -58,9 +69,15 @@ interface IPool is IERC20, IERC4626 {
      */
     event WithdrawRequested(address indexed owner_, uint256 assets_, uint256 escrowedShares_);
 
-    /******************************************************************************************************************************/
-    /*** State Variables                                                                                                        ***/
-    /******************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * State Variables                                                                                                        **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    The amount of shares that will be burned during the first deposit/mint.
@@ -74,9 +91,15 @@ interface IPool is IERC20, IERC4626 {
      */
     function manager() external view returns (address manager_);
 
-    /******************************************************************************************************************************/
-    /*** LP Functions                                                                                                           ***/
-    /******************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * LP Functions                                                                                                           **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    Does a ERC4626 `deposit` with a ERC-2612 `permit`.
@@ -88,7 +111,9 @@ interface IPool is IERC20, IERC4626 {
      *  @param  s_        ECDSA signature s component.
      *  @return shares_   The amount of shares minted.
      */
-    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 shares_);
+    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_)
+        external
+        returns (uint256 shares_);
 
     /**
      *  @dev    Does a ERC4626 `mint` with a ERC-2612 `permit`.
@@ -101,11 +126,25 @@ interface IPool is IERC20, IERC4626 {
      *  @param  s_         ECDSA signature s component.
      *  @return assets_    The amount of shares deposited.
      */
-    function mintWithPermit(uint256 shares_, address receiver_, uint256 maxAssets_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
+    function mintWithPermit(
+        uint256 shares_,
+        address receiver_,
+        uint256 maxAssets_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) external returns (uint256 assets_);
 
-    /******************************************************************************************************************************/
-    /*** Withdrawal Request Functions                                                                                           ***/
-    /******************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * Withdrawal Request Functions                                                                                           **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    Removes shares from the withdrawal mechanism, can only be called after the beginning of the withdrawal window has passed.
@@ -131,9 +170,15 @@ interface IPool is IERC20, IERC4626 {
      */
     function requestRedeem(uint256 shares_, address owner_) external returns (uint256 escrowShares_);
 
-    /******************************************************************************************************************************/
-    /*** View Functions                                                                                                         ***/
-    /******************************************************************************************************************************/
+    /**
+     *
+     */
+    /**
+     * View Functions                                                                                                         **
+     */
+    /**
+     *
+     */
 
     /**
      *  @dev    Returns the amount of underlying assets owned by the specified account.
@@ -161,5 +206,4 @@ interface IPool is IERC20, IERC4626 {
      *  @return unrealizedLosses_ Amount of unrealized losses.
      */
     function unrealizedLosses() external view returns (uint256 unrealizedLosses_);
-
 }

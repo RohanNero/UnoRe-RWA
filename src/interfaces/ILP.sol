@@ -3,62 +3,23 @@ pragma solidity ^0.8.0;
 
 interface ILP {
     // Events
-    event Transfer(
-        address indexed sender,
-        address indexed receiver,
-        uint256 value
-    );
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Transfer(address indexed sender, address indexed receiver, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
     event TokenExchange(
-        address indexed buyer,
-        int128 soldId,
-        uint256 tokensSold,
-        int128 boughtId,
-        uint256 tokensBought
+        address indexed buyer, int128 soldId, uint256 tokensSold, int128 boughtId, uint256 tokensBought
     );
     event TokenExchangeUnderlying(
-        address indexed buyer,
-        int128 soldId,
-        uint256 tokensSold,
-        int128 boughtId,
-        uint256 tokensBought
+        address indexed buyer, int128 soldId, uint256 tokensSold, int128 boughtId, uint256 tokensBought
     );
     event AddLiquidity(
-        address indexed provider,
-        uint256[2] tokenAmounts,
-        uint256[2] fees,
-        uint256 invariant,
-        uint256 tokenSupply
+        address indexed provider, uint256[2] tokenAmounts, uint256[2] fees, uint256 invariant, uint256 tokenSupply
     );
-    event RemoveLiquidity(
-        address indexed provider,
-        uint256[2] tokenAmounts,
-        uint256[2] fees,
-        uint256 tokenSupply
-    );
-    event RemoveLiquidityOne(
-        address indexed provider,
-        uint256 tokenAmount,
-        uint256 coinAmount,
-        uint256 tokenSupply
-    );
+    event RemoveLiquidity(address indexed provider, uint256[2] tokenAmounts, uint256[2] fees, uint256 tokenSupply);
+    event RemoveLiquidityOne(address indexed provider, uint256 tokenAmount, uint256 coinAmount, uint256 tokenSupply);
     event RemoveLiquidityImbalance(
-        address indexed provider,
-        uint256[2] tokenAmounts,
-        uint256[2] fees,
-        uint256 invariant,
-        uint256 tokenSupply
+        address indexed provider, uint256[2] tokenAmounts, uint256[2] fees, uint256 invariant, uint256 tokenSupply
     );
-    event RampA(
-        uint256 oldA,
-        uint256 newA,
-        uint256 initialTime,
-        uint256 futureTime
-    );
+    event RampA(uint256 oldA, uint256 newA, uint256 initialTime, uint256 futureTime);
     event StopRampA(uint256 A, uint256 t);
 
     // Functions
@@ -75,11 +36,7 @@ interface ILP {
 
     function transfer(address _to, uint256 _value) external returns (bool);
 
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _value
-    ) external returns (bool);
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool);
 
     function approve(address _spender, uint256 _value) external returns (bool);
 
@@ -95,103 +52,51 @@ interface ILP {
 
     function get_virtual_price() external view returns (uint256);
 
-    function calc_token_amount(
-        uint256[2] memory _amounts,
-        bool _isDeposit
-    ) external view returns (uint256);
+    function calc_token_amount(uint256[2] memory _amounts, bool _isDeposit) external view returns (uint256);
 
-    function add_liquidity(
-        uint256[2] memory _amounts,
-        uint256 _minMintAmount
-    ) external returns (uint256);
+    function add_liquidity(uint256[2] memory _amounts, uint256 _minMintAmount) external returns (uint256);
 
-    function add_liquidity(
-        uint256[2] memory _amounts,
-        uint256 _minMintAmount,
-        address _receiver
-    ) external returns (uint256);
+    function add_liquidity(uint256[2] memory _amounts, uint256 _minMintAmount, address _receiver)
+        external
+        returns (uint256);
 
-    function get_dy(
-        int128 i,
-        int128 j,
-        uint256 dx
-    ) external view returns (uint256);
+    function get_dy(int128 i, int128 j, uint256 dx) external view returns (uint256);
 
-    function get_dy_underlying(
-        int128 i,
-        int128 j,
-        uint256 dx
-    ) external view returns (uint256);
+    function get_dy_underlying(int128 i, int128 j, uint256 dx) external view returns (uint256);
 
-    function exchange(
-        int128 i,
-        int128 j,
-        uint256 _dx,
-        uint256 _minDy
-    ) external returns (uint256);
+    function exchange(int128 i, int128 j, uint256 _dx, uint256 _minDy) external returns (uint256);
 
-    function exchange(
-        int128 i,
-        int128 j,
-        uint256 _dx,
-        uint256 _minDy,
-        address _receiver
-    ) external returns (uint256);
+    function exchange(int128 i, int128 j, uint256 _dx, uint256 _minDy, address _receiver) external returns (uint256);
 
-    function exchange_underlying(
-        int128 i,
-        int128 j,
-        uint256 _dx,
-        uint256 _minDy
-    ) external returns (uint256);
+    function exchange_underlying(int128 i, int128 j, uint256 _dx, uint256 _minDy) external returns (uint256);
 
-    function exchange_underlying(
-        int128 i,
-        int128 j,
-        uint256 _dx,
-        uint256 _minDy,
-        address _receiver
-    ) external returns (uint256);
+    function exchange_underlying(int128 i, int128 j, uint256 _dx, uint256 _minDy, address _receiver)
+        external
+        returns (uint256);
 
-    function remove_liquidity(
-        uint256 _burnAmount,
-        uint256[2] memory _minAmounts
-    ) external returns (uint256[2] memory);
+    function remove_liquidity(uint256 _burnAmount, uint256[2] memory _minAmounts)
+        external
+        returns (uint256[2] memory);
 
-    function remove_liquidity(
-        uint256 _burnAmount,
-        uint256[2] memory _minAmounts,
-        address _receiver
-    ) external returns (uint256[2] memory);
+    function remove_liquidity(uint256 _burnAmount, uint256[2] memory _minAmounts, address _receiver)
+        external
+        returns (uint256[2] memory);
 
-    function remove_liquidity_imbalance(
-        uint256[2] memory _amounts,
-        uint256 _maxBurnAmount
-    ) external returns (uint256);
+    function remove_liquidity_imbalance(uint256[2] memory _amounts, uint256 _maxBurnAmount)
+        external
+        returns (uint256);
 
-    function remove_liquidity_imbalance(
-        uint256[2] memory _amounts,
-        uint256 _maxBurnAmount,
-        address _receiver
-    ) external returns (uint256);
+    function remove_liquidity_imbalance(uint256[2] memory _amounts, uint256 _maxBurnAmount, address _receiver)
+        external
+        returns (uint256);
 
-    function calc_withdraw_one_coin(
-        uint256 _burnAmount,
-        int128 i
-    ) external view returns (uint256);
+    function calc_withdraw_one_coin(uint256 _burnAmount, int128 i) external view returns (uint256);
 
-    function remove_liquidity_one(
-        uint256 _burnAmount,
-        int128 i,
-        uint256 _minReceived
-    ) external returns (uint256);
+    function remove_liquidity_one(uint256 _burnAmount, int128 i, uint256 _minReceived) external returns (uint256);
 
-    function remove_liquidity_one(
-        uint256 _burnAmount,
-        int128 i,
-        uint256 _minReceived,
-        address _receiver
-    ) external returns (uint256);
+    function remove_liquidity_one(uint256 _burnAmount, int128 i, uint256 _minReceived, address _receiver)
+        external
+        returns (uint256);
 
     function ramp_A(uint256 _futureA, uint256 _futureTime) external;
 
@@ -219,10 +124,7 @@ interface ILP {
 
     function balanceOf(address arg0) external view returns (uint256);
 
-    function allowance(
-        address arg0,
-        address arg1
-    ) external view returns (uint256);
+    function allowance(address arg0, address arg1) external view returns (uint256);
 
     function totalSupply() external view returns (uint256);
 }
