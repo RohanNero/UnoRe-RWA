@@ -147,12 +147,18 @@ contract MatrixUno is ERC4626 {
     /**@notice used for testing, remove after done testing. */
     event transferInfo(uint _amount, uint _receive);
     event actual(uint actualRec);
+    event upkeep(bool needed, uint lastUpkeep);
 
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
         if (this.checkUpkeep()) {
             this.performUpkeep();
         }
+        _;
+    }
+
+    /**@notice used to update balances during ERC-20 transfers */
+    modifier updatesBalance(uint, uint[3]) {
         _;
     }
 
@@ -410,6 +416,8 @@ contract MatrixUno is ERC4626 {
         unaccountedRewards = 0;
     }
 
+    // ERC-4626 functions
+
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
      *@dev See {IERC4626-deposit}. */
     function deposit(
@@ -452,6 +460,18 @@ contract MatrixUno is ERC4626 {
         return assets;
     }
 
+    // ERC-20 functions
+
+    /**@notice  */
+    function transfer(
+        address to,
+        uint256 value
+    ) public virtual override updatesBalance([0, 1, 2, 3]) returns (bool) {
+        address owner = _msgSender();
+        _transfer(owner, to, value);
+        return true;
+    }
+
     /** Admin only functions (Uno's whitelisted EOA) */
 
     /**@notice this function allows uno to set the SSIP address */
@@ -478,6 +498,10 @@ contract MatrixUno is ERC4626 {
         if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
         }
+        emit upkeep(
+            (block.timestamp - lastUpkeepTime) < i_interval,
+            lastUpkeepTime
+        );
         lastUpkeepTime = block.timestamp;
 
         // Most important task performUpkeep does is to set the rewardInfo for the week

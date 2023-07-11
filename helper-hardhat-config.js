@@ -39,7 +39,7 @@ const networkConfig = {
       "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f",
       "0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108",
     ],
-    interval: "86400",
+    interval: "420",
   },
   80001: {
     name: "mumbai",

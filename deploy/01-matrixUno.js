@@ -33,6 +33,10 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
 
   if (!developmentChains.includes(network.name)) {
     log("Verifying contract...")
+    //console.log(matrixUno)
+    console.log(matrixUno.target)
+    console.log(matrixUno.address)
+
     await verify(matrixUno.address, args)
   }
 }
