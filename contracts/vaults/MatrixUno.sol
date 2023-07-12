@@ -37,6 +37,10 @@ error MatrixUno__StableSwapFailed();
 error MatrixUno__AddrMustBeSender(address sender, address addr);
 /**@notice used inside `viewPortionAt()` to ensure the function doesn't try to access out-of-bounds index */
 error MatrixUno__InvalidWeek(uint week);
+/**@notice used when users try to transfer tokens */
+error MatrixUno__InsufficientBalance(uint value, uint totalBalance);
+/**@notice used to ensure the spendingTokens variable has no duplicate values */
+error MatrixUno__NoDuplicates();
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -87,6 +91,7 @@ contract MatrixUno is ERC4626 {
         uint[5] balances;
         uint16 lastClaimPeriod;
         uint totalAmountClaimed;
+        uint8[4] spendingOrder;
     }
 
     /**@notice each index corresponds to a week
@@ -145,13 +150,95 @@ contract MatrixUno is ERC4626 {
     event Unstake(uint amount, address unstaker);
 
     /**@notice used for testing, remove after done testing. */
-    event transferInfo(uint _amount, uint _receive);
-    event actual(uint actualRec);
+    // event transferInfo(uint _amount, uint _receive);
+    // event actual(uint actualRec);
+    // event upkeep(bool needed, uint lastUpkeep);
 
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
         if (this.checkUpkeep()) {
             this.performUpkeep();
+        }
+        _;
+    }
+
+    /**@notice used to update balances during ERC-20 transfers */
+    modifier updatesBalance(
+        address from,
+        address to,
+        uint value
+    ) {
+        if (value > viewTotalBalance(from)) {
+            revert MatrixUno__InsufficientBalance(
+                value,
+                viewTotalBalance(from)
+            );
+        }
+        uint8[4] memory tokens = claimInfoMap[msg.sender].spendingOrder;
+        // If user has never set `spendingOrder` just start from 0 and go up
+        console.log(
+            "tokens total:",
+            tokens[0] + tokens[1] + tokens[2] + tokens[3]
+        );
+        if (tokens[0] + tokens[1] + tokens[2] + tokens[3] == 0) {
+            tokens = [0, 1, 2, 3];
+        }
+        console.log("tokens total:", tokens[3]);
+        uint remaining = value;
+        uint firstBalance = viewBalance(from, tokens[0]);
+        uint secondBalance = viewBalance(from, tokens[1]);
+        uint thirdBalance = viewBalance(from, tokens[2]);
+        console.log("remaining0", remaining);
+        // First token index
+
+        if (remaining > firstBalance) {
+            remaining -= firstBalance;
+            claimInfoMap[to].balances[tokens[0]] += firstBalance;
+            claimInfoMap[from].balances[tokens[0]] = 0;
+        } else {
+            claimInfoMap[from].balances[tokens[0]] -= remaining;
+            claimInfoMap[to].balances[tokens[0]] += remaining;
+            remaining = 0;
+        }
+        console.log("checkpoint 2");
+        console.log("remaining1", remaining);
+        // Second token index
+
+        console.log("secondBalance:", secondBalance);
+        if (remaining > secondBalance) {
+            remaining -= secondBalance;
+            claimInfoMap[to].balances[tokens[1]] += secondBalance;
+            claimInfoMap[from].balances[tokens[1]] = 0;
+        } else {
+            claimInfoMap[from].balances[tokens[1]] -= remaining;
+            claimInfoMap[to].balances[tokens[1]] += remaining;
+            remaining = 0;
+        }
+        console.log("checkpoint 3");
+        // Third token index
+        console.log("remaining2", remaining);
+
+        if (remaining > thirdBalance) {
+            remaining -= thirdBalance;
+            claimInfoMap[to].balances[tokens[2]] += thirdBalance;
+            claimInfoMap[from].balances[tokens[2]] = 0;
+        } else {
+            claimInfoMap[from].balances[tokens[2]] -= remaining;
+            claimInfoMap[to].balances[tokens[2]] += remaining;
+            remaining = 0;
+        }
+
+        console.log("checkpoint 4");
+        // Fourth token index
+        // Since totalbalance is assumed to be more than value, we don't need to check it on the last token
+        console.log("remaining3", remaining);
+        if (remaining > 0) {
+            console.log("checkpoint 4.5");
+            claimInfoMap[from].balances[tokens[3]] -= remaining;
+            console.log("checkpoint 5");
+            claimInfoMap[to].balances[tokens[3]] += remaining;
+            console.log("checkpoint 6");
+            remaining = 0;
         }
         _;
     }
@@ -222,6 +309,8 @@ contract MatrixUno is ERC4626 {
         }
         /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint transferFromAmount;
+        /** amount of stablecoin deposited, with 18 decimals */
+        uint amountStaked;
         // Using Curve's virtual price
         int128 conversionRate = viewStakeConversionRate();
         //console.log("balanceOf:", balanceOf(address(this)));
@@ -235,8 +324,10 @@ contract MatrixUno is ERC4626 {
         } else {
             transferFromAmount = amount;
             if (token > 0) {
+                amountStaked = amount * 1e12;
                 transferAmount = conversionRate.mulu(amount * 1e12);
             } else {
+                amountStaked = amount;
                 transferAmount = conversionRate.mulu(amount);
             }
         }
@@ -250,7 +341,7 @@ contract MatrixUno is ERC4626 {
         // Calling `claim`
         claim(msg.sender, token, minimumPercentage);
         // Increment balance and `totalStaked` on `stake()`
-        claimInfoMap[msg.sender].balances[token] += transferFromAmount;
+        claimInfoMap[msg.sender].balances[token] += amountStaked;
         claimInfoMap[msg.sender].balances[4] += transferAmount;
         if (token > 0) {
             totalStaked += transferFromAmount * 1e12;
@@ -260,7 +351,7 @@ contract MatrixUno is ERC4626 {
         // console.log("transferAmount:", transferAmount);
         // console.log(balanceOf(address(this)));
         // console.log("msg.sender:", msg.sender);
-        this.transfer(msg.sender, transferAmount);
+        _transfer(address(this), msg.sender, transferAmount);
         //console.log("transferred");
         // return shares
         emit Stake(transferFromAmount, msg.sender);
@@ -292,30 +383,32 @@ contract MatrixUno is ERC4626 {
             revert MatrixUno__InvalidTokenId(token);
         }
         // grab the xUNO from the user
-        this.transferFrom(msg.sender, address(this), amount);
+        //_transferFrom(msg.sender, address(this), amount);
+        _spendAllowance(msg.sender, address(this), amount);
+        _transfer(msg.sender, address(this), amount);
         console.log("unstake checkpoint 1");
         // calculate rewards owed to user
         claim(msg.sender, token, minimumPercentage);
         console.log("unstake checkpoint 2");
         // swap STBT into stable and send to user
-        uint adjustedAmount;
-        if (token > 0) {
-            adjustedAmount = amount / 1e12;
-        } else {
-            adjustedAmount = amount;
-        }
+        uint adjustedAmount = amount;
+        // if (token > 0) {
+        //     adjustedAmount = amount / 1e12;
+        // } else {
+        //     adjustedAmount = amount;
+        // }
         // since user is unstaking, send rewards plus the balance
         console.log("unstake checkpoint 3");
         console.log("amount:", adjustedAmount);
         console.log("transferAmount:", adjustedAmount);
         console.log("usdcBalance:", usdc.balanceOf(address(this)));
         console.log("currentPeriod:", rewardInfoArray.length - 1);
-        // updating global variables
         uint initialVaultBalance = claimInfoMap[msg.sender].balances[token];
         int128 conversionRate = viewUnstakeConversionRate();
         adjustedAmount = conversionRate.mulu(adjustedAmount);
         console.log("initialVaultBalance:", initialVaultBalance);
         console.log("adjustedAmount:", adjustedAmount);
+        // updating global variables
         // temporary fix to the adjustedAmount being slightly larger than user balance
         // right now the math is probably causing this due to rounding or something
         if (adjustedAmount > initialVaultBalance) {
@@ -327,12 +420,11 @@ contract MatrixUno is ERC4626 {
         }
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         claimInfoMap[msg.sender].balances[4] -= amount;
+        totalStaked -= adjustedAmount;
         if (token > 0) {
-            totalStaked -= adjustedAmount * 1e12;
-        } else {
-            totalStaked -= adjustedAmount;
+            adjustedAmount /= 1e12;
         }
-        IERC20(stables[token]).transfer(msg.sender, initialVaultBalance);
+        IERC20(stables[token]).transfer(msg.sender, adjustedAmount);
         console.log("unstake checkpoint 7");
         // return total amount of stable received
         emit Unstake(initialVaultBalance, msg.sender);
@@ -410,6 +502,21 @@ contract MatrixUno is ERC4626 {
         unaccountedRewards = 0;
     }
 
+    /**@notice allows users to specify their preferred spending tokens
+     *@dev the tokens will be prioritized for spending starting at lowest `tokens` index
+     *@dev this means that if tokens[0] == 0, (corresponds to DAI), the users DAI will be spent first if the user transfers xUNO */
+    function setSpendingTokens(uint8[4] memory tokens) public {
+        if (hasDuplicates(tokens)) {
+            revert MatrixUno__NoDuplicates();
+        }
+        if (tokens[0] > 3 || tokens[1] > 3 || tokens[2] > 3 || tokens[3] > 3) {
+            revert MatrixUno__InvalidTokenId(0);
+        }
+        claimInfoMap[msg.sender].spendingOrder = tokens;
+    }
+
+    // ERC-4626 functions
+
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
      *@dev See {IERC4626-deposit}. */
     function deposit(
@@ -452,6 +559,66 @@ contract MatrixUno is ERC4626 {
         return assets;
     }
 
+    // ERC-20 functions
+
+    /**@notice overridden ERC-20 transfer function to include `updatesBalance` modifier */
+    function transfer(
+        address to,
+        uint256 value
+    )
+        public
+        virtual
+        override
+        updatesBalance(msg.sender, to, value)
+        returns (bool)
+    {
+        address owner = _msgSender();
+        _transfer(owner, to, value);
+        return true;
+    }
+
+    // /**@notice ERC-20 transfer but this allows you to choose the tokens you want to spend
+    //  *@dev tokens correspond to the stables and STBT, if you provide 0,1,2,3 as tokens input
+    //  * then first your DAI balance will be decremented, but if its not enough to cover the value of the transfer,
+    //  * then next your USDC balance will be decremented, then USDT and finally STBT. (DAI = 0, USDC = 1, USDT = 2, STBT = 3) */
+    // function smartTransfer(
+    //     address to,
+    //     uint256 value,
+    //     uint8[4] memory tokens
+    // ) public updatesBalance(msg.sender, to, value, tokens) returns (bool) {
+    //     address owner = _msgSender();
+    //     _transfer(owner, to, value);
+    //     return true;
+    // }
+
+    /**@notice overridden ERC-20 transferFrom function to include `updatesBalance` modifier */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) public override updatesBalance(from, to, value) returns (bool) {
+        address spender = _msgSender();
+        _spendAllowance(from, spender, value);
+        _transfer(from, to, value);
+        return true;
+    }
+
+    // /**@notice ERC-20 transferFrom but this allows you to choose the tokens you want to spend
+    //  *@dev tokens correspond to the stables and STBT, if you provide 0,1,2,3 as tokens input
+    //  * then first your DAI balance will be decremented, but if its not enough to cover the value of the transfer,
+    //  * then next your USDC balance will be decremented, then USDT and finally STBT. (DAI = 0, USDC = 1, USDT = 2, STBT = 3) */
+    // function smartTransferFrom(
+    //     address from,
+    //     address to,
+    //     uint256 value,
+    //     uint8[4] memory tokens
+    // ) public updatesBalance(from, to, value, tokens) returns (bool) {
+    //     address spender = _msgSender();
+    //     _spendAllowance(from, spender, value);
+    //     _transfer(from, to, value);
+    //     return true;
+    // }
+
     /** Admin only functions (Uno's whitelisted EOA) */
 
     /**@notice this function allows uno to set the SSIP address */
@@ -478,6 +645,10 @@ contract MatrixUno is ERC4626 {
         if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
         }
+        // emit upkeep(
+        //     (block.timestamp - lastUpkeepTime) < i_interval,
+        //     lastUpkeepTime
+        // );
         lastUpkeepTime = block.timestamp;
 
         // Most important task performUpkeep does is to set the rewardInfo for the week
@@ -574,7 +745,7 @@ contract MatrixUno is ERC4626 {
         //returns (uint actualReceived) {
         console.log("try reached");
         console.log("actual:", actualReceived);
-        emit actual(actualReceived);
+        // emit actual(actualReceived);
         return actualReceived;
         //} catch {
         //    revert MatrixUno__StableSwapFailed();
@@ -748,29 +919,42 @@ contract MatrixUno is ERC4626 {
         return rewardInfoArray[week];
     }
 
-    /**@notice this function lets you view the stablecoin balances of users
+    /**@notice this function lets you view the balances of users
+     *@dev DAI = 0, USDC = 1, USDT = 2, STBT = 3, xUNO = 4
      *@param user the owner of the balance you are viewing
-     *@param token is the tokenId of the stablecoin you want to view  */
-    function viewStakedBalance(
+     *@param token is the tokenId of the token you want to view  */
+    function viewBalance(
         address user,
         uint8 token
     ) public view returns (uint256 balance) {
+        if (token > 4) {
+            revert MatrixUno__InvalidTokenId(token);
+        }
         balance = claimInfoMap[user].balances[token];
     }
 
     /**@notice this function returns the total amount of stablecoins a user has deposited
      *@param user the owner of the balance you are viewing */
-    function viewTotalStakedBalance(
+    function viewTotalStableBalance(
         address user
     ) public view returns (uint totalUserStaked) {
-        uint daiBalance = viewStakedBalance(user, 0);
-        uint usdcBalance = viewStakedBalance(user, 1);
-        uint usdtBalance = viewStakedBalance(user, 2);
+        uint daiBalance = viewBalance(user, 0);
+        uint usdcBalance = viewBalance(user, 1);
+        uint usdtBalance = viewBalance(user, 2);
         // Add 12 zeros to USDC and USDT because they only have 6 decimals
         totalUserStaked =
             daiBalance +
             (usdcBalance * 1e12) +
             (usdtBalance * 1e12);
+    }
+
+    /**@notice this function returns the total amount of stablecoins + STBT a user has deposited */
+    function viewTotalBalance(
+        address addr
+    ) public view returns (uint totalBalance) {
+        uint totalStable = viewTotalStableBalance(addr);
+        uint totalStbt = viewBalance(addr, 3);
+        return totalStable + totalStbt;
     }
 
     /**@notice returns the last week a user has claimed
@@ -865,5 +1049,18 @@ contract MatrixUno is ERC4626 {
     {
         conversionRate = pool.get_virtual_price().divu(uint256(1e18));
         console.log("unstake rate:", uint128(conversionRate));
+    }
+
+    /**@notice returns if the array contains duplicate numbers */
+    function hasDuplicates(uint8[4] memory arr) public pure returns (bool) {
+        uint256 length = arr.length;
+        for (uint256 i = 0; i < length - 1; i++) {
+            for (uint256 j = i + 1; j < length; j++) {
+                if (arr[i] == arr[j]) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

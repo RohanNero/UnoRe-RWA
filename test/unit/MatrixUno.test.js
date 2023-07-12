@@ -274,10 +274,7 @@ describe.only("MatrixUno Unit Tests", function () {
             //console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
           })
           it("updates the user's balance for the staked stablecoin", async function () {
-            const vaultBalance = await vault.viewStakedBalance(
-              whale._address,
-              1
-            )
+            const vaultBalance = await vault.viewBalance(whale._address, 1)
             const totalClaimed = await vault.viewTotalClaimed()
             //console.log("whale usdc balance:", vaultBalance.toString())
             //console.log("total claimed:", totalClaimed.toString())
@@ -336,6 +333,43 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("finalWeek:", finalWeek.toString())
             console.log("finalInfo:", finalInfo.toString())
             console.log("nextWeekInfo:", nextWeekInfo.toString())
+          })
+        })
+        describe("transfer", function () {
+          it("should update user balances correctly", async function () {
+            const ten = ethers.utils.parseUnits("10", 18)
+            const initialBal = await vault.viewBalance(whale._address, 1)
+            const initialRBal = await vault.viewBalance(sWhale._address, 1)
+            console.log("initialRBal:", initialRBal.toString())
+            console.log("intialBal:", initialBal.toString())
+            await vault.connect(whale).transfer(sWhale._address, ten)
+            const updatedBal = await vault.viewBalance(whale._address, 1)
+            const updatedRBal = await vault.viewBalance(sWhale._address, 1)
+            console.log("updatedRBal:", updatedRBal.toString())
+            console.log("updatedBal:", updatedBal.toString())
+            // await vault.connect(sWhale).transfer(whale.address, ten)
+            // const finalBal = await vault.viewBalance(whale.address, 1)
+            // const finalRBal = await vault.viewBalance(sWhale.address, 1)
+            // console.log("finalRBal:", finalRBal.toString())
+            // console.log("finalBal:", finalBal.toString())
+          })
+        })
+        describe("transferFrom", function () {
+          it("should update user balances correctly", async function () {
+            const ten = ethers.utils.parseUnits("10", 18)
+            const initialBal = await vault.viewBalance(whale._address, 1)
+            const initialRBal = await vault.viewBalance(sWhale._address, 1)
+            console.log("initialRBal:", initialRBal.toString())
+            console.log("intialBal:", initialBal.toString())
+            await vault.connect(sWhale).approve(whale._address, ten)
+            console.log("approved")
+            await vault
+              .connect(whale)
+              .transferFrom(sWhale._address, whale._address, ten)
+            const updatedBal = await vault.viewBalance(whale._address, 1)
+            const updatedRBal = await vault.viewBalance(sWhale._address, 1)
+            console.log("updatedRBal:", updatedRBal.toString())
+            console.log("updatedBal:", updatedBal.toString())
           })
         })
 
@@ -410,16 +444,16 @@ describe.only("MatrixUno Unit Tests", function () {
             assert.isTrue(999999999999999999999 >= value[0])
           })
         })
-        describe("viewStakedBalance", function () {
+        describe("viewBalance", function () {
           it("view the stablecoin balances of users", async function () {
-            const value = await vault.viewStakedBalance(whale._address, 1)
-            assert.equal(value, 5e10)
+            const value = await vault.viewBalance(whale._address, 1)
+            assert.equal(value, 5e22)
           })
         })
         describe("viewTotalStakedBalance", function () {
           it("view total amount a user has staked", async function () {
-            const value = await vault.viewStakedBalance(whale._address, 1)
-            assert.equal(value, 5e10)
+            const value = await vault.viewBalance(whale._address, 1)
+            assert.equal(value, 5e22)
           })
         })
         describe("viewLastClaimed", function () {
@@ -534,10 +568,7 @@ describe.only("MatrixUno Unit Tests", function () {
               initialVaultAllowance.toString()
             )
             console.log("rewards:", rewards.toString())
-            const whaleBalance = await vault.viewStakedBalance(
-              whale._address,
-              1
-            )
+            const whaleBalance = await vault.viewBalance(whale._address, 1)
             const whaleShares = await vault.balanceOf(whale._address)
             console.log("whaleShares:", whaleShares.toString())
             const totalClaimed = await vault.viewTotalClaimed()
@@ -569,7 +600,7 @@ describe.only("MatrixUno Unit Tests", function () {
             // mock rewards sent, now time to test claiming to see if rewards are calculated correctly
             const finalVaultShares = await vault.balanceOf(vault.address)
             const finalVaultAssets = await stbt.balanceOf(vault.address)
-            const finalWhaleVaultBalance = await vault.viewStakedBalance(
+            const finalWhaleVaultBalance = await vault.viewBalance(
               whale._address,
               1
             )
