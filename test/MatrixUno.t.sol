@@ -9,7 +9,7 @@ import "../src/mocks/MockSanctionsList.sol";
 import "../src/mocks/MockUSDT.sol";
 import "../src/mocks/MockDAI.sol";
 import "../src/mocks/MockUSDC.sol";
-import "../src/mocks/MockUno.sol";
+import "../src/mocks/MockUNO.sol";
 
 contract CounterTest is Test {
     MatrixUno public matrixUno;
