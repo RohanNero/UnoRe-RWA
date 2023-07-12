@@ -152,7 +152,7 @@ contract MatrixUno is ERC4626 {
     /**@notice used for testing, remove after done testing. */
     // event transferInfo(uint _amount, uint _receive);
     // event actual(uint actualRec);
-    // event upkeep(bool needed, uint lastUpkeep);
+    event Upkeep(bool needed, uint lastUpkeep);
 
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
@@ -190,7 +190,6 @@ contract MatrixUno is ERC4626 {
         uint thirdBalance = viewBalance(from, tokens[2]);
         console.log("remaining0", remaining);
         // First token index
-
         if (remaining > firstBalance) {
             remaining -= firstBalance;
             claimInfoMap[to].balances[tokens[0]] += firstBalance;
@@ -203,7 +202,6 @@ contract MatrixUno is ERC4626 {
         console.log("checkpoint 2");
         console.log("remaining1", remaining);
         // Second token index
-
         console.log("secondBalance:", secondBalance);
         if (remaining > secondBalance) {
             remaining -= secondBalance;
@@ -217,7 +215,6 @@ contract MatrixUno is ERC4626 {
         console.log("checkpoint 3");
         // Third token index
         console.log("remaining2", remaining);
-
         if (remaining > thirdBalance) {
             remaining -= thirdBalance;
             claimInfoMap[to].balances[tokens[2]] += thirdBalance;
@@ -227,7 +224,6 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[2]] += remaining;
             remaining = 0;
         }
-
         console.log("checkpoint 4");
         // Fourth token index
         // Since totalbalance is assumed to be more than value, we don't need to check it on the last token
@@ -577,20 +573,6 @@ contract MatrixUno is ERC4626 {
         return true;
     }
 
-    // /**@notice ERC-20 transfer but this allows you to choose the tokens you want to spend
-    //  *@dev tokens correspond to the stables and STBT, if you provide 0,1,2,3 as tokens input
-    //  * then first your DAI balance will be decremented, but if its not enough to cover the value of the transfer,
-    //  * then next your USDC balance will be decremented, then USDT and finally STBT. (DAI = 0, USDC = 1, USDT = 2, STBT = 3) */
-    // function smartTransfer(
-    //     address to,
-    //     uint256 value,
-    //     uint8[4] memory tokens
-    // ) public updatesBalance(msg.sender, to, value, tokens) returns (bool) {
-    //     address owner = _msgSender();
-    //     _transfer(owner, to, value);
-    //     return true;
-    // }
-
     /**@notice overridden ERC-20 transferFrom function to include `updatesBalance` modifier */
     function transferFrom(
         address from,
@@ -602,22 +584,6 @@ contract MatrixUno is ERC4626 {
         _transfer(from, to, value);
         return true;
     }
-
-    // /**@notice ERC-20 transferFrom but this allows you to choose the tokens you want to spend
-    //  *@dev tokens correspond to the stables and STBT, if you provide 0,1,2,3 as tokens input
-    //  * then first your DAI balance will be decremented, but if its not enough to cover the value of the transfer,
-    //  * then next your USDC balance will be decremented, then USDT and finally STBT. (DAI = 0, USDC = 1, USDT = 2, STBT = 3) */
-    // function smartTransferFrom(
-    //     address from,
-    //     address to,
-    //     uint256 value,
-    //     uint8[4] memory tokens
-    // ) public updatesBalance(from, to, value, tokens) returns (bool) {
-    //     address spender = _msgSender();
-    //     _spendAllowance(from, spender, value);
-    //     _transfer(from, to, value);
-    //     return true;
-    // }
 
     /** Admin only functions (Uno's whitelisted EOA) */
 
@@ -645,10 +611,10 @@ contract MatrixUno is ERC4626 {
         if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
         }
-        // emit upkeep(
-        //     (block.timestamp - lastUpkeepTime) < i_interval,
-        //     lastUpkeepTime
-        // );
+        emit Upkeep(
+            (block.timestamp - lastUpkeepTime) < i_interval,
+            lastUpkeepTime
+        );
         lastUpkeepTime = block.timestamp;
 
         // Most important task performUpkeep does is to set the rewardInfo for the week
