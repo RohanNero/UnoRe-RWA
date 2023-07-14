@@ -8,14 +8,6 @@ These are designs for new UNO RE staking pools that allow users to invest in rea
 
 This vault set up involves MatrixPort's STBT token, this token is pegged to $1 and earns the holders yield from US Treasury Bills. Users may hold the shares token, **xUNO**, for these yields alone, or they may also stake into an Uno Re SSIP for additional yield!
 
-### Notes
-
-The POC vault logic is lacking a lot of the functionality present in the revised MatrixUno vault. Some of the functionality added in the new and improved vault contract is:
-
-1. Functioning reward calculation formula that accounts for withdrawals, claims and additional STBT deposits.
-2. Implemented Chainlink Automation so that values in the contract are always updated and ready to be used.
-3. Integrated Chainalysis's `SanctionsList` contract to screen addresses prior to staking stablecoins.
-
 ### Overview
 
 The MatrixUno integration involves using a customized ERC-4626 as well as interacting with Curve finance's Vyper smart contracts.
@@ -29,8 +21,6 @@ The modifications to the vault logic involves:
 3. `_swap()` handles exchanging STBT for stablecoins with the Curve STBT/3CRV pool
 
 4. `_claim()`handles calculating the amount of rewards to send to each user
-
-5. `checkUpkeep()` and `performUpkeep()` are functions called by Chainlink to update variables for reward calculation
 
 The Curve Finance STBT/3CRV pool is used to exchange STBT rewards into stablecoins before being transferred to the user. We call the function `exchange_underlying()` after approving the pool to take our STBT; the pool sends back stablecoins.
 
@@ -70,26 +60,9 @@ The first thing you must do to test the MatrixUno flow is put your mainnet RPC_U
 
     `FORKING_URL=https://eth-mainnet.g.alchemy.com/v2/<YOUR_KEY>`
 
-#### Mainnet Fork POC
-
-Now we can start a mainnet fork on your local hardhat blockchain
-
-    `yarn hardhat node --tags poc`
-
-After the fork has started running, and your vault contract has been deployed, you're ready to run the fork tests
-
-    `yarn hardhat test --network localhost`
-
-If all 17 `stake()` and `claim()` tests pass, then everything is working as expected! These tests showcase staking an amount of stablecoin,
-and then unstaking the stablecoin to get your initial tokens back plus any earned rewards.
-
 #### Goerli testnet
 
-Testing on Goerli has many key differences from how the forked tests are performed, however the overall flow remains the same. To begin testing on Goerli, you first must deploy a `MockCurvePool` contract that acts as our STBT/3CRV pool to swap STBT for stablecoins.
-
-`yarn hardhat deploy --network goerli --tags curve`
-
-Once the Mock Curve Pool contract is deployed, take the contract address and paste it into the `poolAddress` variable under the Goerli Network Config section of the `helper-hardhat-config.js` file. Once the newly deployed mock pool address is in the helper config file, you can deploy the actual `MatrixUno` vault.
+Testing on Goerli has many key differences from how the forked tests are performed, however the overall flow remains the same.
 
 `yarn hardhat deploy --network goerli --tags matrixUno`
 
