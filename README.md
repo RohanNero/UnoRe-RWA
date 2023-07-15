@@ -56,7 +56,7 @@ Currently there are two seperate test flows being used, one on an Ethereum Mainn
 
 The first thing you must do to test the MatrixUno flow is put your mainnet RPC_URL in the .env file like shown in the `.env.example`
 
-    `FORKING_URL=https://eth-mainnet.g.alchemy.com/v2/<YOUR_KEY>`
+`FORKING_URL=https://eth-mainnet.g.alchemy.com/v2/<YOUR_KEY>`
 
 #### Goerli testnet
 
