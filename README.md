@@ -33,11 +33,11 @@ By staking to the vault you earn these native `STBT` yields proportional to the 
 **where**:
 
 - r = rewards to send to the user
-- c = the current week index, starting from the contract's deployment
+- c = the current reward period index, starting from the contract's deployment
 - u = total amount of stablecoins the user staked
-- l = the lastClaim week or last time the user claimed their rewards
-- Ia = array of rewards the vault earned each week
-- Ib = array of underlying vault STBT balances each week
+- l = the lastClaim reward period or last time the user claimed their rewards
+- Ia = array of rewards the vault earned each reward period
+- Ib = array of underlying vault STBT balances each reward period
 - x = an integer starting at 0
 
 The `stake()` flow is pretty straightforward and follows the steps outlined in this diagram
@@ -75,8 +75,6 @@ This will whitelist your contract and also transfer 1 million mock USDC to it. A
 If you see `false` console logged in the terminal, run the test command again. Sometimes the variables take longer than one block confirmation to get updated.
 
 #### Example contracts deployed on Goerli:
-
-#### Main
 
 - MatrixUno Vault [0x96bdcE69A3646Ef2d322444561c1870390c1E733](https://goerli.etherscan.io/address/0x96bdcE69A3646Ef2d322444561c1870390c1E733)
 
