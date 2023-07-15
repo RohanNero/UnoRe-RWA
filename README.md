@@ -50,8 +50,6 @@ The `unstake()` flow is a little more complex involving an extra step to convert
 
 ### Testing
 
-**Note:** You can only test either the production vault or the POC vault on mainnet fork at one time, meaning when you run `yarn hardhat node`, you must pass `--tags matrixUno` or `--tags poc`. This is because if the contract address isnt the default first hardhat node address, it won't match the data payload we send to the STBT Moderator to update our permissions. By default the `MatrixUnoPOC.test.js` unit tests have `.only` set to ensure they are the only unit tests that get called, to change this, move the `.only` from the `describe` _(line 19)_ and put it on the `MatrixUno.test.js` `describe` _(also line 19)_ instead.
-
 Currently there are two seperate test flows being used, one on an Ethereum Mainnet Fork, and the other on Ethereum's Goerli testnet
 
 #### Begin testing Matrix - Uno Re flow
@@ -78,49 +76,27 @@ If you see `false` console logged in the terminal, run the test command again. S
 
 #### Example contracts deployed on Goerli:
 
-#### POC
-
-- MatrixUno Vault [0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70](https://goerli.etherscan.io/address/0xE2832569155A3D874a7D1b4DAD4dE5ba4116db70)
-
-- Mock Curve Pool [0xC185462cDa787E00707b3E234e4763538fA15E8d](https://goerli.etherscan.io/address/0xC185462cDa787E00707b3E234e4763538fA15E8d)
-
 #### Main
 
-- MatrixUno Vault [0xd1E00a2e807392a5cD4De59F02214F2e9E182070](https://goerli.etherscan.io/address/0xd1E00a2e807392a5cD4De59F02214F2e9E182070)
+- MatrixUno Vault [0x96bdcE69A3646Ef2d322444561c1870390c1E733](https://goerli.etherscan.io/address/0x96bdcE69A3646Ef2d322444561c1870390c1E733)
 
 - Mock Curve Pool [0xA861038315c29987CE16F315dE6fCb099C115d68](https://goerli.etherscan.io/address/0xA861038315c29987CE16F315dE6fCb099C115d68#code)
 
 ### Current Developer Quickstart
 
-#### POC
-
-`yarn hardhat node --tags poc`
+`yarn hardhat node --tags matrixUno`
 
 `yarn hardhat test --network localhost`
 
-#### Main
-
-`yarn hardhat node --tags matrixUno`
-
-`yarn hardhat node --network localhost`
-
 ### External Resources
 
-1. **Chainlink Automation** is used to update variables for reward calculation at a constant time interval
+1. **MatrixPort's STBT** is an ERC-20 that earns yield from short-term US treasury bills
 2. **Open Zeppelin ERC-4626** is their take on the vault standard EIP that introduces the `asset` and `shares` token structure
 3. **ABDK Math Library** is a math library that allows for precise calculations using fractions, decimals, or percentages
 4. **Chainalysis Sanctions List** is a contract that maintains a list of sanctioned addresses so that anyone can screen users before interacting with a function
-5. **Curve Finance** is a DeFi protocol that allows users to swap tokens in a permisionless manner
+5. **Curve Finance** is a DeFi protocol that allows users to swap tokens in a permisionless manner, specifically STBT for us
 
-### Maple UNO
-
-The `Hades` pool interacts with the Maple Finance RWA pools
-
-- [M11 Credit - USDC](https://app.maple.finance/#/v2/lend/pool/0xd3cd37a7299b963bbc69592e5ba933388f70dc88)
-- [Maple Pool GitHub](https://github.com/maple-labs/pool-v2)
-- [Maple lending pools](https://app.maple.finance/#/v2/lend)
-
-### Matrixdock UNO
+### Matrixdock UNO References
 
 The `Loki` pool interacts with the STBT/3CRV Curve pool
 
