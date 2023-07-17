@@ -6,6 +6,8 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 /**@notice used to interact with multiple ERC20 token contracts */
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+/**@notice used to interact with USDT since function signature differs from OZ ERC-20 */
+import "../interfaces/IUSDT.sol";
 /**@notice used when swapping STBT into stablecoins for user rewards */
 import "../Curve/interfaces/IStableSwap.sol";
 /**@notice uses to screen addresses prior to staking */
@@ -63,7 +65,7 @@ contract MatrixUno is ERC4626 {
     /**@notice The stablecoins that this contract can hold */
     IERC20 private dai;
     IERC20 private usdc;
-    IERC20 private usdt;
+    IUSDT private usdt;
 
     /**@notice used to screen users prior to being allowed to stake */
     ISanctionsList private sanctionsList;
@@ -265,7 +267,7 @@ contract MatrixUno is ERC4626 {
         stables = stablecoins;
         dai = IERC20(stables[0]);
         usdc = IERC20(stables[1]);
-        usdt = IERC20(stables[2]);
+        usdt = IUSDT(stables[2]);
         i_startingTimestamp = block.timestamp;
         lastUpkeepTime = block.timestamp;
         i_interval = interval;
@@ -313,7 +315,7 @@ contract MatrixUno is ERC4626 {
         uint amountStaked;
         // Using Curve's virtual price
         int128 conversionRate = viewStakeConversionRate();
-        //console.log("balanceOf:", balanceOf(address(this)));
+        console.log("balanceOf:", balanceOf(address(this)));
         if (this.balanceOf(address(this)) < transferAmount) {
             if (token > 0) {
                 transferFromAmount = this.balanceOf(address(this)) / 1e12;
@@ -331,13 +333,24 @@ contract MatrixUno is ERC4626 {
                 transferAmount = conversionRate.mulu(amount);
             }
         }
-        //console.log("transferFrom:", transferFromAmount);
+        console.log("transferFrom:", transferFromAmount);
+        console.log("msg.sender:", msg.sender);
+        console.log("address(this):", address(this));
         /** Actually moving the tokens and updating balance */
-        IERC20(stables[token]).transferFrom(
-            msg.sender,
-            address(this),
-            transferFromAmount
-        );
+        if (token == 2) {
+            IUSDT(stables[token]).transferFrom(
+                msg.sender,
+                address(this),
+                transferFromAmount
+            );
+        } else {
+            IERC20(stables[token]).transferFrom(
+                msg.sender,
+                address(this),
+                transferFromAmount
+            );
+        }
+        console.log("transferFrom passed");
         // Calling `claim`
         claim(msg.sender, token, minimumPercentage);
         // Increment balance and `totalStaked` on `stake()`
@@ -424,7 +437,11 @@ contract MatrixUno is ERC4626 {
         if (token > 0) {
             adjustedAmount /= 1e12;
         }
-        IERC20(stables[token]).transfer(msg.sender, adjustedAmount);
+        if (token == 2) {
+            IUSDT(stables[token]).transfer(msg.sender, adjustedAmount);
+        } else {
+            IERC20(stables[token]).transfer(msg.sender, adjustedAmount);
+        }
         console.log("unstake checkpoint 7");
         // return total amount of stable received
         emit Unstake(initialVaultBalance, msg.sender);
@@ -474,7 +491,12 @@ contract MatrixUno is ERC4626 {
             rewardInfoArray[rewardInfoArray.length - 1].claimed += totalRewards;
             uint minimumReceive = _swap(totalRewards, token, minimumPercentage);
             // send stablecoin of type `token`
-            IERC20(stables[token]).transfer(addr, minimumReceive);
+
+            if (token == 2) {
+                IUSDT(stables[token]).transfer(addr, minimumReceive);
+            } else {
+                IERC20(stables[token]).transfer(addr, minimumReceive);
+            }
         }
         // updating variables and sending STBT rewards
         if (totalSRewards > 0) {
@@ -630,8 +652,8 @@ contract MatrixUno is ERC4626 {
      *@dev returns true when one week has passed since the last `performUpkeep()` call
      */
     function checkUpkeep() external view returns (bool upkeepNeeded) {
-        console.log("lastUpkeepTime:", lastUpkeepTime);
-        console.log("difference:", block.timestamp - lastUpkeepTime);
+        // console.log("lastUpkeepTime:", lastUpkeepTime);
+        // console.log("difference:", block.timestamp - lastUpkeepTime);
         upkeepNeeded = (block.timestamp - lastUpkeepTime) >= i_interval;
     }
 
@@ -640,7 +662,7 @@ contract MatrixUno is ERC4626 {
     function performUpkeep() external {
         console.log("performUpkeep reached");
         uint length = rewardInfoArray.length;
-        console.log("length:", length);
+        //console.log("length:", length);
         // It's highly recommended to revalidate the upkeep in the performUpkeep function
         if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
@@ -658,10 +680,10 @@ contract MatrixUno is ERC4626 {
         // set `currentBalance` for the current week
         uint currentStbt = stbt.balanceOf(address(this));
         rewardInfoArray[length - 1].currentBalance = currentStbt;
-        console.log("checkpoint 0");
+        //console.log("checkpoint 0");
         rewardInfo memory currentInfo = rewardInfoArray[length - 1];
         //`rewardsPerWeek` = (`currentBalance` + `claimedPerWeek` + `withdrawn` ) - (`lastWeekBalance` + `deposited`)
-        console.log("checkpoint 1");
+        //console.log("checkpoint 1");
         console.log("currentBalance:", currentInfo.currentBalance);
         console.log("claimed:", currentInfo.claimed);
         console.log("withdrawn:", currentInfo.withdrawn);
@@ -684,7 +706,7 @@ contract MatrixUno is ERC4626 {
         }
         rewardInfoArray[length - 1].endTime = block.timestamp;
 
-        console.log("checkpoint 2");
+        //console.log("checkpoint 2");
         // push a new struct to the array with only the `previousWeekBalance`
         rewardInfoArray.push(
             rewardInfo(
@@ -699,14 +721,14 @@ contract MatrixUno is ERC4626 {
                 0
             )
         );
-        console.log("checkpoint 3");
+        //console.log("checkpoint 3");
         // increment the `unaccountedRewards` variable
         console.log("currentBalance:", currentInfo.currentBalance);
         console.log("uno deposit:", unoDepositAmount);
         console.log("rewards:", rewardInfoArray[length - 1].rewards);
         // unaccountedRewards += (rewardInfoArray[length - 1].rewards /
         //     (currentInfo.currentBalance / unoDepositAmount));
-        console.log("checkpoint 4");
+        //console.log("checkpoint 4");
         emit UpkeepPerformed(rewardInfoArray[length - 1]);
     }
 

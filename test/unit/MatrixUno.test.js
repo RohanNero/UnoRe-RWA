@@ -440,139 +440,139 @@ describe.only("MatrixUno Unit Tests", function () {
             ).to.be.revertedWithCustomError(vault, "MatrixUno__InvalidTokenId")
           })
           // The important one DAI
-          // it("transfers the dai from user to vault", async function () {
-          //   await hre.network.provider.request({
-          //     method: "hardhat_impersonateAccount",
-          //     params: [daiWhale._address],
-          //   })
-          //   const initialVaultdaiBalance = await dai.balanceOf(vault.address)
-          //   const daiBalance = await dai.balanceOf(daiWhale._address)
-          //   const daiAllowance = await dai.allowance(
-          //     daiWhale._address,
-          //     vault.address
-          //   )
-          //   const daiDeposit = ethers.utils.parseUnits("50000", 18)
-          //   console.log("daiWhale dai balance:", daiBalance.toString())
-          //   console.log("vault dai allowance:", daiAllowance.toString())
-          //   console.log(
-          //     "initial vault dai balance:",
-          //     initialVaultdaiBalance.toString()
-          //   )
-          //   //if (daiAllowance < daiDeposit) {
-          //   await dai
-          //     .connect(daiWhale)
-          //     .approve(vault.address, daiDeposit.toString())
-          //   //}
-          //   const updateddaiAllowance = await dai.allowance(
-          //     daiWhale._address,
-          //     vault.address
-          //   )
-          //   const totalClaimed = await vault.viewTotalClaimed()
-          //   console.log(
-          //     "updated dai allowance:",
-          //     updateddaiAllowance.toString()
-          //   )
-          //   console.log("total claimed:", totalClaimed.toString())
-          //   console.log((await vault.balanceOf(vault.address)).toString())
-          //   console.log("daiDeposit:", daiDeposit.toString())
-          //   //if (initialVaultdaiBalance < daiDeposit) {
-          //   const shares = await vault
-          //     .connect(daiWhale)
-          //     .stake(daiDeposit, 0, 99, { gasLimit: 300000 })
-          //   //}
-          //   //console.log("staked!")
+          it("transfers the dai from user to vault", async function () {
+            await hre.network.provider.request({
+              method: "hardhat_impersonateAccount",
+              params: [daiWhale._address],
+            })
+            const initialVaultdaiBalance = await dai.balanceOf(vault.address)
+            const daiBalance = await dai.balanceOf(daiWhale._address)
+            const daiAllowance = await dai.allowance(
+              daiWhale._address,
+              vault.address
+            )
+            const daiDeposit = ethers.utils.parseUnits("50000", 18)
+            console.log("daiWhale dai balance:", daiBalance.toString())
+            console.log("vault dai allowance:", daiAllowance.toString())
+            console.log(
+              "initial vault dai balance:",
+              initialVaultdaiBalance.toString()
+            )
+            //if (daiAllowance < daiDeposit) {
+            await dai
+              .connect(daiWhale)
+              .approve(vault.address, daiDeposit.toString())
+            //}
+            const updateddaiAllowance = await dai.allowance(
+              daiWhale._address,
+              vault.address
+            )
+            const totalClaimed = await vault.viewTotalClaimed()
+            console.log(
+              "updated dai allowance:",
+              updateddaiAllowance.toString()
+            )
+            console.log("total claimed:", totalClaimed.toString())
+            console.log((await vault.balanceOf(vault.address)).toString())
+            console.log("daiDeposit:", daiDeposit.toString())
+            //if (initialVaultdaiBalance < daiDeposit) {
+            const shares = await vault
+              .connect(daiWhale)
+              .stake(daiDeposit, 0, 99, { gasLimit: 300000 })
+            //}
+            //console.log("staked!")
 
-          //   const finalVaultdaiBalance = await dai.balanceOf(vault.address)
-          //   //console.log("final vault dai balance:", finalVaultdaiBalance.toString())
-          // })
-          // it("updates the user's balance for the staked dai", async function () {
-          //   const vaultBalance = await vault.viewBalance(daiWhale._address, 0)
-          //   const totalClaimed = await vault.viewTotalClaimed()
-          //   console.log("daiWhale dai balance:", vaultBalance.toString())
-          //   console.log("total claimed:", totalClaimed.toString())
-          //   // eventually need to make > into = since unstake should be working properly
-          //   assert.isTrue(vaultBalance >= 50000000000 || totalClaimed > 0)
-          // })
-          // it("transfers xUNO to the user", async function () {
-          //   const daiWhalexUnoBalance = await vault.balanceOf(daiWhale._address)
-          //   const vaultxUnoBalance = await vault.balanceOf(vault.address)
-          //   const vaultSymbol = await vault.symbol()
-          //   const sliceddaiWhaleBalance = daiWhalexUnoBalance
-          //     .toString()
-          //     .slice(0, -18)
-          //   const totalClaimed = await vault.viewTotalClaimed()
-          //   console.log(
-          //     "daiWhale xUNO balance:",
-          //     daiWhalexUnoBalance.toString()
-          //   )
-          //   console.log("vault xUNO balance:", vaultxUnoBalance.toString())
-          //   console.log("vault shares symbol:", vaultSymbol.toString())
-          //   console.log("total claimed:", totalClaimed.toString())
-          //   assert.isTrue(sliceddaiWhaleBalance > 1000 || totalClaimed > 0)
-          // })
-          // // The important one USDC
-          // it("transfers the usdc from user to vault", async function () {
-          //   const initialVaultUsdcBalance = await usdc.balanceOf(vault.address)
-          //   const usdcBalance = await usdc.balanceOf(usdcWhale._address)
-          //   const usdcAllowance = await usdc.allowance(
-          //     usdcWhale._address,
-          //     vault.address
-          //   )
-          //   const usdcDeposit = 50000 * 1e6
-          //   // console.log("whale usdc balance:", usdcBalance.toString())
-          //   // console.log("vault usdc allowance:", usdcAllowance.toString())
-          //   // console.log(
-          //   //   "initial vault usdc balance:",
-          //   //   initialVaultUsdcBalance.toString()
-          //   // )
-          //   //if (usdcAllowance < usdcDeposit) {
-          //   await usdc
-          //     .connect(usdcWhale)
-          //     .approve(vault.address, usdcDeposit.toString())
-          //   //}
-          //   const updatedUsdcAllowance = await usdc.allowance(
-          //     usdcWhale._address,
-          //     vault.address
-          //   )
-          //   const totalClaimed = await vault.viewTotalClaimed()
-          //   // console.log("updated usdc allowance:", updatedUsdcAllowance.toString())
-          //   // console.log("total claimed:", totalClaimed.toString())
-          //   // console.log((await vault.balanceOf(vault.address)).toString())
-          //   // console.log("usdcDeposit:",usdcDeposit.toString())
-          //   //if (initialVaultUsdcBalance < usdcDeposit) {
-          //   const shares = await vault
-          //     .connect(usdcWhale)
-          //     .stake(usdcDeposit, 1, 99, { gasLimit: 300000 })
-          //   //}
-          //   //console.log("staked!")
+            const finalVaultdaiBalance = await dai.balanceOf(vault.address)
+            //console.log("final vault dai balance:", finalVaultdaiBalance.toString())
+          })
+          it("updates the user's balance for the staked dai", async function () {
+            const vaultBalance = await vault.viewBalance(daiWhale._address, 0)
+            const totalClaimed = await vault.viewTotalClaimed()
+            console.log("daiWhale dai balance:", vaultBalance.toString())
+            console.log("total claimed:", totalClaimed.toString())
+            // eventually need to make > into = since unstake should be working properly
+            assert.isTrue(vaultBalance >= 50000000000 || totalClaimed > 0)
+          })
+          it("transfers xUNO to the user", async function () {
+            const daiWhalexUnoBalance = await vault.balanceOf(daiWhale._address)
+            const vaultxUnoBalance = await vault.balanceOf(vault.address)
+            const vaultSymbol = await vault.symbol()
+            const sliceddaiWhaleBalance = daiWhalexUnoBalance
+              .toString()
+              .slice(0, -18)
+            const totalClaimed = await vault.viewTotalClaimed()
+            console.log(
+              "daiWhale xUNO balance:",
+              daiWhalexUnoBalance.toString()
+            )
+            console.log("vault xUNO balance:", vaultxUnoBalance.toString())
+            console.log("vault shares symbol:", vaultSymbol.toString())
+            console.log("total claimed:", totalClaimed.toString())
+            assert.isTrue(sliceddaiWhaleBalance > 1000 || totalClaimed > 0)
+          })
+          // The important one USDC
+          it("transfers the usdc from user to vault", async function () {
+            const initialVaultUsdcBalance = await usdc.balanceOf(vault.address)
+            const usdcBalance = await usdc.balanceOf(usdcWhale._address)
+            const usdcAllowance = await usdc.allowance(
+              usdcWhale._address,
+              vault.address
+            )
+            const usdcDeposit = 50000 * 1e6
+            // console.log("whale usdc balance:", usdcBalance.toString())
+            // console.log("vault usdc allowance:", usdcAllowance.toString())
+            // console.log(
+            //   "initial vault usdc balance:",
+            //   initialVaultUsdcBalance.toString()
+            // )
+            //if (usdcAllowance < usdcDeposit) {
+            await usdc
+              .connect(usdcWhale)
+              .approve(vault.address, usdcDeposit.toString())
+            //}
+            const updatedUsdcAllowance = await usdc.allowance(
+              usdcWhale._address,
+              vault.address
+            )
+            const totalClaimed = await vault.viewTotalClaimed()
+            // console.log("updated usdc allowance:", updatedUsdcAllowance.toString())
+            // console.log("total claimed:", totalClaimed.toString())
+            // console.log((await vault.balanceOf(vault.address)).toString())
+            // console.log("usdcDeposit:",usdcDeposit.toString())
+            //if (initialVaultUsdcBalance < usdcDeposit) {
+            const shares = await vault
+              .connect(usdcWhale)
+              .stake(usdcDeposit, 1, 99, { gasLimit: 300000 })
+            //}
+            //console.log("staked!")
 
-          //   const finalVaultUsdcBalance = await usdc.balanceOf(vault.address)
-          //   //console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
-          // })
-          // it("updates the user's balance for the staked usdc", async function () {
-          //   const vaultBalance = await vault.viewBalance(usdcWhale._address, 1)
-          //   const totalClaimed = await vault.viewTotalClaimed()
-          //   //console.log("whale usdc balance:", vaultBalance.toString())
-          //   //console.log("total claimed:", totalClaimed.toString())
-          //   // eventually need to make > into = since unstake should be working properly
-          //   assert.isTrue(vaultBalance >= 50000000000 || totalClaimed > 0)
-          // })
-          // it("transfers xUNO to the user", async function () {
-          //   const usdcWhalexUnoBalance = await vault.balanceOf(
-          //     usdcWhale._address
-          //   )
-          //   const vaultxUnoBalance = await vault.balanceOf(vault.address)
-          //   const vaultSymbol = await vault.symbol()
-          //   const slicedWhaleBalance = usdcWhalexUnoBalance
-          //     .toString()
-          //     .slice(0, -18)
-          //   const totalClaimed = await vault.viewTotalClaimed()
-          //   console.log("whale xUNO balance:", usdcWhalexUnoBalance.toString())
-          //   console.log("vault xUNO balance:", vaultxUnoBalance.toString())
-          //   console.log("vault shares symbol:", vaultSymbol.toString())
-          //   console.log("total claimed:", totalClaimed.toString())
-          //   assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
-          // })
+            const finalVaultUsdcBalance = await usdc.balanceOf(vault.address)
+            //console.log("final vault usdc balance:", finalVaultUsdcBalance.toString())
+          })
+          it("updates the user's balance for the staked usdc", async function () {
+            const vaultBalance = await vault.viewBalance(usdcWhale._address, 1)
+            const totalClaimed = await vault.viewTotalClaimed()
+            //console.log("whale usdc balance:", vaultBalance.toString())
+            //console.log("total claimed:", totalClaimed.toString())
+            // eventually need to make > into = since unstake should be working properly
+            assert.isTrue(vaultBalance >= 50000000000 || totalClaimed > 0)
+          })
+          it("transfers xUNO to the user", async function () {
+            const usdcWhalexUnoBalance = await vault.balanceOf(
+              usdcWhale._address
+            )
+            const vaultxUnoBalance = await vault.balanceOf(vault.address)
+            const vaultSymbol = await vault.symbol()
+            const slicedWhaleBalance = usdcWhalexUnoBalance
+              .toString()
+              .slice(0, -18)
+            const totalClaimed = await vault.viewTotalClaimed()
+            console.log("whale xUNO balance:", usdcWhalexUnoBalance.toString())
+            console.log("vault xUNO balance:", vaultxUnoBalance.toString())
+            console.log("vault shares symbol:", vaultSymbol.toString())
+            console.log("total claimed:", totalClaimed.toString())
+            assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
+          })
           // The important one USDT
           it("transfers the usdt from user to vault", async function () {
             await hre.network.provider.request({
@@ -642,16 +642,16 @@ describe.only("MatrixUno Unit Tests", function () {
               .toString()
               .slice(0, -18)
             const totalClaimed = await vault.viewTotalClaimed()
-            // console.log("whale xUNO balance:", usdcWhalexUnoBalance.toString())
-            // console.log("vault xUNO balance:", vaultxUnoBalance.toString())
-            // console.log("vault shares symbol:", vaultSymbol.toString())
-            // console.log("total claimed:", totalClaimed.toString())
+            console.log("whale xUNO balance:", usdcWhalexUnoBalance.toString())
+            console.log("vault xUNO balance:", vaultxUnoBalance.toString())
+            console.log("vault shares symbol:", vaultSymbol.toString())
+            console.log("total claimed:", totalClaimed.toString())
             assert.isTrue(slicedWhaleBalance > 1000 || totalClaimed > 0)
           })
           // come back to this test later
           // it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
         })
-        describe("performUpkeep", function () {
+        describe.only("performUpkeep", function () {
           it("MOCK SENDING REWARDS", async function () {
             const initialVaultAssets = await stbt.balanceOf(vault.address)
             const thousandStbt = ethers.utils.parseUnits("1000", 18)
@@ -979,7 +979,7 @@ describe.only("MatrixUno Unit Tests", function () {
         //   // it("vault transfers stablecoin to user", async function () {})
         //   // it("emits the `stablesClaimed` event", async function () {})
         // })
-        describe("unstake", function () {
+        describe.only("unstake", function () {
           it("reverts if `amount` input is zero", async function () {
             await expect(
               vault.connect(usdcWhale).unstake(0, 1, 99, { gasLimit: 300000 })

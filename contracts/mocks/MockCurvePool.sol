@@ -3,6 +3,7 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IUSDT.sol";
 
 /**@title Mock Curve STBT/3CRV Pool
  *@author Rohan Nero
@@ -17,7 +18,7 @@ contract MockCurvePool {
     IERC20 private usdc = IERC20(0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f);
 
     /**@notice Goerli USDT contract */
-    IERC20 private usdt = IERC20(0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108);
+    IUSDT private usdt = IUSDT(0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108);
 
     /**@notice Goerli DAI contract */
     IERC20 private dai = IERC20(0x3Df6dB83F269B9017a68e39f0AE4be6e0a052003);
