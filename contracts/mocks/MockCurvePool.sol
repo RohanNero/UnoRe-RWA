@@ -18,10 +18,10 @@ contract MockCurvePool {
     IERC20 private usdc = IERC20(0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f);
 
     /**@notice Goerli USDT contract */
-    IUSDT private usdt = IUSDT(0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108);
+    IUSDT private usdt = IUSDT(0xf0A72B71665e161a27741EA5ed4391000C905098);
 
     /**@notice Goerli DAI contract */
-    IERC20 private dai = IERC20(0x3Df6dB83F269B9017a68e39f0AE4be6e0a052003);
+    IERC20 private dai = IERC20(0xb72ff7B2cEF9dEE389CA68744f5EC6B9Ba4E5F32);
 
     /**@notice Perform an exchange between two underlying coins
      *@dev need this function to allow swapping STBT into USDC

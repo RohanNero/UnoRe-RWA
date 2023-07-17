@@ -489,14 +489,20 @@ contract MatrixUno is ERC4626 {
         if (totalRewards > 0) {
             totalClaimed += totalRewards;
             rewardInfoArray[rewardInfoArray.length - 1].claimed += totalRewards;
-            uint minimumReceive = _swap(totalRewards, token, minimumPercentage);
-            // send stablecoin of type `token`
-
-            if (token == 2) {
-                IUSDT(stables[token]).transfer(addr, minimumReceive);
-            } else {
-                IERC20(stables[token]).transfer(addr, minimumReceive);
+            if (token < 3) {
+                uint minimumReceive = _swap(
+                    totalRewards,
+                    token,
+                    minimumPercentage
+                );
+                if (token == 2) {
+                    IUSDT(stables[token]).transfer(addr, minimumReceive);
+                } else {
+                    IERC20(stables[token]).transfer(addr, minimumReceive);
+                }
             }
+
+            // send stablecoin of type `token`
         }
         // updating variables and sending STBT rewards
         if (totalSRewards > 0) {
@@ -570,7 +576,7 @@ contract MatrixUno is ERC4626 {
             "ERC4626: withdraw more than max"
         );
         _withdraw(_msgSender(), receiver, owner, assets, 0);
-        claim(msg.sender, 1, 97);
+        claim(msg.sender, 3, 97);
         /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
         if (msg.sender == uno) {
             unoDepositAmount -= assets;
