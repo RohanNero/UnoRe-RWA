@@ -34,7 +34,11 @@ developmentChains.includes(network.name)
           "0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f"
         )
         vault = await ethers.getContract("MatrixUno")
+        usdt = await ethers.getContract("MockUSDT")
+        dai = await ethers.getContract("MockDAI")
         console.log("vault:", vault.address)
+        console.log("dai:", dai.address)
+        console.log("usdt:", usdt.address)
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
       })
@@ -48,8 +52,8 @@ developmentChains.includes(network.name)
        * 6. call unstake()
        * 7. Ensure the user gained USDC rewards
        */
-      describe.only("stake", function () {
-        it.only("initial STBT deposit mints 200,000 xUNO", async function () {
+      describe("stake", function () {
+        it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
@@ -89,7 +93,7 @@ developmentChains.includes(network.name)
           console.log("User:", deployer.address)
           /** APPROVE VAULT TO TAKE 50,000 USDC */
           if (initialAllowance < 5e10) {
-            await usdc.approve(vault.address, 5e10)
+            await dai.approve(vault.address, 5e10)
           }
           console.log("approved!")
           /** CALL STAKE WITH 50,000 USDC IF USER HAS NO SHARES */
@@ -108,7 +112,7 @@ developmentChains.includes(network.name)
           console.log("FinalUserAssets:", finalAssets.toString())
         })
       })
-      describe("performUpkeep", function () {
+      describe.only("performUpkeep", function () {
         it("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -123,21 +127,21 @@ developmentChains.includes(network.name)
           console.log("Mock rewards distributed!")
           //}
         })
-        it("updates the rewardInfoArray", async function () {
-          const initialInfo = await vault.viewRewardInfo(0)
-          const returnVal = await vault.checkUpkeep("0x")
-          console.log(initialInfo.toString())
-          console.log("upkeepNeeded:", returnVal.upkeepNeeded)
-          if (returnVal.upkeepNeeded == true) {
-            const upkeep = await vault.performUpkeep("0x")
-            await upkeep.wait(1)
-            console.log("upkeep performed!")
-          } else {
-            console.log("upkeep not needed!")
-          }
-          const finalInfo = await vault.viewRewardInfo(0)
-          console.log(finalInfo.toString())
-        })
+        // it("updates the rewardInfoArray", async function () {
+        //   const initialInfo = await vault.viewRewardInfo(0)
+        //   const returnVal = await vault.checkUpkeep("0x")
+        //   console.log(initialInfo.toString())
+        //   console.log("upkeepNeeded:", returnVal.upkeepNeeded)
+        //   if (returnVal.upkeepNeeded == true) {
+        //     const upkeep = await vault.performUpkeep("0x")
+        //     await upkeep.wait(1)
+        //     console.log("upkeep performed!")
+        //   } else {
+        //     console.log("upkeep not needed!")
+        //   }
+        //   const finalInfo = await vault.viewRewardInfo(0)
+        //   console.log(finalInfo.toString())
+        // })
       })
       describe("unstake", function () {
         it("allows users to unstake xUNO for their initial stablecoin deposit plus rewards earned", async function () {

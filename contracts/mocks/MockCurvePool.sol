@@ -16,6 +16,12 @@ contract MockCurvePool {
     /**@notice Goerli USDC contract */
     IERC20 private usdc = IERC20(0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f);
 
+    /**@notice Goerli USDT contract */
+    IERC20 private usdt = IERC20(0x7a3d4eF6f2F720594e2091C8E569a0c6f1213108);
+
+    /**@notice Goerli DAI contract */
+    IERC20 private dai = IERC20(0x3Df6dB83F269B9017a68e39f0AE4be6e0a052003);
+
     /**@notice Perform an exchange between two underlying coins
      *@dev need this function to allow swapping STBT into USDC
      *@param i Index value for the underlying coin to send
@@ -31,7 +37,13 @@ contract MockCurvePool {
     ) public returns (uint256) {
         stbt.transferFrom(msg.sender, address(this), _dx);
         /**@notice the amount is divided by 1e12 to remove 12 zeros since USDC only has 6 decimals */
-        usdc.transfer(msg.sender, _min_dy);
+        if (j == 1) {
+            dai.transfer(msg.sender, _min_dy);
+        } else if (j == 2) {
+            usdc.transfer(msg.sender, _min_dy);
+        } else if (j == 3) {
+            usdt.transfer(msg.sender, _min_dy);
+        }
         return _min_dy;
     }
 
