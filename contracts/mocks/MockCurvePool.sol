@@ -18,7 +18,7 @@ contract MockCurvePool {
     IERC20 private usdc = IERC20(0x43c7181e745Be7265EB103c5D69F1b7b4EF8763f);
 
     /**@notice Goerli USDT contract */
-    IUSDT private usdt = IUSDT(0xf0A72B71665e161a27741EA5ed4391000C905098);
+    IUSDT private usdt = IUSDT(0x3Cd3Cfcd10a23A82Faf3Cf97a4f9d594ED69714a);
 
     /**@notice Goerli DAI contract */
     IERC20 private dai = IERC20(0xb72ff7B2cEF9dEE389CA68744f5EC6B9Ba4E5F32);

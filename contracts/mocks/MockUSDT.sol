@@ -54,6 +54,8 @@ contract MockUSDT {
         uint256 requestedDecrease
     );
 
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -286,6 +288,7 @@ contract MockUSDT {
                 _balances[to] += value;
             }
         }
+        emit Transfer(from, to, value);
     }
 
     /**
