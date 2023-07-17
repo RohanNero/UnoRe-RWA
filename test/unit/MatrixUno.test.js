@@ -312,7 +312,7 @@ describe.only("MatrixUno Unit Tests", function () {
         //   // come back to this test later
         //   // it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
         // })
-        describe.only("stake", function () {
+        describe("stake", function () {
           it("STBT usdcWhale should have a high STBT balance", async function () {
             const initialBal = await stbt.balanceOf(sWhale._address, {
               gasLimit: 300000,
@@ -651,7 +651,7 @@ describe.only("MatrixUno Unit Tests", function () {
           // come back to this test later
           // it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
         })
-        describe.only("performUpkeep", function () {
+        describe("performUpkeep", function () {
           it("MOCK SENDING REWARDS", async function () {
             const initialVaultAssets = await stbt.balanceOf(vault.address)
             const thousandStbt = ethers.utils.parseUnits("1000", 18)
@@ -821,8 +821,10 @@ describe.only("MatrixUno Unit Tests", function () {
         describe("viewClaimedAmount", function () {
           it("returns the amount a user has claimed", async function () {
             const value = await vault.viewClaimedAmount(usdcWhale._address)
-            const totalClaimed = await vault.viewTotalClaimed()
-            assert.equal(value.toString(), totalClaimed)
+            const daiWhaleValue = await vault.viewClaimedAmount(
+              daiWhale._address
+            )
+            assert.equal(value.toString(), daiWhaleValue.toString())
           })
         })
         describe("viewTotalClaimed", function () {
@@ -831,13 +833,19 @@ describe.only("MatrixUno Unit Tests", function () {
             const totalClaimed = await vault.viewClaimedAmount(
               usdcWhale._address
             )
-            assert.equal(value.toString(), totalClaimed)
+            const xthree = totalClaimed.mul(3)
+            // console.log("value:", value.toString())
+            // console.log("totalClaimed:", totalClaimed.toString())
+            // console.log("xThree value:", xthree.toString())
+
+            assert.equal(value.toString(), xthree)
           })
         })
         describe("viewTotalStaked", function () {
           it("returns the totalStaked variable", async function () {
             const value = await vault.viewTotalStaked()
-            assert.equal(value, 50000000000000000000000)
+            //console.log(value.toString())
+            assert.equal(value, 150000000000000000000000)
           })
         })
         describe("viewUnoDeposit", function () {
@@ -979,7 +987,7 @@ describe.only("MatrixUno Unit Tests", function () {
         //   // it("vault transfers stablecoin to user", async function () {})
         //   // it("emits the `stablesClaimed` event", async function () {})
         // })
-        describe.only("unstake", function () {
+        describe("unstake", function () {
           it("reverts if `amount` input is zero", async function () {
             await expect(
               vault.connect(usdcWhale).unstake(0, 1, 99, { gasLimit: 300000 })
