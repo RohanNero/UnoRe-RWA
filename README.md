@@ -60,13 +60,13 @@ The first thing you must do to test the MatrixUno flow is put your mainnet RPC_U
 
 #### Goerli testnet
 
+NOTE: Contract addresses must be whitelisted by MatrixPort's STBT bot
+
+NOTE: You will have to move the `.only` around to specificy which function calls to make in the goerli staging test (`performUpkeep` will mock sending 2,000 STBT to the vault as rewards)
+
 Testing on Goerli has many key differences from how the forked tests are performed, however the overall flow remains the same.
 
 `yarn hardhat deploy --network goerli --tags matrixUno`
-
-Once the contracts are deployed, both of them must be whitelisted by the STBT bot on Telegram. To do so, run the following command:
-
-`/bind_address <YOUR_ADDRESS_HERE>`
 
 This will whitelist your contract and also transfer 1 million mock USDC to it. After the contracts have been whitelisted to receieve STBT, you can run the `MatrixUno` staging tests.
 
@@ -82,7 +82,7 @@ If you see `false` console logged in the terminal, run the test command again. S
 
 ### Current Developer Quickstart
 
-`yarn hardhat node --tags matrixUno`
+`yarn hardhat node`
 
 `yarn hardhat test --network localhost`
 
