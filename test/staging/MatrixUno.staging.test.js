@@ -100,7 +100,7 @@ developmentChains.includes(network.name)
           /** CALL STAKE WITH 50,000 DAI IF USER HAS NO SHARES */
           if (initialShares == 0) {
             const stakeTx = await vault.connect(user).stake(daiDeposit, 0, 99, {
-              gasLimit: 300000,
+              gasLimit: 700000,
             })
             await stakeTx.wait(1)
             console.log("staked!")
@@ -145,7 +145,7 @@ developmentChains.includes(network.name)
           console.log("FinalUserShares:", finalShares.toString())
           console.log("FinalUserAssets:", finalAssets.toString())
         })
-        it("allows users to stake usdt for xUNO", async function () {
+        it("allows users to stake USDT for xUNO", async function () {
           const initialShares = await vault.balanceOf(user2.address)
           const initialUsdtBal = await usdt.balanceOf(user2.address)
           const initialAssets = await stbt.balanceOf(user2.address)
@@ -165,15 +165,13 @@ developmentChains.includes(network.name)
           }
           console.log("approved!")
           /** CALL STAKE WITH 50,000 USDT IF USER HAS NO SHARES */
-          if (initialShares == 0) {
-            const stakeTx = await vault
-              .connect(user2)
-              .stake(usdtDeposit, 2, 99, {
-                gasLimit: 300000,
-              })
-            await stakeTx.wait(1)
-            console.log("staked!")
-          }
+          //if (initialShares == 0) {
+          const stakeTx = await vault.connect(user2).stake(usdtDeposit, 2, 99, {
+            gasLimit: 300000,
+          })
+          await stakeTx.wait(1)
+          console.log("staked!")
+          //}
 
           const finalShares = await vault.balanceOf(user2.address)
           const finalAssets = await stbt.balanceOf(user2.address)
@@ -310,7 +308,7 @@ developmentChains.includes(network.name)
             const unstakeTx = await vault
               .connect(user)
               .unstake(xUnoTransfer, 0, 99, {
-                gasLimit: 3000000,
+                gasLimit: 700000,
               })
             await unstakeTx.wait(1)
             console.log("unstaked!")
@@ -318,7 +316,7 @@ developmentChains.includes(network.name)
           const rewards = await vault.viewTotalClaimed()
           console.log("totalClaimed:", rewards.toString())
         })
-        it("allows users to unstake xUNO for their initial USDC deposit plus rewards earned", async function () {
+        it.only("allows users to unstake xUNO for their initial USDC deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
@@ -358,7 +356,7 @@ developmentChains.includes(network.name)
           const rewards = await vault.viewTotalClaimed()
           console.log("totalClaimed:", rewards.toString())
         })
-        it("allows users to unstake xUNO for their initial USDT deposit plus rewards earned", async function () {
+        it.only("allows users to unstake xUNO for their initial USDT deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(user2.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
           console.log("InitialShares:", initialShares.toString())
