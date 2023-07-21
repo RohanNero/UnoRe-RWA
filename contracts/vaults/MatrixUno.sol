@@ -135,6 +135,11 @@ contract MatrixUno is ERC4626 {
      *@dev Uno Re can claim this amount at any time*/
     uint private unaccountedRewards;
 
+    /**@notice this variable tracks the total number of STBT that is accounted for
+     * i.e if a user stakes 50 DAI and gets 49 STBT, this variable will increment by 49
+     */
+    uint private accountedForStbt;
+
     /**@notice emits when uno calls `UnoClaim()`
      *@param amountClaimed is the amount of STBT sent to `uno` */
     event UnoClaim(uint amountClaimed);
@@ -186,7 +191,9 @@ contract MatrixUno is ERC4626 {
             tokens = [0, 1, 2, 3];
         }
         console.log("tokens total:", tokens[3]);
-        uint remaining = value;
+        int128 conversion = viewUnstakeConversionRate();
+        uint remaining = conversion.mulu(value);
+        //uint remaining = value;
         uint firstBalance = viewBalance(from, tokens[0]);
         uint secondBalance = viewBalance(from, tokens[1]);
         uint thirdBalance = viewBalance(from, tokens[2]);
@@ -202,7 +209,6 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[0]] += remaining;
             remaining = 0;
         }
-        console.log("checkpoint 2");
         console.log("remaining1", remaining);
         // Second token index
 
@@ -216,7 +222,6 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[1]] += remaining;
             remaining = 0;
         }
-        console.log("checkpoint 3");
         // Third token index
         console.log("remaining2", remaining);
 
@@ -229,19 +234,16 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[2]] += remaining;
             remaining = 0;
         }
-
-        console.log("checkpoint 4");
         // Fourth token index
         // Since totalbalance is assumed to be more than value, we don't need to check it on the last token
         console.log("remaining3", remaining);
         if (remaining > 0) {
-            console.log("checkpoint 4.5");
             claimInfoMap[from].balances[tokens[3]] -= remaining;
-            console.log("checkpoint 5");
             claimInfoMap[to].balances[tokens[3]] += remaining;
-            console.log("checkpoint 6");
             remaining = 0;
         }
+        claimInfoMap[from].balances[4] -= value;
+        claimInfoMap[to].balances[4] += value;
         _;
     }
 
@@ -361,6 +363,8 @@ contract MatrixUno is ERC4626 {
         } else {
             totalStaked += transferFromAmount;
         }
+        // added new variable that unlike totalStaked, tracks the number of STBT/xUNO not total stablecoins
+        accountedForStbt += transferAmount;
         // console.log("transferAmount:", transferAmount);
         // console.log(balanceOf(address(this)));
         // console.log("msg.sender:", msg.sender);
@@ -433,6 +437,7 @@ contract MatrixUno is ERC4626 {
         }
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         claimInfoMap[msg.sender].balances[4] -= amount;
+        accountedForStbt -= amount;
         totalStaked -= adjustedAmount;
         if (token > 0) {
             adjustedAmount /= 1e12;
@@ -963,11 +968,7 @@ contract MatrixUno is ERC4626 {
         uint daiBalance = viewBalance(user, 0);
         uint usdcBalance = viewBalance(user, 1);
         uint usdtBalance = viewBalance(user, 2);
-        // Add 12 zeros to USDC and USDT because they only have 6 decimals
-        totalUserStaked =
-            daiBalance +
-            (usdcBalance * 1e12) +
-            (usdtBalance * 1e12);
+        totalUserStaked = daiBalance + usdcBalance + usdtBalance;
     }
 
     /**@notice this function returns the total amount of stablecoins + STBT a user has deposited */
@@ -1027,11 +1028,12 @@ contract MatrixUno is ERC4626 {
         console.log("calculateUnnacountedRewards reached!");
         uint length = rewardInfoArray.length;
         console.log("length:", length);
-        console.log("totalStaked:", totalStaked);
-        if (unoDepositAmount <= totalStaked) {
+        //console.log("totalStaked:", totalStaked);
+        console.log("totalAccountedFor:", accountedForStbt);
+        if (unoDepositAmount <= accountedForStbt) {
             return 0;
         } else {
-            uint remainder = unoDepositAmount - totalStaked;
+            uint remainder = unoDepositAmount - accountedForStbt;
             console.log("remainder:", remainder);
             int128 portion = remainder.divu(
                 rewardInfoArray[length - 1].currentBalance
@@ -1051,6 +1053,12 @@ contract MatrixUno is ERC4626 {
      *@dev current value of the `unaccountedRewards` variable */
     function viewUnaccountedRewards() public view returns (uint) {
         return unaccountedRewards;
+    }
+
+    /**@notice returns the total number of STBT that is accounted for aka belongs to staked users
+     *@dev current value of the `accountedForStbt` variable */
+    function viewAccountedForStbt() public view returns (uint) {
+        return accountedForStbt;
     }
 
     /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price for `stake()` */
