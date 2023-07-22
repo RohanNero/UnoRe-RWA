@@ -194,7 +194,6 @@ developmentChains.includes(network.name)
         //   console.log(finalInfo.toString())
         // })
       })
-
       describe("unstake", function () {
         it("allows users to unstake xUNO for their initial DAI deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(user.address)
@@ -220,7 +219,7 @@ developmentChains.includes(network.name)
             const approveTx = await vault
               .connect(user)
               .approve(vault.address, xUnoTransfer, { gasLimit: 700000 })
-            await approveTx.wait(3)
+            await approveTx.wait(1)
             console.log("approved!")
           }
           console.log(
@@ -232,7 +231,7 @@ developmentChains.includes(network.name)
           ) {
             const unstakeTx = await vault
               .connect(user)
-              .unstake(xUnoTransfer, 1, 99, {
+              .unstake(xUnoTransfer, 0, 99, {
                 gasLimit: 7000000,
               })
             await unstakeTx.wait(1)
@@ -262,7 +261,7 @@ developmentChains.includes(network.name)
           console.log("InitialAllowance:", initialAllowance.toString())
           if (initialAllowance < xUnoTransfer) {
             const approveTx = await vault.approve(vault.address, xUnoTransfer)
-            await approveTx.wait(3)
+            await approveTx.wait(1)
             console.log("approved!")
           }
           console.log(
@@ -304,7 +303,7 @@ developmentChains.includes(network.name)
             const approveTx = await vault
               .connect(user2)
               .approve(vault.address, xUnoTransfer)
-            await approveTx.wait(3)
+            await approveTx.wait(1)
             console.log("approved!")
           }
           console.log(
@@ -392,7 +391,7 @@ developmentChains.includes(network.name)
           )
         })
       })
-      describe.only("unoClaim", function () {
+      describe("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())
