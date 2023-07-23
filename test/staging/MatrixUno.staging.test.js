@@ -391,7 +391,7 @@ developmentChains.includes(network.name)
           )
         })
       })
-      describe.only("unoClaim", function () {
+      describe("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())

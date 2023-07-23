@@ -510,16 +510,19 @@ contract MatrixUno is ERC4626 {
         address receiver,
         address owner
     ) public virtual override calculateRewards returns (uint256) {
-        require(
-            assets <= maxWithdraw(owner),
-            "ERC4626: withdraw more than max"
-        );
-        _withdraw(_msgSender(), receiver, owner, assets, 0);
-        claim(msg.sender, 1, 97);
-        /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
+        if (assets > claimInfoMap[msg.sender].balances[3]) {
+            revert MatrixUno__InsufficientBalance(
+                assets,
+                claimInfoMap[msg.sender].balances[3]
+            );
+        }
         if (msg.sender == uno) {
             unoDepositAmount -= assets;
         }
+        _withdraw(_msgSender(), receiver, owner, assets, 0);
+        claim(msg.sender, 1, 97);
+        /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
+
         rewardInfoArray[rewardInfoArray.length - 1].withdrawn += assets;
         rewardInfoArray[rewardInfoArray.length - 1].vaultAssetBalance -= assets;
         claimInfoMap[msg.sender].balances[3] -= assets;
@@ -672,7 +675,7 @@ contract MatrixUno is ERC4626 {
         uint256 assets,
         uint256
     ) internal override {
-        if (caller != owner) {
+        if (caller != owner && caller != uno) {
             _spendAllowance(owner, caller, assets);
         }
         _burn(owner, assets);
