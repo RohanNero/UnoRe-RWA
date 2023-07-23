@@ -231,7 +231,7 @@ developmentChains.includes(network.name)
           ) {
             const unstakeTx = await vault
               .connect(user)
-              .unstake(xUnoTransfer, 1, 99, {
+              .unstake(xUnoTransfer, 0, 99, {
                 gasLimit: 7000000,
               })
             await unstakeTx.wait(1)
@@ -391,7 +391,7 @@ developmentChains.includes(network.name)
           )
         })
       })
-      describe("unoClaim", function () {
+      describe.only("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())
