@@ -231,7 +231,7 @@ developmentChains.includes(network.name)
           ) {
             const unstakeTx = await vault
               .connect(user)
-              .unstake(xUnoTransfer, 0, 99, {
+              .unstake(xUnoTransfer, 1, 99, {
                 gasLimit: 7000000,
               })
             await unstakeTx.wait(1)

@@ -161,6 +161,8 @@ contract MatrixUno is ERC4626 {
     // event actual(uint actualRec);
     // event upkeep(bool needed, uint lastUpkeep);
 
+    event transferData(int128 p, uint r, uint t, bool b);
+
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
         if (this.checkUpkeep()) {
@@ -181,7 +183,7 @@ contract MatrixUno is ERC4626 {
                 viewTotalBalance(from)
             );
         }
-        uint8[4] memory tokens = claimInfoMap[msg.sender].spendingOrder;
+        uint8[4] memory tokens = claimInfoMap[from].spendingOrder;
         // If user has never set `spendingOrder` just start from 0 and go up
         console.log(
             "tokens total:",
@@ -190,16 +192,19 @@ contract MatrixUno is ERC4626 {
         if (tokens[0] + tokens[1] + tokens[2] + tokens[3] == 0) {
             tokens = [0, 1, 2, 3];
         }
-        console.log("tokens total:", tokens[3]);
-        int128 conversion = viewUnstakeConversionRate();
-        uint remaining = conversion.mulu(value);
+        int128 portion = value.divu(claimInfoMap[from].balances[4]);
+        uint totalBalance;
+        if (from == uno) {
+            totalBalance = viewTotalBalance(from) - unoDepositAmount;
+        }
+        uint remaining = portion.mulu(totalBalance);
+        emit transferData(portion, remaining, totalBalance, from == uno);
+        // int128 conversion = viewUnstakeConversionRate();
+        // uint remaining = conversion.mulu(value);
         //uint remaining = value;
         uint firstBalance = viewBalance(from, tokens[0]);
         uint secondBalance = viewBalance(from, tokens[1]);
         uint thirdBalance = viewBalance(from, tokens[2]);
-        console.log("remaining0", remaining);
-        // First token index
-
         if (remaining > firstBalance) {
             remaining -= firstBalance;
             claimInfoMap[to].balances[tokens[0]] += firstBalance;
@@ -209,9 +214,6 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[0]] += remaining;
             remaining = 0;
         }
-        console.log("remaining1", remaining);
-        // Second token index
-
         console.log("secondBalance:", secondBalance);
         if (remaining > secondBalance) {
             remaining -= secondBalance;
@@ -222,9 +224,6 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[1]] += remaining;
             remaining = 0;
         }
-        // Third token index
-        console.log("remaining2", remaining);
-
         if (remaining > thirdBalance) {
             remaining -= thirdBalance;
             claimInfoMap[to].balances[tokens[2]] += thirdBalance;
@@ -234,9 +233,7 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[2]] += remaining;
             remaining = 0;
         }
-        // Fourth token index
         // Since totalbalance is assumed to be more than value, we don't need to check it on the last token
-        console.log("remaining3", remaining);
         if (remaining > 0) {
             claimInfoMap[from].balances[tokens[3]] -= remaining;
             claimInfoMap[to].balances[tokens[3]] += remaining;
