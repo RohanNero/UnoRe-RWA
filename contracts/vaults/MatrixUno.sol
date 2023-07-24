@@ -39,6 +39,8 @@ error MatrixUno__InvalidWeek(uint week);
 error MatrixUno__InsufficientBalance(uint value, uint totalBalance);
 /**@notice used to ensure the spendingTokens variable has no duplicate values */
 error MatrixUno__NoDuplicates();
+/**@notice used to ensure perform upkeep doesn't work if unoDepositAmount is zero */
+error MatrixUno__UpkeepNotAllowed();
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -158,6 +160,7 @@ contract MatrixUno is ERC4626 {
     // event upkeep(bool needed, uint lastUpkeep);
 
     event transferData(int128 p, uint r, uint t, bool b);
+    event withdrawData(bool p, bool r, uint t, uint b);
 
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
@@ -373,8 +376,12 @@ contract MatrixUno is ERC4626 {
         if (token > 2) {
             revert MatrixUno__InvalidTokenId(token);
         }
+
         _spendAllowance(msg.sender, address(this), amount);
         _transfer(msg.sender, address(this), amount);
+        if (unoDepositAmount == 0) {
+            _burn(address(this), amount);
+        }
         claim(msg.sender, token, minimumPercentage);
         uint adjustedAmount = amount;
         uint initialVaultBalance = claimInfoMap[msg.sender].balances[token];
@@ -517,7 +524,7 @@ contract MatrixUno is ERC4626 {
             );
         }
         if (msg.sender == uno) {
-            unoDepositAmount -= assets;
+            this.performUpkeep();
         }
         _withdraw(_msgSender(), receiver, owner, assets, 0);
         claim(msg.sender, 1, 97);
@@ -569,7 +576,8 @@ contract MatrixUno is ERC4626 {
      *@dev returns true when one week has passed since the last `performUpkeep()` call
      */
     function checkUpkeep() external view returns (bool upkeepNeeded) {
-        upkeepNeeded = (block.timestamp - lastUpkeepTime) >= i_interval;
+        upkeepNeeded = (((block.timestamp - lastUpkeepTime) >= i_interval) &&
+            unoDepositAmount > 0);
     }
 
     /**@notice this function is called by core functions after `interval` passes to update values for reward calculation
@@ -578,6 +586,9 @@ contract MatrixUno is ERC4626 {
         uint length = rewardInfoArray.length;
         if ((block.timestamp - lastUpkeepTime) < i_interval) {
             revert MatrixUno__UpkeepNotReady();
+        }
+        if (unoDepositAmount == 0 && _msgSender() != uno) {
+            revert MatrixUno__UpkeepNotAllowed();
         }
         lastUpkeepTime = block.timestamp;
         uint currentStbt = stbt.balanceOf(address(this));
@@ -678,7 +689,20 @@ contract MatrixUno is ERC4626 {
         if (caller != owner && caller != uno) {
             _spendAllowance(owner, caller, assets);
         }
-        _burn(owner, assets);
+        emit withdrawData(
+            caller == uno,
+            balanceOf(address(this)) < unoDepositAmount,
+            balanceOf(address(this)),
+            unoDepositAmount
+        );
+        if (caller == uno && balanceOf(address(this)) < unoDepositAmount) {
+            _burn(owner, balanceOf(address(this)));
+        } else {
+            _burn(owner, assets);
+        }
+        if (caller == uno) {
+            unoDepositAmount = 0;
+        }
         stbt.transfer(receiver, assets);
         emit Withdraw(caller, receiver, owner, assets, assets);
     }
