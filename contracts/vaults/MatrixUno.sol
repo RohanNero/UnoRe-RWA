@@ -825,7 +825,7 @@ contract MatrixUno is ERC4626 {
 
     /**@notice returns the current STBT / stablecoin conversion from Curve's get_virtual_price for `unstake()` */
     function viewUnstakeConversionRate()
-        external
+        public
         view
         returns (int128 conversionRate)
     {
@@ -843,6 +843,24 @@ contract MatrixUno is ERC4626 {
             }
         }
         return false;
+    }
+
+    /**Overridden view functions */
+
+    /** @dev See {IERC4626-convertToShares}. */
+    function convertToShares(
+        uint256 assets
+    ) public view override returns (uint256) {
+        int128 rate = viewUnstakeConversionRate();
+        return rate.mulu(assets);
+    }
+
+    /** @dev See {IERC4626-convertToAssets}. */
+    function convertToAssets(
+        uint256 shares
+    ) public view override returns (uint256) {
+        int128 rate = viewStakeConversionRate();
+        return rate.mulu(shares);
     }
 
     /** Internal and Private functions */
@@ -981,5 +999,25 @@ contract MatrixUno is ERC4626 {
         }
         claimInfoMap[from].balances[4] -= value;
         claimInfoMap[to].balances[4] += value;
+    }
+
+    /**
+     * @dev Unused internal conversion function (from STBT/xUNO to stablecoins)
+     */
+    function _convertToShares(
+        uint256,
+        Math.Rounding
+    ) internal view override returns (uint256) {
+        return (7);
+    }
+
+    /**
+     * @dev Unused internal conversion function (from stablecoin to STBT/xUNO)
+     */
+    function _convertToAssets(
+        uint256,
+        Math.Rounding
+    ) internal view override returns (uint256) {
+        return (7);
     }
 }
