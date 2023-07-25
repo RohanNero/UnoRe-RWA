@@ -224,7 +224,6 @@ contract MatrixUno is ERC4626 {
         uint8 token,
         uint256 minimumPercentage
     ) external calculateRewards returns (uint256 shares) {
-        /**@notice all the logic checks come before actually moving the tokens */
         if (amount == 0) {
             revert MatrixUno__ZeroAmountGiven();
         }
@@ -234,11 +233,6 @@ contract MatrixUno is ERC4626 {
         if (sanctionsList.isSanctioned(msg.sender)) {
             revert MatrixUno__SanctionedAddress();
         }
-        /**  Transfer xUNO from the vault to the user
-         Must add 12 zeros if user deposited USDC/USDT since these coins use 6 decimals
-         DAI = 18 decimals, USDT/USDC = 6 decimals
-         100 DAI  = 100 000000000000000000
-         100 USDC = 100 000000 */
         uint256 transferAmount;
         if (token > 0) {
             transferAmount = amount * 1e12;
@@ -247,9 +241,7 @@ contract MatrixUno is ERC4626 {
         }
         /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint256 transferFromAmount;
-        /** amount of stablecoin deposited, with 18 decimals */
         uint256 amountStaked;
-        // Using Curve's virtual price
         int128 conversionRate = viewStakeConversionRate();
         if (this.balanceOf(address(this)) < transferAmount) {
             if (token > 0) {
@@ -328,10 +320,6 @@ contract MatrixUno is ERC4626 {
         uint256 initialVaultBalance = claimInfoMap[msg.sender].balances[token];
         int128 portion = amount.divu(claimInfoMap[msg.sender].balances[4]);
         adjustedAmount = portion.mulu(viewTotalStableBalance(msg.sender));
-        // // temporary fix to the adjustedAmount being slightly larger than user balance
-        // if (adjustedAmount > initialVaultBalance) {
-        //     adjustedAmount = initialVaultBalance;
-        // }
         claimInfoMap[msg.sender].balances[token] -= adjustedAmount;
         claimInfoMap[msg.sender].balances[4] -= amount;
         accountedForStbt -= amount;
@@ -867,7 +855,6 @@ contract MatrixUno is ERC4626 {
         uint8 token,
         uint256 minimumPercentage
     ) private returns (uint256) {
-        // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
         uint256 minimumReceive;
         int128 formatPercentage = minimumPercentage.fromUInt();
         if (token > 0) {
@@ -876,7 +863,6 @@ contract MatrixUno is ERC4626 {
             minimumReceive = formatPercentage.mulu(earned) / 100;
         }
         stbt.approve(address(pool), earned);
-        //try
         uint256 actualReceived = pool.exchange_underlying(
             int128(0),
             int128(uint128(token + 1)),
@@ -884,16 +870,6 @@ contract MatrixUno is ERC4626 {
             minimumReceive
         );
         return actualReceived;
-        //} catch {
-        //    revert MatrixUno__StableSwapFailed();
-        //}
-        // uint256 actualReceived = pool.exchange_underlying(
-        //     int128(0),
-        //     int128(uint128(token + 1)),
-        //     earned,
-        //     minimumReceive
-        // );
-        // return actualReceived;
     }
 
     /**@notice native ERC-4626 function */
@@ -905,7 +881,6 @@ contract MatrixUno is ERC4626 {
     ) internal override {
         stbt.transferFrom(caller, address(this), assets);
         _mint(receiver, assets);
-        // inherited event, currently emitting with assets for assets and shares since 1:1 peg.
         emit Deposit(caller, receiver, assets, assets);
     }
 
