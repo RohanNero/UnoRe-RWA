@@ -474,6 +474,21 @@ contract MatrixUno is ERC4626 {
         return assets;
     }
 
+    /** @dev Unused function
+     */
+    function mint(uint256, address) public override returns (uint256) {
+        revert();
+    }
+
+    /** @dev Unused function */
+    function redeem(
+        uint256,
+        address,
+        address
+    ) public override returns (uint256) {
+        revert();
+    }
+
     // ERC-20 functions
 
     /**@notice overridden ERC-20 transfer function to include `updatesBalance` modifier */
@@ -847,7 +862,7 @@ contract MatrixUno is ERC4626 {
 
     /**Overridden view functions */
 
-    /** @dev See {IERC4626-convertToShares}. */
+    /** @dev (from STBT/xUNO to stablecoins) */
     function convertToShares(
         uint256 assets
     ) public view override returns (uint256) {
@@ -855,12 +870,60 @@ contract MatrixUno is ERC4626 {
         return rate.mulu(assets);
     }
 
-    /** @dev See {IERC4626-convertToAssets}. */
+    /** @dev (from stablecoin to STBT/xUNO) */
     function convertToAssets(
         uint256 shares
     ) public view override returns (uint256) {
         int128 rate = viewStakeConversionRate();
         return rate.mulu(shares);
+    }
+
+    /** @dev See {IERC4626-maxDeposit}. */
+    function maxDeposit(address) public view override returns (uint256) {
+        return type(uint256).max;
+    }
+
+    /** @dev See {IERC4626-maxMint}. */
+    function maxMint(address) public view override returns (uint256) {
+        return type(uint256).max;
+    }
+
+    /** @dev See {IERC4626-maxWithdraw}. */
+    function maxWithdraw(address owner) public view override returns (uint256) {
+        return convertToAssets(balanceOf(owner));
+    }
+
+    /** @dev See {IERC4626-maxRedeem}. */
+    function maxRedeem(address owner) public view override returns (uint256) {
+        return balanceOf(owner);
+    }
+
+    /** @dev See {IERC4626-previewDeposit}. */
+    function previewDeposit(
+        uint256 assets
+    ) public view override returns (uint256) {
+        return convertToShares(assets);
+    }
+
+    /** @dev See {IERC4626-previewMint}. */
+    function previewMint(
+        uint256 shares
+    ) public view override returns (uint256) {
+        return convertToAssets(shares);
+    }
+
+    /** @dev See {IERC4626-previewWithdraw}. */
+    function previewWithdraw(
+        uint256 assets
+    ) public view override returns (uint256) {
+        return convertToShares(assets);
+    }
+
+    /** @dev See {IERC4626-previewRedeem}. */
+    function previewRedeem(
+        uint256 shares
+    ) public view override returns (uint256) {
+        return convertToAssets(shares);
     }
 
     /** Internal and Private functions */
@@ -1002,22 +1065,22 @@ contract MatrixUno is ERC4626 {
     }
 
     /**
-     * @dev Unused internal conversion function (from STBT/xUNO to stablecoins)
+     * @dev Unused internal conversion function
      */
     function _convertToShares(
         uint256,
         Math.Rounding
     ) internal view override returns (uint256) {
-        return (7);
+        revert();
     }
 
     /**
-     * @dev Unused internal conversion function (from stablecoin to STBT/xUNO)
+     * @dev Unused internal conversion function
      */
     function _convertToAssets(
         uint256,
         Math.Rounding
     ) internal view override returns (uint256) {
-        return (7);
+        revert();
     }
 }
