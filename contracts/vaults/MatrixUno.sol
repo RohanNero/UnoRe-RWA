@@ -282,9 +282,7 @@ contract MatrixUno is ERC4626 {
                 transferFromAmount
             );
         }
-        // Calling `claim`
         claim(msg.sender, token, minimumPercentage);
-        // Increment balance and `totalStaked` on `stake()`
         claimInfoMap[msg.sender].balances[token] += amountStaked;
         claimInfoMap[msg.sender].balances[4] += transferAmount;
         if (token > 0) {
@@ -518,12 +516,6 @@ contract MatrixUno is ERC4626 {
         _transfer(from, to, value);
         return true;
     }
-
-    // /** Admin only functions (Uno's whitelisted EOA) */
-    // /**@notice this function allows uno to set the SSIP address */
-    // function setSSIP(address ssipAddress) external {
-    //     ssip = ISingleSidedInsurancePool(ssipAddress);
-    // }
 
     /**@notice this function will call `performUpkeep()` when upkeepNeeded is true
      *@dev returns true when one period has passed since the last `performUpkeep()` call
