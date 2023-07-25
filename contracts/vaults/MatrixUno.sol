@@ -76,7 +76,7 @@ contract MatrixUno is ERC4626 {
     struct rewardInfo {
         uint rewards; // amount of STBT rewards earned by the vault during the period
         uint vaultAssetBalance; // total amount of assets DEPOSITED into the vault
-        uint previousperiodBalance; // total STBT in the vault the previous period (last `performUpkeep()` call)
+        uint previousPeriodBalance; // total STBT in the vault the previous period (last `performUpkeep()` call)
         uint currentBalance; // TOTAL AMOUNT of assets in the vault, deposited or sent from MatrixPort as rewards (balanceOf)
         uint unoDeposit; // amount of stbt uno has deposited during the period
         uint claimed; // amount of STBT rewards that were claimed during the period
@@ -268,7 +268,7 @@ contract MatrixUno is ERC4626 {
         i_startingTimestamp = block.timestamp;
         lastUpkeepTime = block.timestamp;
         i_interval = interval;
-        //rewardInfoArray[0].previousperiodBalance = 2e23;
+        //rewardInfoArray[0].previousPeriodBalance = 2e23;
         // 200,000 STBT with 18 decimals
         rewardInfoArray.push(
             rewardInfo(0, 0, 0, 0, 0, 0, 0, 0, block.timestamp, 0)
@@ -587,8 +587,20 @@ contract MatrixUno is ERC4626 {
      *@dev returns true when one period has passed since the last `performUpkeep()` call
      */
     function checkUpkeep() external view returns (bool upkeepNeeded) {
-        upkeepNeeded = (((block.timestamp - lastUpkeepTime) >= i_interval) &&
-            totalDeposited > 0);
+        if ((block.timestamp - lastUpkeepTime) >= i_interval) {
+            upkeepNeeded = false;
+        } else if (totalDeposited <= 0) {
+            upkeepNeeded = false;
+        } else {
+            rewardInfo memory currentInfo = rewardInfoArray[
+                rewardInfoArray.length - 1
+            ];
+            upkeepNeeded =
+                (currentInfo.currentBalance +
+                    currentInfo.claimed +
+                    currentInfo.withdrawn) <=
+                (currentInfo.previousPeriodBalance + currentInfo.deposited);
+        }
     }
 
     /**@notice this function is called by core functions after `interval` passes to update values for reward calculation
@@ -618,8 +630,8 @@ contract MatrixUno is ERC4626 {
         if (
             (currentInfo.currentBalance +
                 currentInfo.claimed +
-                currentInfo.withdrawn) <
-            (currentInfo.previousperiodBalance + currentInfo.deposited)
+                currentInfo.withdrawn) <=
+            (currentInfo.previousPeriodBalance + currentInfo.deposited)
         ) {
             rewardInfoArray[length - 1].rewards = 0;
         } else {
@@ -627,7 +639,7 @@ contract MatrixUno is ERC4626 {
                 (currentInfo.currentBalance +
                     currentInfo.claimed +
                     currentInfo.withdrawn) -
-                (currentInfo.previousperiodBalance + currentInfo.deposited);
+                (currentInfo.previousPeriodBalance + currentInfo.deposited);
             unaccountedRewards += calculateUnaccountedRewards();
         }
         rewardInfoArray[length - 1].endTime = block.timestamp;
