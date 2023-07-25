@@ -158,13 +158,6 @@ contract MatrixUno is ERC4626 {
     /**@notice emitted when user unstakes */
     event Unstake(uint256 amount, address unstaker);
 
-    /**@notice used for testing, remove after done testing. */
-    // event transferInfo(uint256 _amount, uint256 _receive);
-    // event actual(uint256 actualRec);
-    // event upkeep(bool needed, uint256 lastUpkeep);
-    event transferData(int128 p, uint256 r, uint256 t, bool b);
-    event withdrawData(bool p, bool r, uint256 t, uint256 b);
-
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
         _calculateRewards();
@@ -972,12 +965,6 @@ contract MatrixUno is ERC4626 {
             _spendAllowance(owner, caller, assets);
         }
         uint thisBalance = balanceOf(address(this));
-        emit withdrawData(
-            caller == uno,
-            thisBalance < unoDepositAmount,
-            thisBalance,
-            unoDepositAmount
-        );
         if (caller == uno && thisBalance < unoDepositAmount) {
             _burn(owner, thisBalance);
         } else {
@@ -1015,7 +1002,6 @@ contract MatrixUno is ERC4626 {
             totalBalance = viewTotalBalance(from) - unoDepositAmount;
         }
         uint256 remaining = portion.mulu(totalBalance);
-        emit transferData(portion, remaining, totalBalance, from == uno);
         uint256 firstBalance = viewBalance(from, tokens[0]);
         uint256 secondBalance = viewBalance(from, tokens[1]);
         uint256 thirdBalance = viewBalance(from, tokens[2]);
