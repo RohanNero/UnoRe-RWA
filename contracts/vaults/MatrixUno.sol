@@ -12,10 +12,6 @@ import "../interfaces/IUSDT.sol";
 import "../Curve/interfaces/IStableSwap.sol";
 /**@notice uses to screen addresses prior to staking */
 import "../interfaces/ISanctionsList.sol";
-// /**@notice uses to interact with SSIP */
-// import "../interfaces/ISingleSidedInsurancePool.sol";
-/**@notice used in testing to ensure values are set correctly */
-import "hardhat/console.sol";
 /**@notice used in reward calculation math */
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
@@ -47,7 +43,7 @@ error MatrixUno__UpkeepNotAllowed();
  *@notice this contract allows UNO users to earn native STBT yields from Matrixdock.
  *@dev This vault uses STBT as the asset and xUNO as the shares token*/
 contract MatrixUno is ERC4626 {
-    /**@notice declare that we are using ABDK Math library for these variabels */
+    /**@notice declare that we are using ABDK Math library */
     using ABDKMath64x64 for uint256;
     using ABDKMath64x64 for int128;
 
@@ -67,9 +63,6 @@ contract MatrixUno is ERC4626 {
 
     /**@notice used to screen users prior to being allowed to stake */
     ISanctionsList private sanctionsList;
-
-    // /**@notice used to interact with the SSIP */
-    // ISingleSidedInsurancePool private ssip;
 
     /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every period
      *@dev each struct corresponds to a different period since the contract's inception */
@@ -531,8 +524,6 @@ contract MatrixUno is ERC4626 {
      *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep() external {
         uint256 length = rewardInfoArray.length;
-        console.log(_msgSender() != uno);
-        console.log(_msgSender());
         if (
             (block.timestamp - lastUpkeepTime) < i_interval &&
             _msgSender() != uno &&
@@ -789,8 +780,6 @@ contract MatrixUno is ERC4626 {
             return 0;
         } else {
             uint256 remainder = unoDepositAmount - accountedForStbt;
-            console.log("remainder:", remainder);
-            console.log("cb:", rewardInfoArray[length - 1].currentBalance);
             int128 portion = remainder.divu(
                 rewardInfoArray[length - 1].currentBalance
             );
