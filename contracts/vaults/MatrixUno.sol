@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /**@notice used to interact with USDT since function signature differs from OZ ERC-20 */
 import "../interfaces/IUSDT.sol";
+/**@notice the Uno Re SSIP that corresponds to this vault */
+import "../interfaces/ISingleSidedInsurancePool.sol";
 /**@notice used when swapping STBT into stablecoins for user rewards */
 import "../Curve/interfaces/IStableSwap.sol";
 /**@notice uses to screen addresses prior to staking */
@@ -63,6 +65,9 @@ contract MatrixUno is ERC4626 {
 
     /**@notice used to screen users prior to being allowed to stake */
     ISanctionsList private sanctionsList;
+
+    /**@notice used to enter/leave from Uno Re's xUNO SSIP */
+    ISingleSidedInsurancePool private ssip;
 
     /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every period
      *@dev each struct corresponds to a different period since the contract's inception */
@@ -407,6 +412,20 @@ contract MatrixUno is ERC4626 {
         claimInfoMap[msg.sender].spendingOrder = tokens;
     }
 
+    /**@notice used to stake stablecoins into vault and xUNO into SSIP */
+    function stakeAndEnterInPool() public {}
+
+    /**@notice used to withdraw xUNO from SSIP and unstake stablecoins from  */
+    function unstakeAndLeaveFromPool() public {}
+
+    /**@notice allows uno to set the SSIP address */
+    function setSSIP(address _ssip) public {
+        if (msg.sender != uno) {
+            revert MatrixUno__OnlyUno();
+        }
+        ssip = ISingleSidedInsurancePool(_ssip);
+    }
+
     // ERC-4626 functions
 
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
@@ -457,7 +476,7 @@ contract MatrixUno is ERC4626 {
 
     /** @dev Unused function
      */
-    function mint(uint256, address) public override returns (uint256) {
+    function mint(uint256, address) public pure override returns (uint256) {
         revert();
     }
 
@@ -466,7 +485,7 @@ contract MatrixUno is ERC4626 {
         uint256,
         address,
         address
-    ) public override returns (uint256) {
+    ) public pure override returns (uint256) {
         revert();
     }
 
@@ -856,12 +875,12 @@ contract MatrixUno is ERC4626 {
     }
 
     /** @dev See {IERC4626-maxDeposit}. */
-    function maxDeposit(address) public view override returns (uint256) {
+    function maxDeposit(address) public pure override returns (uint256) {
         return type(uint256).max;
     }
 
     /** @dev See {IERC4626-maxMint}. */
-    function maxMint(address) public view override returns (uint256) {
+    function maxMint(address) public pure override returns (uint256) {
         return type(uint256).max;
     }
 
@@ -1034,7 +1053,7 @@ contract MatrixUno is ERC4626 {
     function _convertToShares(
         uint256,
         Math.Rounding
-    ) internal view override returns (uint256) {
+    ) internal pure override returns (uint256) {
         revert();
     }
 
@@ -1042,7 +1061,7 @@ contract MatrixUno is ERC4626 {
     function _convertToAssets(
         uint256,
         Math.Rounding
-    ) internal view override returns (uint256) {
+    ) internal pure override returns (uint256) {
         revert();
     }
 }
