@@ -242,12 +242,13 @@ contract MatrixUno is ERC4626 {
         /** If there's less xUNO than the user is supposed to receive, the amount staked is equal to the amount of xUNO left */
         uint256 transferFromAmount;
         uint256 amountStaked;
+        uint256 thisBalance = this.balanceOf(address(this));
         int128 conversionRate = viewStakeConversionRate();
-        if (this.balanceOf(address(this)) < transferAmount) {
+        if (thisBalance < transferAmount) {
             if (token > 0) {
-                transferFromAmount = this.balanceOf(address(this)) / 1e12;
+                transferFromAmount = thisBalance / 1e12;
             } else {
-                transferFromAmount = this.balanceOf(address(this));
+                transferFromAmount = thisBalance;
             }
             transferAmount = conversionRate.mulu(this.balanceOf(address(this)));
         } else {
@@ -428,12 +429,8 @@ contract MatrixUno is ERC4626 {
         uint256 assets,
         address receiver
     ) public virtual override calculateRewards returns (uint256) {
-        //uint256 shares = previewDeposit(assets);
-
         _deposit(_msgSender(), receiver, assets, 0);
         claim(msg.sender, 1, 97);
-
-        /**@notice custom MatrixUno logic to track STBT deposited by Uno Re */
         uint256 length = rewardInfoArray.length - 1;
         if (receiver == address(this) && msg.sender == uno) {
             unoDepositAmount += assets;
@@ -464,11 +461,9 @@ contract MatrixUno is ERC4626 {
         }
         claim(msg.sender, 1, 97);
         _withdraw(_msgSender(), receiver, owner, assets, 0);
-
-        /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
-
-        rewardInfoArray[rewardInfoArray.length - 1].withdrawn += assets;
-        rewardInfoArray[rewardInfoArray.length - 1].vaultAssetBalance -= assets;
+        uint256 length = rewardInfoArray.length - 1;
+        rewardInfoArray[length].withdrawn += assets;
+        rewardInfoArray[length].vaultAssetBalance -= assets;
         claimInfoMap[msg.sender].balances[3] -= assets;
         totalDeposited -= assets;
         return assets;
@@ -976,14 +971,15 @@ contract MatrixUno is ERC4626 {
         if (caller != owner && caller != uno) {
             _spendAllowance(owner, caller, assets);
         }
+        uint thisBalance = balanceOf(address(this));
         emit withdrawData(
             caller == uno,
-            balanceOf(address(this)) < unoDepositAmount,
-            balanceOf(address(this)),
+            thisBalance < unoDepositAmount,
+            thisBalance,
             unoDepositAmount
         );
-        if (caller == uno && balanceOf(address(this)) < unoDepositAmount) {
-            _burn(owner, balanceOf(address(this)));
+        if (caller == uno && thisBalance < unoDepositAmount) {
+            _burn(owner, thisBalance);
         } else {
             _burn(owner, assets);
         }
@@ -1010,7 +1006,6 @@ contract MatrixUno is ERC4626 {
             );
         }
         uint8[4] memory tokens = claimInfoMap[from].spendingOrder;
-        // If user has never set `spendingOrder` just start from 0 and go up
         if (tokens[0] + tokens[1] + tokens[2] + tokens[3] == 0) {
             tokens = [0, 1, 2, 3];
         }
@@ -1021,9 +1016,6 @@ contract MatrixUno is ERC4626 {
         }
         uint256 remaining = portion.mulu(totalBalance);
         emit transferData(portion, remaining, totalBalance, from == uno);
-        // int128 conversion = viewUnstakeConversionRate();
-        // uint256 remaining = conversion.mulu(value);
-        //uint256 remaining = value;
         uint256 firstBalance = viewBalance(from, tokens[0]);
         uint256 secondBalance = viewBalance(from, tokens[1]);
         uint256 thirdBalance = viewBalance(from, tokens[2]);
@@ -1054,7 +1046,6 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[tokens[2]] += remaining;
             remaining = 0;
         }
-        // Since totalbalance is assumed to be more than value, we don't need to check it on the last token
         if (remaining > 0) {
             claimInfoMap[from].balances[tokens[3]] -= remaining;
             claimInfoMap[to].balances[tokens[3]] += remaining;
@@ -1064,9 +1055,7 @@ contract MatrixUno is ERC4626 {
         claimInfoMap[to].balances[4] += value;
     }
 
-    /**
-     * @dev Unused internal conversion function
-     */
+    /** @dev Unused internal conversion function */
     function _convertToShares(
         uint256,
         Math.Rounding
@@ -1074,9 +1063,7 @@ contract MatrixUno is ERC4626 {
         revert();
     }
 
-    /**
-     * @dev Unused internal conversion function
-     */
+    /** @dev Unused internal conversion function */
     function _convertToAssets(
         uint256,
         Math.Rounding
