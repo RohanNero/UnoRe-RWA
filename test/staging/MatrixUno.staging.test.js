@@ -163,7 +163,7 @@ developmentChains.includes(network.name)
           console.log("FinalUserAssets:", finalAssets.toString())
         })
       })
-      describe("performUpkeep", function () {
+      describe.only("performUpkeep", function () {
         it("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -194,7 +194,7 @@ developmentChains.includes(network.name)
         //   console.log(finalInfo.toString())
         // })
       })
-      describe.only("unstake", function () {
+      describe("unstake", function () {
         it("allows users to unstake xUNO for their initial DAI deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(user.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -426,7 +426,7 @@ developmentChains.includes(network.name)
           // )
         })
       })
-      describe.only("unoClaim", function () {
+      describe("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())

@@ -504,7 +504,7 @@ contract MatrixUno is ERC4626 {
      *@dev returns true when one period has passed since the last `performUpkeep()` call
      */
     function checkUpkeep() external view returns (bool upkeepNeeded) {
-        if ((block.timestamp - lastUpkeepTime) >= i_interval) {
+        if ((block.timestamp - lastUpkeepTime) < i_interval) {
             upkeepNeeded = false;
         } else if (totalDeposited <= 0) {
             upkeepNeeded = false;
@@ -837,7 +837,7 @@ contract MatrixUno is ERC4626 {
         return false;
     }
 
-    /**Overridden view functions */
+    /** Overridden view functions */
 
     /** @dev (from STBT/xUNO to stablecoins) */
     function convertToShares(
