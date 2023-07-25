@@ -888,38 +888,38 @@ contract MatrixUno is ERC4626 {
         return type(uint256).max;
     }
 
-    /** @dev See {IERC4626-maxWithdraw}. */
+    /** @dev Simply returns amount of xUNO they can have converted into stablecoins */
     function maxWithdraw(address owner) public view override returns (uint256) {
-        return convertToAssets(balanceOf(owner));
+        return convertToShares(balanceOf(owner));
     }
 
-    /** @dev See {IERC4626-maxRedeem}. */
+    /** @dev Simply returns xUNO balance of `owner` */
     function maxRedeem(address owner) public view override returns (uint256) {
         return balanceOf(owner);
     }
 
-    /** @dev See {IERC4626-previewDeposit}. */
+    /** @dev Simply returns `assets` amount of xUNO converted into stablecoins */
     function previewDeposit(
         uint256 assets
     ) public view override returns (uint256) {
         return convertToShares(assets);
     }
 
-    /** @dev See {IERC4626-previewMint}. */
+    /** @dev Simply returns `shares` amount of stablecoins converted into xUNO */
     function previewMint(
         uint256 shares
     ) public view override returns (uint256) {
         return convertToAssets(shares);
     }
 
-    /** @dev See {IERC4626-previewWithdraw}. */
+    /** @dev Simply returns `assets` amount of xUNO converted into stablecoins */
     function previewWithdraw(
         uint256 assets
     ) public view override returns (uint256) {
         return convertToShares(assets);
     }
 
-    /** @dev See {IERC4626-previewRedeem}. */
+    /** @dev Simply returns `shares` amount of stablecoins converted into xUNO */
     function previewRedeem(
         uint256 shares
     ) public view override returns (uint256) {
