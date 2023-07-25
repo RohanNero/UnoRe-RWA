@@ -3,7 +3,6 @@
 pragma solidity 0.8.7;
 
 interface IMatrixUno {
-
     struct rewardInfo {
         uint256 rewards;
         uint256 previousPeriodBalance;
@@ -59,7 +58,10 @@ interface IMatrixUno {
     function setSpendingTokens(uint8[4] memory tokens) external;
 
     // ERC-4626 functions
-    function deposit(uint256 assets, address receiver) external returns (uint256);
+    function deposit(
+        uint256 assets,
+        address receiver
+    ) external returns (uint256);
 
     function withdraw(
         uint256 assets,
@@ -75,7 +77,7 @@ interface IMatrixUno {
         address to,
         uint256 value
     ) external returns (bool);
-}
+
     function viewPoolAddress() external view returns (address);
 
     function viewUnoAddress() external view returns (address);

@@ -76,7 +76,7 @@ contract MatrixUno is ERC4626 {
     struct rewardInfo {
         uint256 rewards; // amount of STBT rewards earned by the vault during the period
         uint256 vaultAssetBalance; // total amount of assets DEPOSITED into the vault
-        uint256 previousperiodBalance; // total STBT in the vault the previous period (last `performUpkeep()` call)
+        uint256 previousPeriodBalance; // total STBT in the vault the previous period (last `performUpkeep()` call)
         uint256 currentBalance; // TOTAL AMOUNT of assets in the vault, deposited or sent from MatrixPort as rewards (balanceOf)
         uint256 unoDeposit; // amount of stbt uno has deposited during the period
         uint256 claimed; // amount of STBT rewards that were claimed during the period
@@ -162,7 +162,6 @@ contract MatrixUno is ERC4626 {
     // event transferInfo(uint256 _amount, uint256 _receive);
     // event actual(uint256 actualRec);
     // event upkeep(bool needed, uint256 lastUpkeep);
-
     event transferData(int128 p, uint256 r, uint256 t, bool b);
     event withdrawData(bool p, bool r, uint256 t, uint256 b);
 
@@ -594,87 +593,6 @@ contract MatrixUno is ERC4626 {
         emit UpkeepPerformed(rewardInfoArray[length - 1]);
     }
 
-    /** Internal and Private functions */
-
-    /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool
-     *@param earned is the total STBT rewards earned by the user
-     *@param token corresponds to the `stables` array index */
-    function _swap(
-        uint256 earned,
-        uint8 token,
-        uint256 minimumPercentage
-    ) private returns (uint256) {
-        // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
-        uint256 minimumReceive;
-        int128 formatPercentage = minimumPercentage.fromUInt();
-        if (token > 0) {
-            minimumReceive = formatPercentage.mulu(earned) / 1e14;
-        } else {
-            minimumReceive = formatPercentage.mulu(earned) / 100;
-        }
-        stbt.approve(address(pool), earned);
-        //try
-        uint256 actualReceived = pool.exchange_underlying(
-            int128(0),
-            int128(uint128(token + 1)),
-            earned,
-            minimumReceive
-        );
-        return actualReceived;
-        //} catch {
-        //    revert MatrixUno__StableSwapFailed();
-        //}
-        // uint256 actualReceived = pool.exchange_underlying(
-        //     int128(0),
-        //     int128(uint128(token + 1)),
-        //     earned,
-        //     minimumReceive
-        // );
-        // return actualReceived;
-    }
-
-    /**@notice native ERC-4626 function */
-    function _deposit(
-        address caller,
-        address receiver,
-        uint256 assets,
-        uint256
-    ) internal override {
-        stbt.transferFrom(caller, address(this), assets);
-        _mint(receiver, assets);
-        // inherited event, currently emitting with assets for assets and shares since 1:1 peg.
-        emit Deposit(caller, receiver, assets, assets);
-    }
-
-    /**@notice native ERC-4626 function */
-    function _withdraw(
-        address caller,
-        address receiver,
-        address owner,
-        uint256 assets,
-        uint256
-    ) internal override {
-        if (caller != owner && caller != uno) {
-            _spendAllowance(owner, caller, assets);
-        }
-        emit withdrawData(
-            caller == uno,
-            balanceOf(address(this)) < unoDepositAmount,
-            balanceOf(address(this)),
-            unoDepositAmount
-        );
-        if (caller == uno && balanceOf(address(this)) < unoDepositAmount) {
-            _burn(owner, balanceOf(address(this)));
-        } else {
-            _burn(owner, assets);
-        }
-        if (caller == uno) {
-            unoDepositAmount = 0;
-        }
-        stbt.transfer(receiver, assets);
-        emit Withdraw(caller, receiver, owner, assets, assets);
-    }
-
     /** View / Pure functions */
 
     /**@notice returns the curve pool address */
@@ -939,12 +857,95 @@ contract MatrixUno is ERC4626 {
         return false;
     }
 
+    /** Internal and Private functions */
+
+    /**@notice handles swapping STBT into stablecoins by using the Curve finance STBT/3CRV pool
+     *@param earned is the total STBT rewards earned by the user
+     *@param token corresponds to the `stables` array index */
+    function _swap(
+        uint256 earned,
+        uint8 token,
+        uint256 minimumPercentage
+    ) private returns (uint256) {
+        // transfer earned STBT to STBT/3CRV pool and exchange for stablecoin
+        uint256 minimumReceive;
+        int128 formatPercentage = minimumPercentage.fromUInt();
+        if (token > 0) {
+            minimumReceive = formatPercentage.mulu(earned) / 1e14;
+        } else {
+            minimumReceive = formatPercentage.mulu(earned) / 100;
+        }
+        stbt.approve(address(pool), earned);
+        //try
+        uint256 actualReceived = pool.exchange_underlying(
+            int128(0),
+            int128(uint128(token + 1)),
+            earned,
+            minimumReceive
+        );
+        return actualReceived;
+        //} catch {
+        //    revert MatrixUno__StableSwapFailed();
+        //}
+        // uint256 actualReceived = pool.exchange_underlying(
+        //     int128(0),
+        //     int128(uint128(token + 1)),
+        //     earned,
+        //     minimumReceive
+        // );
+        // return actualReceived;
+    }
+
+    /**@notice native ERC-4626 function */
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256
+    ) internal override {
+        stbt.transferFrom(caller, address(this), assets);
+        _mint(receiver, assets);
+        // inherited event, currently emitting with assets for assets and shares since 1:1 peg.
+        emit Deposit(caller, receiver, assets, assets);
+    }
+
+    /**@notice native ERC-4626 function */
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256
+    ) internal override {
+        if (caller != owner && caller != uno) {
+            _spendAllowance(owner, caller, assets);
+        }
+        emit withdrawData(
+            caller == uno,
+            balanceOf(address(this)) < unoDepositAmount,
+            balanceOf(address(this)),
+            unoDepositAmount
+        );
+        if (caller == uno && balanceOf(address(this)) < unoDepositAmount) {
+            _burn(owner, balanceOf(address(this)));
+        } else {
+            _burn(owner, assets);
+        }
+        if (caller == uno) {
+            unoDepositAmount = 0;
+        }
+        stbt.transfer(receiver, assets);
+        emit Withdraw(caller, receiver, owner, assets, assets);
+    }
+
+    /**@notice checks upkeep and if true, calls performUpkeep */
     function _calculateRewards() private {
         if (this.checkUpkeep()) {
             this.performUpkeep();
         }
     }
 
+    /**@notice updates user balances for transferring xUNO tokens */
     function _updatesBalance(address from, address to, uint256 value) private {
         if (value > viewTotalBalance(from)) {
             revert MatrixUno__InsufficientBalance(
