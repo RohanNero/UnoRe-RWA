@@ -35,7 +35,7 @@ developmentChains.includes(network.name)
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
       })
-      describe.only("stake", function () {
+      describe("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
@@ -194,7 +194,7 @@ developmentChains.includes(network.name)
         //   console.log(finalInfo.toString())
         // })
       })
-      describe("unstake", function () {
+      describe.only("unstake", function () {
         it("allows users to unstake xUNO for their initial DAI deposit plus rewards earned", async function () {
           const initialShares = await vault.balanceOf(user.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -289,6 +289,7 @@ developmentChains.includes(network.name)
           const stbtDeposit = ethers.utils.parseUnits("200000", 18)
           //const xUnoTransfer = ethers.utils.parseUnits("50000", 18)
           const xUnoTransfer = await vault.balanceOf(user2.address)
+          //const half = BigInt(xUnoTransfer) / BigInt(2)
           console.log((initialVaultAssets - stbtDeposit).toString())
           // if (initialShares != 0 && initialVaultAssets <= stbtDeposit) {
           //   const transferTx = await stbt.transfer(vault.address, stbtTransfer)
@@ -413,7 +414,7 @@ developmentChains.includes(network.name)
             deployer.address,
             vault.address,
             {
-              gasLimit: 3000000,
+              gasLimit: 7000000,
             }
           )
           await withdrawTx.wait(1)
@@ -425,7 +426,7 @@ developmentChains.includes(network.name)
           // )
         })
       })
-      describe("unoClaim", function () {
+      describe.only("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())

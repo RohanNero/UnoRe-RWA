@@ -23,7 +23,7 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 error MatrixUno__ZeroAmountGiven();
 /**@param tokenId - corresponds to the `stables` indices */
 error MatrixUno__InvalidTokenId(uint tokenId);
-/**@notice used when `performUpkeep()` is called before a week has passed */
+/**@notice used when `performUpkeep()` is called before a period has passed */
 error MatrixUno__UpkeepNotReady();
 /**@notice used when calling `stake` to ensure the user isn't a sanctioned entity */
 error MatrixUno__SanctionedAddress();
@@ -34,7 +34,7 @@ error MatrixUno__StableSwapFailed();
 /**@notice used inside of `claim` to ensure the sender is claiming for themselves */
 error MatrixUno__AddrMustBeSender(address sender, address addr);
 /**@notice used inside `viewPortionAt()` to ensure the function doesn't try to access out-of-bounds index */
-error MatrixUno__InvalidWeek(uint week);
+error MatrixUno__InvalidPeriod(uint period);
 /**@notice used when users try to transfer tokens */
 error MatrixUno__InsufficientBalance(uint value, uint totalBalance);
 /**@notice used to ensure the spendingTokens variable has no duplicate values */
@@ -71,21 +71,22 @@ contract MatrixUno is ERC4626 {
     // /**@notice used to interact with the SSIP */
     // ISingleSidedInsurancePool private ssip;
 
-    /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every week
-     *@dev each struct corresponds to a different week since the contract's inception */
+    /**@notice this struct includes a list of variables that get updated inside the rewardInfoArray every period
+     *@dev each struct corresponds to a different period since the contract's inception */
     struct rewardInfo {
-        uint rewards; // amount of STBT rewards earned by the vault during the week
+        uint rewards; // amount of STBT rewards earned by the vault during the period
         uint vaultAssetBalance; // total amount of assets DEPOSITED into the vault
-        uint previousWeekBalance; // total STBT in the vault the previous week (last `performUpkeep()` call)
+        uint previousperiodBalance; // total STBT in the vault the previous period (last `performUpkeep()` call)
         uint currentBalance; // TOTAL AMOUNT of assets in the vault, deposited or sent from MatrixPort as rewards (balanceOf)
-        uint claimed; // amount of STBT rewards that were claimed during the week
-        uint deposited; // amount of STBT deposited into the vault during the week
-        uint withdrawn; // amount of STBT withdrawn from the vault during the week
+        uint unoDeposit; // amount of stbt uno has deposited during the period
+        uint claimed; // amount of STBT rewards that were claimed during the period
+        uint deposited; // amount of STBT deposited into the vault during the period
+        uint withdrawn; // amount of STBT withdrawn from the vault during the period
         uint startTime; // starting timestamp of this reward period
         uint endTime; // ending timestamp of this reward period
     }
 
-    /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim week
+    /**@notice this struct includes a variable that represents stablecoin balances as well as the last claim period
      *@dev balances corresponds to the stable array indices (DAI = 0, USDC = 1, USDT = 2, STBT = 3, and xUNO = 4) */
     struct claimInfo {
         uint[5] balances;
@@ -94,8 +95,8 @@ contract MatrixUno is ERC4626 {
         uint8[4] spendingOrder;
     }
 
-    /**@notice each index corresponds to a week
-     *@dev index 0 is the contract's first week of being deployed
+    /**@notice each index corresponds to a period
+     *@dev index 0 is the contract's first period of being deployed
      *@dev starting at i_startingTimestamp, ending at i_startingTimestamp +i_interval */
     rewardInfo[] private rewardInfoArray;
 
@@ -103,12 +104,15 @@ contract MatrixUno is ERC4626 {
      *@dev 0 = DAI, 1 = USDC, 2= USDT*/
     address[3] private stables;
 
-    /**@notice User stablecoin balances and week index of their last claim */
+    /**@notice User stablecoin balances and period index of their last claim */
     mapping(address => claimInfo) private claimInfoMap;
 
     /**@notice tracks the total amount of stablecoins staked
      *@dev USDC/UDST were converted into 18 decimals */
     uint private totalStaked;
+
+    /**@notice tracks total amount of stbt deposited */
+    uint private totalDeposited;
 
     /**@notice tracks the total amount of STBT claimed by users */
     uint private totalClaimed;
@@ -123,7 +127,7 @@ contract MatrixUno is ERC4626 {
     uint private immutable i_startingTimestamp;
 
     /**@notice immutable variable representing the number of seconds in ani_interval
-     *@dev originally was constant variable set to one week (604800) */
+     *@dev originally was constant variable set to one period (604800) */
     uint private immutable i_interval;
 
     /**@notice last timestamp that performUpkeep() was called */
@@ -264,10 +268,10 @@ contract MatrixUno is ERC4626 {
         i_startingTimestamp = block.timestamp;
         lastUpkeepTime = block.timestamp;
         i_interval = interval;
-        //rewardInfoArray[0].previousWeekBalance = 2e23;
+        //rewardInfoArray[0].previousperiodBalance = 2e23;
         // 200,000 STBT with 18 decimals
         rewardInfoArray.push(
-            rewardInfo(0, 0, 0, 0, 0, 0, 0, block.timestamp, 0)
+            rewardInfo(0, 0, 0, 0, 0, 0, 0, 0, block.timestamp, 0)
         );
     }
 
@@ -498,15 +502,20 @@ contract MatrixUno is ERC4626 {
         address receiver
     ) public virtual override calculateRewards returns (uint256) {
         //uint256 shares = previewDeposit(assets);
+
         _deposit(_msgSender(), receiver, assets, 0);
         claim(msg.sender, 1, 97);
+
         /**@notice custom MatrixUno logic to track STBT deposited by Uno Re */
+        uint length = rewardInfoArray.length - 1;
         if (receiver == address(this) && msg.sender == uno) {
             unoDepositAmount += assets;
+            rewardInfoArray[length].unoDeposit += assets;
         }
-        rewardInfoArray[rewardInfoArray.length - 1].deposited += assets;
-        rewardInfoArray[rewardInfoArray.length - 1].vaultAssetBalance += assets;
+        rewardInfoArray[length].deposited += assets;
+        rewardInfoArray[length].vaultAssetBalance += assets;
         claimInfoMap[msg.sender].balances[3] += assets;
+        totalDeposited += assets;
         return assets;
     }
 
@@ -526,13 +535,15 @@ contract MatrixUno is ERC4626 {
         if (msg.sender == uno) {
             this.performUpkeep();
         }
-        _withdraw(_msgSender(), receiver, owner, assets, 0);
         claim(msg.sender, 1, 97);
+        _withdraw(_msgSender(), receiver, owner, assets, 0);
+
         /**@notice custom MatrixUno logic to track STBT withdrawn by Uno Re */
 
         rewardInfoArray[rewardInfoArray.length - 1].withdrawn += assets;
         rewardInfoArray[rewardInfoArray.length - 1].vaultAssetBalance -= assets;
         claimInfoMap[msg.sender].balances[3] -= assets;
+        totalDeposited -= assets;
         return assets;
     }
 
@@ -573,21 +584,31 @@ contract MatrixUno is ERC4626 {
     // }
 
     /**@notice this function will call `performUpkeep()` when upkeepNeeded is true
-     *@dev returns true when one week has passed since the last `performUpkeep()` call
+     *@dev returns true when one period has passed since the last `performUpkeep()` call
      */
     function checkUpkeep() external view returns (bool upkeepNeeded) {
         upkeepNeeded = (((block.timestamp - lastUpkeepTime) >= i_interval) &&
-            unoDepositAmount > 0);
+            totalDeposited > 0);
     }
 
     /**@notice this function is called by core functions after `interval` passes to update values for reward calculation
      *@dev is only called once `checkUpkeep()` returns true */
     function performUpkeep() external {
         uint length = rewardInfoArray.length;
-        if ((block.timestamp - lastUpkeepTime) < i_interval) {
+        console.log(_msgSender() != uno);
+        console.log(_msgSender());
+        if (
+            (block.timestamp - lastUpkeepTime) < i_interval &&
+            _msgSender() != uno &&
+            _msgSender() != address(this)
+        ) {
             revert MatrixUno__UpkeepNotReady();
         }
-        if (unoDepositAmount == 0 && _msgSender() != uno) {
+        if (
+            totalDeposited == 0 &&
+            _msgSender() != uno &&
+            _msgSender() != address(this)
+        ) {
             revert MatrixUno__UpkeepNotAllowed();
         }
         lastUpkeepTime = block.timestamp;
@@ -598,7 +619,7 @@ contract MatrixUno is ERC4626 {
             (currentInfo.currentBalance +
                 currentInfo.claimed +
                 currentInfo.withdrawn) <
-            (currentInfo.previousWeekBalance + currentInfo.deposited)
+            (currentInfo.previousperiodBalance + currentInfo.deposited)
         ) {
             rewardInfoArray[length - 1].rewards = 0;
         } else {
@@ -606,7 +627,7 @@ contract MatrixUno is ERC4626 {
                 (currentInfo.currentBalance +
                     currentInfo.claimed +
                     currentInfo.withdrawn) -
-                (currentInfo.previousWeekBalance + currentInfo.deposited);
+                (currentInfo.previousperiodBalance + currentInfo.deposited);
             unaccountedRewards += calculateUnaccountedRewards();
         }
         rewardInfoArray[length - 1].endTime = block.timestamp;
@@ -616,6 +637,7 @@ contract MatrixUno is ERC4626 {
                 currentInfo.vaultAssetBalance,
                 currentStbt,
                 0,
+                unoDepositAmount,
                 0,
                 0,
                 0,
@@ -747,23 +769,25 @@ contract MatrixUno is ERC4626 {
     }
 
     /**@notice this function returns the total amount of STBT that can be redeemed for stablecoins
-     *@param week is the rewardInfoArray index that you'd like to view portion from */
-    function viewRedeemableAt(uint week) public view returns (uint redeemable) {
-        redeemable = totalAssets() - rewardInfoArray[week].vaultAssetBalance;
+     *@param period is the rewardInfoArray index that you'd like to view portion from */
+    function viewRedeemableAt(
+        uint period
+    ) public view returns (uint redeemable) {
+        redeemable = totalAssets() - rewardInfoArray[period].vaultAssetBalance;
     }
 
-    /**@notice this function returns the amount of times that the users totalStaked goes into the vaultAssetBalance at given week
+    /**@notice this function returns the amount of times that the users totalStaked goes into the vaultAssetBalance at given period
      *@dev essentially views what portion of the STBT is being represented by the user
      *@dev for example: user who staked $50,000 DAI would have portion of 4. (1/4 of unoDepositAmount)
      *@dev portion is the stablecoins staked portion, sPortion is the STBT portion
-     *@param week is the rewardInfoArray index that you'd like to view portion from
+     *@param period is the rewardInfoArray index that you'd like to view portion from
      *@param addr is the user's portion you are viewing */
     function viewPortionAt(
-        uint week,
+        uint period,
         address addr
     ) public view returns (int128 portion, int128 sPortion) {
-        if (week >= rewardInfoArray.length) {
-            revert MatrixUno__InvalidWeek(week);
+        if (period >= rewardInfoArray.length) {
+            revert MatrixUno__InvalidPeriod(period);
         }
         uint stbtDeposited = claimInfoMap[addr].balances[3];
         uint xunoBalance = claimInfoMap[addr].balances[4];
@@ -771,14 +795,16 @@ contract MatrixUno is ERC4626 {
         if (msg.sender == uno) {
             stbtDeposited -= unoDepositAmount;
         }
-        if (xunoBalance > 0 && unoDepositAmount > 0) {
-            portion = xunoBalance.divu(rewardInfoArray[week].vaultAssetBalance);
+        if (xunoBalance > 0 && rewardInfoArray[period].unoDeposit > 0) {
+            portion = xunoBalance.divu(
+                rewardInfoArray[period].vaultAssetBalance
+            );
         } else {
             portion = 0;
         }
         if (stbtDeposited > 0) {
             sPortion = stbtDeposited.divu(
-                rewardInfoArray[week].vaultAssetBalance
+                rewardInfoArray[period].vaultAssetBalance
             );
         } else {
             sPortion = 0;
@@ -812,10 +838,12 @@ contract MatrixUno is ERC4626 {
         return (totalRewards, totalSRewards);
     }
 
-    /**@notice returns the rewardInfo struct for a given week
-     *@param week corresponds to the rewardInfoArray index */
-    function viewRewardInfo(uint week) public view returns (rewardInfo memory) {
-        return rewardInfoArray[week];
+    /**@notice returns the rewardInfo struct for a given period
+     *@param period corresponds to the rewardInfoArray index */
+    function viewRewardInfo(
+        uint period
+    ) public view returns (rewardInfo memory) {
+        return rewardInfoArray[period];
     }
 
     /**@notice this function lets you view the balances of users
@@ -852,7 +880,7 @@ contract MatrixUno is ERC4626 {
         return totalStable + totalStbt;
     }
 
-    /**@notice returns the last week a user has claimed
+    /**@notice returns the last period a user has claimed
      *@param user the address that has claimed */
     function viewLastClaimed(address user) public view returns (uint16) {
         return claimInfoMap[user].lastClaimPeriod;
@@ -902,6 +930,8 @@ contract MatrixUno is ERC4626 {
             return 0;
         } else {
             uint remainder = unoDepositAmount - accountedForStbt;
+            console.log("remainder:", remainder);
+            console.log("cb:", rewardInfoArray[length - 1].currentBalance);
             int128 portion = remainder.divu(
                 rewardInfoArray[length - 1].currentBalance
             );

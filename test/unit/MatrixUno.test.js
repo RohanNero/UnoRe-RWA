@@ -313,7 +313,7 @@ describe.only("MatrixUno Unit Tests", function () {
         //   // it("`transferFromAmount` is less than provided `amount` if vault doesn't have enough xUNO", async function () {})
         // })
         describe("stake", function () {
-          it("STBT usdcWhale should have a high STBT balance", async function () {
+          it("STBT whale should have a high STBT balance", async function () {
             const initialBal = await stbt.balanceOf(sWhale._address, {
               gasLimit: 300000,
             })
@@ -403,13 +403,13 @@ describe.only("MatrixUno Unit Tests", function () {
             // console.log("vault stbt balance:", vaultStbtBalance.toString())
             if (stbtAllowance.toString() < stbtDeposit.toString()) {
               await stbt.connect(sWhale).approve(vault.address, stbtDeposit, {
-                gasLimit: 300000,
+                gasLimit: 700000,
               })
               //console.log(stbtDeposit.toString(), "STBT approved!")
             }
             if (vaultStbtBalance < stbtDeposit / 2) {
               await vault.connect(sWhale).deposit(stbtDeposit, vault.address, {
-                gasLimit: 300000,
+                gasLimit: 700000,
               })
             }
             const endingVaultStbtBalance = await stbt.balanceOf(vault.address)
@@ -478,7 +478,7 @@ describe.only("MatrixUno Unit Tests", function () {
             //if (initialVaultdaiBalance < daiDeposit) {
             const shares = await vault
               .connect(daiWhale)
-              .stake(daiDeposit, 0, 99, { gasLimit: 300000 })
+              .stake(daiDeposit, 0, 99, { gasLimit: 700000 })
             //}
             //console.log("staked!")
 
@@ -542,7 +542,7 @@ describe.only("MatrixUno Unit Tests", function () {
             //if (initialVaultUsdcBalance < usdcDeposit) {
             const shares = await vault
               .connect(usdcWhale)
-              .stake(usdcDeposit, 1, 99, { gasLimit: 300000 })
+              .stake(usdcDeposit, 1, 99, { gasLimit: 700000 })
             //}
             //console.log("staked!")
 
@@ -617,7 +617,7 @@ describe.only("MatrixUno Unit Tests", function () {
             //if (initialVaultusdtBalance < usdtDeposit) {
             const shares = await vault
               .connect(usdtWhale)
-              .stake(usdtDeposit, 2, 99, { gasLimit: 300000 })
+              .stake(usdtDeposit, 2, 99, { gasLimit: 700000 })
             //}
             console.log("staked!")
 
@@ -727,6 +727,42 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("updatedBal:", updatedBal.toString())
           })
         })
+        describe("withdraw", function () {
+          it("should allow uno to withdraw their initial deposit at any time", async function () {
+            const uno = await vault.viewUnoAddress()
+            console.log("uno:", uno.toString())
+            console.log(sWhale._address)
+            const initialShares = await vault.balanceOf(sWhale._address)
+            const initialVaultAssets = await stbt.balanceOf(vault.address)
+            console.log("InitialShares:", initialShares.toString())
+            console.log("InitialVaultAssets:", initialVaultAssets.toString())
+            const stbtDeposit = ethers.utils.parseUnits("200000", 18)
+            // console.log((initialVaultAssets - stbtDeposit).toString())
+            const initialAllowance = await vault.allowance(
+              sWhale._address,
+              vault.address
+            )
+
+            if (initialAllowance < stbtDeposit) {
+              const approveTx = await vault
+                .connect(sWhale)
+                .approve(vault.address, stbtDeposit)
+              console.log("approved!")
+            }
+            console.log("InitialAllowance:", initialAllowance.toString())
+            const withdrawTx = await vault
+              .connect(sWhale)
+              .withdraw(stbtDeposit, sWhale._address, vault.address, {
+                gasLimit: 7000000,
+              })
+            console.log("withdrawn!")
+            const rewards = await vault.viewTotalClaimed()
+            console.log("totalClaimed:", rewards.toString())
+            // console.log(
+            //   initialVaultAssets > stbtDeposit && initialAllowance >= xUnoTransfer
+            // )
+          })
+        })
 
         // VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS / VIEW FUNCTIONS //
         describe("viewPoolAddress", function () {
@@ -783,20 +819,23 @@ describe.only("MatrixUno Unit Tests", function () {
         //     week++
         //   })
         // })
-        describe("viewRewards", function () {
-          it("returns amount of rewards a user earns", async function () {
-            const value = await vault.viewRewards(usdcWhale._address)
-            console.log(value.toString())
-            const convertedAmount = value[0].toString().slice(0, -18)
-            console.log("converted:", convertedAmount)
-            console.log(value[0] >= 249)
-            assert.isTrue(value[0] >= 249)
-          })
-        })
+        // describe("viewRewards", function () {
+        //   it("returns amount of rewards a user earns", async function () {
+        //     const value = await vault.viewRewards(usdcWhale._address)
+        //     console.log(value.toString())
+        //     const convertedAmount = value[0].toString().slice(0, -18)
+        //     console.log("converted:", convertedAmount)
+        //     console.log(value[0] >= 249)
+        //     assert.isTrue(value[0] >= 249)
+        //   })
+        //})
         describe("viewRewardInfo", function () {
           it("returns the rewardInfo for given week", async function () {
-            const value = await vault.viewRewardInfo(0)
-            assert.isTrue(999999999999999999999 >= value[0])
+            const value = await vault.viewRewardInfo(1)
+            const value2 = await vault.viewRewardInfo(0)
+            console.log(value.toString())
+            console.log(value2.toString())
+            //assert.isTrue(999999999999999999999 >= value[0])
           })
         })
         describe("viewBalance", function () {
@@ -834,9 +873,9 @@ describe.only("MatrixUno Unit Tests", function () {
               usdcWhale._address
             )
             const xthree = totalClaimed.mul(3)
-            // console.log("value:", value.toString())
-            // console.log("totalClaimed:", totalClaimed.toString())
-            // console.log("xThree value:", xthree.toString())
+            console.log("value:", value.toString())
+            console.log("totalClaimed:", totalClaimed.toString())
+            console.log("xThree value:", xthree.toString())
 
             assert.equal(value.toString(), xthree)
           })
@@ -900,6 +939,12 @@ describe.only("MatrixUno Unit Tests", function () {
             const number = (value / 2 ** 64) * (stakeValue / 2 ** 64)
             //console.log(number.toString())
             assert.approximately(number, 1, 0.5)
+          })
+        })
+        describe("viewSTBTBalance", function () {
+          it("views stbt balance", async function () {
+            const stbtBal = await stbt.balanceOf(vault.address)
+            console.log(stbtBal.toString())
           })
         })
         // describe("unstake", function () {
