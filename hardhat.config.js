@@ -123,4 +123,11 @@ module.exports = {
   mocha: {
     timeout: 100000000,
   },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    strict: true,
+    only: ['vaults/MatrixUno.sol'],
+  },
 }
