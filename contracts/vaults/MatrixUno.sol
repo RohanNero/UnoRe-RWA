@@ -39,6 +39,8 @@ error MatrixUno__InsufficientBalance(uint256 value, uint256 totalBalance);
 error MatrixUno__NoDuplicates();
 /**@notice used to ensure perform upkeep doesn't work if unoDepositAmount is zero */
 error MatrixUno__UpkeepNotAllowed();
+/**@notice used to ensure users input a number between 1-99 in _swap() */
+error MatrixUno__InvalidPercent(uint8 percent);
 
 /**@title MatrixUno
  *@author Rohan Nero
@@ -91,6 +93,8 @@ contract MatrixUno is ERC4626 {
         uint16 lastClaimPeriod;
         uint256 totalAmountClaimed;
         uint8[4] spendingOrder;
+        uint8 minimumPercent;
+        uint8 tokenPreference;
     }
 
     /**@notice each index corresponds to a period
@@ -104,6 +108,9 @@ contract MatrixUno is ERC4626 {
 
     /**@notice User stablecoin balances and period index of their last claim */
     mapping(address => claimInfo) private claimInfoMap;
+
+    // /**@notice used when claim is called on behalf of users during xUNO transfer */
+    // uint8 private minimumPercentage;
 
     /**@notice tracks the total amount of stablecoins staked
      *@dev USDC/UDST were converted into 18 decimals */
@@ -213,7 +220,7 @@ contract MatrixUno is ERC4626 {
     function stake(
         uint256 amount,
         uint8 token,
-        uint256 minimumPercentage
+        uint8 minimumPercentage
     ) external calculateRewards returns (uint256 shares) {
         if (amount == 0) {
             revert MatrixUno__ZeroAmountGiven();
@@ -287,7 +294,7 @@ contract MatrixUno is ERC4626 {
     function unstake(
         uint256 amount,
         uint8 token,
-        uint256 minimumPercentage
+        uint8 minimumPercentage
     ) external calculateRewards returns (uint256) {
         if (amount == 0) {
             revert MatrixUno__ZeroAmountGiven();
@@ -334,7 +341,7 @@ contract MatrixUno is ERC4626 {
     function claim(
         address addr,
         uint8 token,
-        uint256 minimumPercentage
+        uint8 minimumPercentage
     ) public calculateRewards returns (uint256, uint256) {
         if (msg.sender != addr && msg.sender != address(this)) {
             revert MatrixUno__AddrMustBeSender(msg.sender, addr);
@@ -403,7 +410,7 @@ contract MatrixUno is ERC4626 {
      *@dev the tokens will be prioritized for spending starting at lowest `tokens` index
      *@dev this means that if tokens[0] == 0, (corresponds to DAI), the users DAI will be spent first if the user transfers xUNO */
     function setSpendingTokens(uint8[4] memory tokens) external {
-        if (hasDuplicates(tokens)) {
+        if (_hasDuplicates(tokens)) {
             revert MatrixUno__NoDuplicates();
         }
         if (tokens[0] > 3 || tokens[1] > 3 || tokens[2] > 3 || tokens[3] > 3) {
@@ -413,10 +420,40 @@ contract MatrixUno is ERC4626 {
     }
 
     /**@notice used to stake stablecoins into vault and xUNO into SSIP */
-    function stakeAndEnterInPool() public {}
+    function stakeAndEnterInPool(
+        uint256 amount,
+        uint8 token,
+        uint8 minimumPercentage
+    ) external {
+        uint256 shares = this.stake(amount, token, minimumPercentage);
+        ssip.enterInPool(shares);
+    }
 
-    /**@notice used to withdraw xUNO from SSIP and unstake stablecoins from  */
-    function unstakeAndLeaveFromPool() public {}
+    /**@notice used to deposit STBT into vault and xUNO into SSIP */
+    function depositAndEnterInPool(uint256 assets, address receiver) external {
+        deposit(assets, receiver);
+        ssip.enterInPool(assets);
+    }
+
+    /**@notice used to withdraw xUNO from SSIP and unstake stablecoins from vault */
+    function unstakeAndLeaveFromPool(
+        uint256 amount,
+        uint8 token,
+        uint8 minimumPercent
+    ) external {
+        ssip.leaveFromPending();
+        this.unstake(amount, token, minimumPercent);
+    }
+
+    /**@notice used to withdraw xUNO from SSIP and withdraw STBT from vault*/
+    function withdrawAndLeaveFromPool(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) external {
+        ssip.leaveFromPending();
+        withdraw(assets, receiver, owner);
+    }
 
     /**@notice allows uno to set the SSIP address */
     function setSSIP(address _ssip) public {
@@ -424,6 +461,22 @@ contract MatrixUno is ERC4626 {
             revert MatrixUno__OnlyUno();
         }
         ssip = ISingleSidedInsurancePool(_ssip);
+    }
+
+    /**@notice allows users to set their preferred minimum percent */
+    function setMinimumPercent(uint8 percent) external {
+        if (!_isValidPercent(percent)) {
+            revert MatrixUno__InvalidPercent(percent);
+        }
+        claimInfoMap[msg.sender].minimumPercent = percent;
+    }
+
+    /**@notice allows users to set their preferred stablecoin to receive rewards in */
+    function setTokenPreference(uint8 token) external {
+        if (token > 2) {
+            revert MatrixUno__InvalidTokenId(token);
+        }
+        claimInfoMap[msg.sender].tokenPreference = token;
     }
 
     // ERC-4626 functions
@@ -503,6 +556,7 @@ contract MatrixUno is ERC4626 {
         returns (bool)
     {
         address owner = _msgSender();
+        _claim(to);
         _transfer(owner, to, value);
         return true;
     }
@@ -514,6 +568,7 @@ contract MatrixUno is ERC4626 {
         uint256 value
     ) public override updatesBalance(from, to, value) returns (bool) {
         address spender = _msgSender();
+        _claim(to);
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
         return true;
@@ -656,7 +711,6 @@ contract MatrixUno is ERC4626 {
         }
         uint256 stbtDeposited = claimInfoMap[addr].balances[3];
         uint256 xunoBalance = claimInfoMap[addr].balances[4];
-        // If msg.sender is uno, we don't want to count the initial deposit towards earned rewards
         if (msg.sender == uno) {
             stbtDeposited -= unoDepositAmount;
         }
@@ -843,19 +897,6 @@ contract MatrixUno is ERC4626 {
         conversionRate = pool.get_virtual_price().divu(uint256(1e18));
     }
 
-    /**@notice returns if the array contains duplicate numbers */
-    function hasDuplicates(uint8[4] memory arr) public pure returns (bool) {
-        uint256 length = arr.length;
-        for (uint256 i = 0; i < length - 1; i++) {
-            for (uint256 j = i + 1; j < length; j++) {
-                if (arr[i] == arr[j]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     /** Overridden view functions */
 
     /** @dev (from STBT/xUNO to stablecoins) */
@@ -930,10 +971,13 @@ contract MatrixUno is ERC4626 {
     function _swap(
         uint256 earned,
         uint8 token,
-        uint256 minimumPercentage
+        uint8 minimumPercentage
     ) private returns (uint256) {
+        if (!_isValidPercent(minimumPercentage)) {
+            revert MatrixUno__InvalidPercent(minimumPercentage);
+        }
         uint256 minimumReceive;
-        int128 formatPercentage = minimumPercentage.fromUInt();
+        int128 formatPercentage = uint256(minimumPercentage).fromUInt();
         if (token > 0) {
             minimumReceive = formatPercentage.mulu(earned) / 1e14;
         } else {
@@ -944,7 +988,7 @@ contract MatrixUno is ERC4626 {
             int128(0),
             int128(uint128(token + 1)),
             earned,
-            minimumReceive
+            uint256(minimumReceive)
         );
         return actualReceived;
     }
@@ -1047,6 +1091,42 @@ contract MatrixUno is ERC4626 {
         }
         claimInfoMap[from].balances[4] -= value;
         claimInfoMap[to].balances[4] += value;
+    }
+
+    /**@notice returns if the array contains duplicate numbers */
+    function _hasDuplicates(uint8[4] memory arr) internal pure returns (bool) {
+        uint256 length = arr.length;
+        for (uint256 i = 0; i < length - 1; i++) {
+            for (uint256 j = i + 1; j < length; j++) {
+                if (arr[i] == arr[j]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**@notice returns whether a number is between 1 - 99 or not */
+    function _isValidPercent(uint8 percent) internal pure returns (bool) {
+        if (percent == 0 || percent > 99) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**@notice claims rewards on behalf of a user during xUNO transfer */
+    function _claim(address to) internal {
+        uint8 toPercent = claimInfoMap[to].minimumPercent;
+        uint8 toToken = claimInfoMap[to].tokenPreference;
+        uint8 unoPercent = claimInfoMap[uno].minimumPercent;
+        if (toPercent == 0) {
+            if (unoPercent == 0) {
+                toPercent = 97;
+            }
+            toPercent = unoPercent;
+        }
+        claim(to, toToken, toPercent);
     }
 
     /** @dev Unused internal conversion function */
