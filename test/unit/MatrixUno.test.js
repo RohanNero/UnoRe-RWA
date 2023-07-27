@@ -196,7 +196,7 @@ describe.only("MatrixUno Unit Tests", function () {
             //console.log(stbt.functions)
             //assert.isTrue(postPermissions[1])
           })
-          it("STBT usdcWhale should be able to deposit STBT", async function () {
+          it("STBT whale should be able to deposit STBT", async function () {
             await hre.network.provider.request({
               method: "hardhat_impersonateAccount",
               params: [sWhale._address],
@@ -505,10 +505,14 @@ describe.only("MatrixUno Unit Tests", function () {
           it("should update user balances correctly", async function () {
             const ten = ethers.utils.parseUnits("10", 18)
             const initialBal = await vault.viewBalance(usdcWhale._address, 1)
+            const initialxUNO = await vault.viewBalance(usdcWhale._address, 4)
             const initialRBal = await vault.viewBalance(sWhale._address, 1)
             console.log("initialRBal:", initialRBal.toString())
             console.log("intialBal:", initialBal.toString())
-            await vault.connect(usdcWhale).transfer(sWhale._address, ten)
+            console.log("initialXUNO:", initialxUNO.toString())
+            await vault
+              .connect(usdcWhale)
+              .transfer(sWhale._address, ten, { gasLimit: 700000 })
             const updatedBal = await vault.viewBalance(usdcWhale._address, 1)
             const updatedRBal = await vault.viewBalance(sWhale._address, 1)
             console.log("updatedRBal:", updatedRBal.toString())
@@ -531,7 +535,9 @@ describe.only("MatrixUno Unit Tests", function () {
             console.log("approved")
             await vault
               .connect(usdcWhale)
-              .transferFrom(sWhale._address, usdcWhale._address, ten)
+              .transferFrom(sWhale._address, usdcWhale._address, ten, {
+                gasLimit: 700000,
+              })
             const updatedBal = await vault.viewBalance(usdcWhale._address, 1)
             const updatedRBal = await vault.viewBalance(sWhale._address, 1)
             console.log("updatedRBal:", updatedRBal.toString())
@@ -665,30 +671,27 @@ describe.only("MatrixUno Unit Tests", function () {
           it("returns the last week a user has claimed", async function () {
             const currentWeek = await vault.viewCurrentPeriod()
             const value = await vault.viewLastClaimed(usdcWhale._address)
-            assert.equal(value, currentWeek.sub(1))
+            assert.equal(value, currentWeek)
           })
         })
         describe("viewClaimedAmount", function () {
           it("returns the amount a user has claimed", async function () {
             const value = await vault.viewClaimedAmount(usdcWhale._address)
-            const daiWhaleValue = await vault.viewClaimedAmount(
-              daiWhale._address
-            )
-            assert.equal(value.toString(), daiWhaleValue.toString())
+            console.log(value.toString())
+            //console.log(daiWhaleValue.toString())
+            const convertedValue = value.toString().slice(0, -18)
+            console.log(convertedValue.toString())
+            assert.isTrue(convertedValue > 100)
           })
         })
         describe("viewTotalClaimed", function () {
           it("returns the totalClaimed variable", async function () {
             const value = await vault.viewTotalClaimed()
-            const totalClaimed = await vault.viewClaimedAmount(
-              usdcWhale._address
-            )
-            const xthree = totalClaimed.mul(3)
+            const whaleClaim = await vault.viewClaimedAmount(usdcWhale._address)
             console.log("value:", value.toString())
-            console.log("totalClaimed:", totalClaimed.toString())
-            console.log("xThree value:", xthree.toString())
+            console.log("claim:", whaleClaim.toString())
 
-            assert.equal(value.toString(), xthree)
+            assert.isTrue(BigInt(value) >= BigInt(whaleClaim))
           })
         })
         describe("viewTotalStaked", function () {

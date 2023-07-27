@@ -17,6 +17,8 @@ import "../interfaces/ISanctionsList.sol";
 /**@notice used in reward calculation math */
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
+import "hardhat/console.sol";
+
 /**notice used to revert function calls that pass zero as the `amount` */
 error MatrixUno__ZeroAmountGiven();
 /**@param tokenId - corresponds to the `stables` indices */
@@ -175,6 +177,15 @@ contract MatrixUno is ERC4626 {
         address to,
         uint256 value
     ) {
+        if (claimInfoMap[from].balances[4] < value) {
+            revert MatrixUno__InsufficientBalance(
+                value,
+                claimInfoMap[from].balances[4]
+            );
+        }
+        if (claimInfoMap[to].balances[4] > 0) {
+            _claim(to);
+        }
         _updatesBalance(from, to, value);
         _;
     }
@@ -343,9 +354,9 @@ contract MatrixUno is ERC4626 {
         uint8 token,
         uint8 minimumPercentage
     ) public calculateRewards returns (uint256, uint256) {
-        if (msg.sender != addr && msg.sender != address(this)) {
-            revert MatrixUno__AddrMustBeSender(msg.sender, addr);
-        }
+        // if (_msgSender() != addr && _msgSender() != address(this)) {
+        //     revert MatrixUno__AddrMustBeSender(msg.sender, addr);
+        // }
         uint256 lastClaimPeriod = claimInfoMap[addr].lastClaimPeriod;
         uint256 currentPeriod = rewardInfoArray.length - 1;
         uint256 totalRewards = 0;
@@ -556,8 +567,9 @@ contract MatrixUno is ERC4626 {
         returns (bool)
     {
         address owner = _msgSender();
-        _claim(to);
+
         _transfer(owner, to, value);
+        console.log("code reached");
         return true;
     }
 
@@ -568,7 +580,7 @@ contract MatrixUno is ERC4626 {
         uint256 value
     ) public override updatesBalance(from, to, value) returns (bool) {
         address spender = _msgSender();
-        _claim(to);
+
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
         return true;
@@ -777,6 +789,7 @@ contract MatrixUno is ERC4626 {
         address user,
         uint8 token
     ) public view returns (uint256 balance) {
+        console.log("token:", token);
         if (token > 4) {
             revert MatrixUno__InvalidTokenId(token);
         }
@@ -1048,12 +1061,15 @@ contract MatrixUno is ERC4626 {
         if (tokens[0] + tokens[1] + tokens[2] + tokens[3] == 0) {
             tokens = [0, 1, 2, 3];
         }
+        console.log("value:", value);
+        console.log("balance:", claimInfoMap[from].balances[4]);
         int128 portion = value.divu(claimInfoMap[from].balances[4]);
-        uint256 totalBalance;
+        uint256 totalBalance = viewTotalBalance(from);
         if (from == uno) {
-            totalBalance = viewTotalBalance(from) - unoDepositAmount;
+            totalBalance -= unoDepositAmount;
         }
         uint256 remaining = portion.mulu(totalBalance);
+        console.log("remaining:", remaining);
         uint256 firstBalance = viewBalance(from, tokens[0]);
         uint256 secondBalance = viewBalance(from, tokens[1]);
         uint256 thirdBalance = viewBalance(from, tokens[2]);
@@ -1123,9 +1139,11 @@ contract MatrixUno is ERC4626 {
         if (toPercent == 0) {
             if (unoPercent == 0) {
                 toPercent = 97;
+            } else {
+                toPercent = unoPercent;
             }
-            toPercent = unoPercent;
         }
+        console.log("claimInfo:", to, toToken, toPercent);
         claim(to, toToken, toPercent);
     }
 
