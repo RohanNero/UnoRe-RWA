@@ -1102,64 +1102,42 @@ contract MatrixUno is ERC4626 {
         uint256 remaining
     ) private returns (uint) {
         uint8[3] memory tokens = claimInfoMap[from].spendingOrder;
-        uint256 firstBalance = viewBalance(from, tokens[0]);
-        uint256 secondBalance = viewBalance(from, tokens[1]);
-        uint256 thirdBalance = viewBalance(from, tokens[2]);
         uint256 xUnoBalance = viewBalance(from, 4);
+        uint256[3] memory balances = [
+            viewBalance(from, tokens[0]),
+            viewBalance(from, tokens[1]),
+            viewBalance(from, tokens[2])
+        ];
         if (xUnoBalance > remaining) {
             int128 portion = xUnoBalance.divu(remaining);
             uint sRemaining = portion.mulu(viewTotalStableBalance(from));
-            // 1st Stable
-            if (firstBalance > sRemaining) {
-                claimInfoMap[from].balances[tokens[0]] -= sRemaining;
-                claimInfoMap[to].balances[tokens[0]] += sRemaining;
-                sRemaining = 0;
-            } else {
-                claimInfoMap[from].balances[tokens[0]] = 0;
-                claimInfoMap[to].balances[tokens[0]] += firstBalance;
-                sRemaining -= firstBalance;
-            }
-            // 2nd Stable
-            if (secondBalance > sRemaining && sRemaining > 0) {
-                claimInfoMap[from].balances[tokens[1]] -= sRemaining;
-                claimInfoMap[to].balances[tokens[1]] += sRemaining;
-                sRemaining = 0;
-            } else {
-                claimInfoMap[from].balances[tokens[1]] = 0;
-                claimInfoMap[to].balances[tokens[1]] += secondBalance;
-                sRemaining -= secondBalance;
-            }
-            // 3rd Stable
-            if (thirdBalance > sRemaining && sRemaining > 0) {
-                claimInfoMap[from].balances[tokens[2]] -= sRemaining;
-                claimInfoMap[to].balances[tokens[2]] += sRemaining;
-                sRemaining = 0;
-            } else {
-                claimInfoMap[from].balances[tokens[2]] = 0;
-                claimInfoMap[to].balances[tokens[2]] += thirdBalance;
-                sRemaining -= thirdBalance;
+            for (uint8 i; i < 3; i++) {
+                if (balances[i] > 0) {
+                    if (balances[i] > sRemaining) {
+                        claimInfoMap[from].balances[tokens[i]] -= sRemaining;
+                        claimInfoMap[to].balances[tokens[i]] += sRemaining;
+                        sRemaining = 0;
+                    } else {
+                        claimInfoMap[from].balances[tokens[i]] = 0;
+                        claimInfoMap[to].balances[tokens[i]] += balances[i];
+                        sRemaining -= balances[i];
+                    }
+                }
             }
             claimInfoMap[from].balances[4] -= remaining;
             claimInfoMap[to].balances[4] += remaining;
             return 0;
         } else {
-            for (uint i; i < 5; i++) {
+            for (uint8 i; i < 5; i++) {
                 if (i != 3) {
                     claimInfoMap[from].balances[i] = 0;
                     uint stableBalance = viewBalance(from, i);
                     claimInfoMap[to].balances[i] += stableBalance;
                 }
             }
+            claimInfoMap[from].balances[4] = 0;
+            claimInfoMap[to].balances[4] += xUnoBalance;
             return remaining - xUnoBalance;
-            // claimInfoMap[from].balances[0] = 0;
-            // claimInfoMap[to].balances[0] += firstBalance;
-            // claimInfoMap[from].balances[1] = 0;
-            // claimInfoMap[to].balances[1] = secondBalance;
-            // claimInfoMap[from].balances[2] = 0;
-            // claimInfoMap[to].balances[2] = thirdBalance;
-            // claimInfoMap[from].balances[4] = 0;
-            // claimInfoMap[to].balances[4] += xUnoBalance;
-            // return remaining - xUnoBalance;
         }
     }
 
