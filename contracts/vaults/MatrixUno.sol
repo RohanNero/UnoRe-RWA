@@ -92,11 +92,12 @@ contract MatrixUno is ERC4626 {
      *@dev balances corresponds to the stable array indices (DAI = 0, USDC = 1, USDT = 2, STBT = 3, and xUNO = 4) */
     struct claimInfo {
         uint256[5] balances;
-        uint16 lastClaimPeriod;
+        uint8[3] spendingOrder;
         uint256 totalAmountClaimed;
-        uint8[4] spendingOrder;
+        uint16 lastClaimPeriod;
         uint8 minimumPercent;
         uint8 tokenPreference;
+        bool spendStbt; // false to decrement stable balance first when transferring xUNO, true to decrement STBT balance first
     }
 
     /**@notice each index corresponds to a period
@@ -423,11 +424,11 @@ contract MatrixUno is ERC4626 {
     /**@notice allows users to specify their preferred spending tokens
      *@dev the tokens will be prioritized for spending starting at lowest `tokens` index
      *@dev this means that if tokens[0] == 0, (corresponds to DAI), the users DAI will be spent first if the user transfers xUNO */
-    function setSpendingTokens(uint8[4] memory tokens) external {
+    function setSpendingTokens(uint8[3] memory tokens) external {
         if (_hasDuplicates(tokens)) {
             revert MatrixUno__NoDuplicates();
         }
-        if (tokens[0] > 3 || tokens[1] > 3 || tokens[2] > 3 || tokens[3] > 3) {
+        if (tokens[0] > 3 || tokens[1] > 3 || tokens[2] > 3) {
             revert MatrixUno__InvalidTokenId(0);
         }
         claimInfoMap[msg.sender].spendingOrder = tokens;
@@ -812,7 +813,7 @@ contract MatrixUno is ERC4626 {
     function viewTotalBalance(
         address addr
     ) public view returns (uint256 totalBalance) {
-        uint256 totalStable = viewTotalStableBalance(addr);
+        uint256 totalStable = viewBalance(addr, 4);
         uint256 totalStbt = viewBalance(addr, 3);
         return totalStable + totalStbt;
     }
@@ -1052,66 +1053,118 @@ contract MatrixUno is ERC4626 {
 
     /**@notice updates user balances for transferring xUNO tokens */
     function _updatesBalance(address from, address to, uint256 value) private {
-        if (value > viewTotalBalance(from)) {
+        uint totalBalance = viewTotalBalance(from);
+        if (value > totalBalance) {
             revert MatrixUno__InsufficientBalance(
                 value,
                 viewTotalBalance(from)
             );
         }
-        uint8[4] memory tokens = claimInfoMap[from].spendingOrder;
-        if (tokens[0] + tokens[1] + tokens[2] + tokens[3] == 0) {
-            tokens = [0, 1, 2, 3];
+        bool spendSTBT = claimInfoMap[from].spendStbt;
+        uint256 remaining = value;
+        // 1st half
+        if (spendSTBT) {
+            _updateStbt(from, to, remaining);
+        } else {
+            _updateStable(from, to, remaining);
         }
-        console.log("value:", value);
-        console.log("balance:", claimInfoMap[from].balances[4]);
-        int128 portion = value.divu(claimInfoMap[from].balances[4]);
-        uint256 totalBalance = viewTotalBalance(from);
-        if (from == uno) {
-            totalBalance -= unoDepositAmount;
+        // 2nd half
+        if (remaining > 0) {
+            if (spendSTBT) {
+                _updateStable(from, to, remaining);
+            } else {
+                _updateStbt(from, to, remaining);
+            }
         }
-        uint256 remaining = portion.mulu(totalBalance);
-        console.log("remaining:", remaining);
+    }
+
+    /**@notice used to update STBT balance inside `_updatesBalances` */
+    function _updateStbt(
+        address from,
+        address to,
+        uint256 remaining
+    ) private returns (uint) {
+        uint stbtBal = viewBalance(from, 3);
+        if (remaining <= stbtBal) {
+            claimInfoMap[from].balances[3] -= remaining;
+            claimInfoMap[to].balances[3] += remaining;
+            return 0;
+        } else {
+            claimInfoMap[from].balances[3] = 0;
+            claimInfoMap[to].balances[3] += stbtBal;
+            return remaining - stbtBal;
+        }
+    }
+
+    function _updateStable(
+        address from,
+        address to,
+        uint256 remaining
+    ) private returns (uint) {
+        uint8[3] memory tokens = claimInfoMap[from].spendingOrder;
         uint256 firstBalance = viewBalance(from, tokens[0]);
         uint256 secondBalance = viewBalance(from, tokens[1]);
         uint256 thirdBalance = viewBalance(from, tokens[2]);
-        if (remaining > firstBalance) {
-            remaining -= firstBalance;
-            claimInfoMap[to].balances[tokens[0]] += firstBalance;
-            claimInfoMap[from].balances[tokens[0]] = 0;
+        uint256 xUnoBalance = viewBalance(from, 4);
+        if (xUnoBalance > remaining) {
+            int128 portion = xUnoBalance.divu(remaining);
+            uint sRemaining = portion.mulu(viewTotalStableBalance(from));
+            // 1st Stable
+            if (firstBalance > sRemaining) {
+                claimInfoMap[from].balances[tokens[0]] -= sRemaining;
+                claimInfoMap[to].balances[tokens[0]] += sRemaining;
+                sRemaining = 0;
+            } else {
+                claimInfoMap[from].balances[tokens[0]] = 0;
+                claimInfoMap[to].balances[tokens[0]] += firstBalance;
+                sRemaining -= firstBalance;
+            }
+            // 2nd Stable
+            if (secondBalance > sRemaining && sRemaining > 0) {
+                claimInfoMap[from].balances[tokens[1]] -= sRemaining;
+                claimInfoMap[to].balances[tokens[1]] += sRemaining;
+                sRemaining = 0;
+            } else {
+                claimInfoMap[from].balances[tokens[1]] = 0;
+                claimInfoMap[to].balances[tokens[1]] += secondBalance;
+                sRemaining -= secondBalance;
+            }
+            // 3rd Stable
+            if (thirdBalance > sRemaining && sRemaining > 0) {
+                claimInfoMap[from].balances[tokens[2]] -= sRemaining;
+                claimInfoMap[to].balances[tokens[2]] += sRemaining;
+                sRemaining = 0;
+            } else {
+                claimInfoMap[from].balances[tokens[2]] = 0;
+                claimInfoMap[to].balances[tokens[2]] += thirdBalance;
+                sRemaining -= thirdBalance;
+            }
+            claimInfoMap[from].balances[4] -= remaining;
+            claimInfoMap[to].balances[4] += remaining;
+            return 0;
         } else {
-            claimInfoMap[from].balances[tokens[0]] -= remaining;
-            claimInfoMap[to].balances[tokens[0]] += remaining;
-            remaining = 0;
+            for (uint i; i < 5; i++) {
+                if (i != 3) {
+                    claimInfoMap[from].balances[i] = 0;
+                    uint stableBalance = viewBalance(from, i);
+                    claimInfoMap[to].balances[i] += stableBalance;
+                }
+            }
+            return remaining - xUnoBalance;
+            // claimInfoMap[from].balances[0] = 0;
+            // claimInfoMap[to].balances[0] += firstBalance;
+            // claimInfoMap[from].balances[1] = 0;
+            // claimInfoMap[to].balances[1] = secondBalance;
+            // claimInfoMap[from].balances[2] = 0;
+            // claimInfoMap[to].balances[2] = thirdBalance;
+            // claimInfoMap[from].balances[4] = 0;
+            // claimInfoMap[to].balances[4] += xUnoBalance;
+            // return remaining - xUnoBalance;
         }
-        if (remaining > secondBalance) {
-            remaining -= secondBalance;
-            claimInfoMap[to].balances[tokens[1]] += secondBalance;
-            claimInfoMap[from].balances[tokens[1]] = 0;
-        } else {
-            claimInfoMap[from].balances[tokens[1]] -= remaining;
-            claimInfoMap[to].balances[tokens[1]] += remaining;
-            remaining = 0;
-        }
-        if (remaining > thirdBalance) {
-            remaining -= thirdBalance;
-            claimInfoMap[to].balances[tokens[2]] += thirdBalance;
-            claimInfoMap[from].balances[tokens[2]] = 0;
-        } else {
-            claimInfoMap[from].balances[tokens[2]] -= remaining;
-            claimInfoMap[to].balances[tokens[2]] += remaining;
-            remaining = 0;
-        }
-        if (remaining > 0) {
-            claimInfoMap[from].balances[tokens[3]] -= remaining;
-            claimInfoMap[to].balances[tokens[3]] += remaining;
-            remaining = 0;
-        }
-        claimInfoMap[from].balances[4] -= value;
-        claimInfoMap[to].balances[4] += value;
     }
 
     /**@notice returns if the array contains duplicate numbers */
-    function _hasDuplicates(uint8[4] memory arr) internal pure returns (bool) {
+    function _hasDuplicates(uint8[3] memory arr) internal pure returns (bool) {
         uint256 length = arr.length;
         for (uint256 i = 0; i < length - 1; i++) {
             for (uint256 j = i + 1; j < length; j++) {
