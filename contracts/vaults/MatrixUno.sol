@@ -165,6 +165,8 @@ contract MatrixUno is ERC4626 {
     /**@notice emitted when user unstakes */
     event Unstake(uint256 amount, address unstaker);
 
+    event claimData(uint x, uint y);
+
     /**@notice used to check if the rewards are due to be updated */
     modifier calculateRewards() {
         _calculateRewards();
@@ -361,6 +363,7 @@ contract MatrixUno is ERC4626 {
         uint256 currentPeriod = rewardInfoArray.length - 1;
         uint256 totalRewards = 0;
         uint256 totalSRewards = 0;
+        emit claimData(lastClaimPeriod, currentPeriod);
         for (uint256 i = lastClaimPeriod; i < currentPeriod; i++) {
             (int128 stakedPortion, int128 sPortion) = viewPortionAt(i, addr);
             if (stakedPortion > 0) {
@@ -490,7 +493,7 @@ contract MatrixUno is ERC4626 {
         claimInfoMap[msg.sender].tokenPreference = token;
     }
 
-    // ERC-4626 functions
+    /* ERC-4626 functions */
 
     /**@notice ERC-4626 but with some custom logic for calls from `uno`
      *@dev See {IERC4626-deposit}. */
@@ -567,9 +570,7 @@ contract MatrixUno is ERC4626 {
         returns (bool)
     {
         address owner = _msgSender();
-
         _transfer(owner, to, value);
-        console.log("code reached");
         return true;
     }
 

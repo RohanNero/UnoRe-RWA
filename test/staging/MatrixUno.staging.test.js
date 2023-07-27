@@ -148,13 +148,15 @@ developmentChains.includes(network.name)
           }
           console.log("approved!")
           /** CALL STAKE WITH 50,000 USDT IF USER HAS NO SHARES */
-          //if (initialShares == 0) {
-          const stakeTx = await vault.connect(user2).stake(usdtDeposit, 2, 99, {
-            gasLimit: 700000,
-          })
-          await stakeTx.wait(1)
-          console.log("staked!")
-          //}
+          if (initialShares == 0) {
+            const stakeTx = await vault
+              .connect(user2)
+              .stake(usdtDeposit, 2, 99, {
+                gasLimit: 700000,
+              })
+            await stakeTx.wait(1)
+            console.log("staked!")
+          }
 
           const finalShares = await vault.balanceOf(user2.address)
           const finalAssets = await stbt.balanceOf(user2.address)
@@ -163,7 +165,7 @@ developmentChains.includes(network.name)
           console.log("FinalUserAssets:", finalAssets.toString())
         })
       })
-      describe.only("performUpkeep", function () {
+      describe("performUpkeep", function () {
         it("MOCK SENDING REWARDS", async function () {
           const initialShares = await vault.balanceOf(deployer.address)
           const initialVaultAssets = await stbt.balanceOf(vault.address)
@@ -229,13 +231,22 @@ developmentChains.includes(network.name)
           //   initialVaultAssets > stbtDeposit &&
           //   initialAllowance >= xUnoTransfer
           // ) {
+          // if (xUnoTransfer > 5e23) {
+          // const unstakeTx = await vault.connect(user).unstake(half, 1, 99, {
+          //   gasLimit: 7000000,
+          // })
+          //console.log("unstaked!")
+          // } else {
           const unstakeTx = await vault
             .connect(user)
             .unstake(xUnoTransfer, 0, 99, {
               gasLimit: 7000000,
             })
-          await unstakeTx.wait(1)
           console.log("unstaked!")
+          //}
+
+          // await unstakeTx.wait(1)
+
           //}
           const rewards = await vault.viewTotalClaimed()
           console.log("totalClaimed:", rewards.toString())
@@ -374,14 +385,14 @@ developmentChains.includes(network.name)
             const approveTx = await vault
               .connect(user)
               .approve(vault.address, xUnoTransfer)
-            await approveTx.wait(3)
+            await approveTx.wait(1)
             console.log("approved!")
           }
           console.log("InitialAllowance:", initialAllowance.toString())
           const unstakeTx = await vault
             .connect(user)
             .withdraw(xUnoTransfer, user.address, user.address, {
-              gasLimit: 3000000,
+              gasLimit: 7000000,
             })
           await unstakeTx.wait(1)
           console.log("withdrawn!")
@@ -405,7 +416,7 @@ developmentChains.includes(network.name)
 
           if (initialAllowance < stbtDeposit) {
             const approveTx = await vault.approve(vault.address, stbtDeposit)
-            await approveTx.wait(3)
+            await approveTx.wait(1)
             console.log("approved!")
           }
           console.log("InitialAllowance:", initialAllowance.toString())
@@ -436,7 +447,7 @@ developmentChains.includes(network.name)
           console.log("final:", final.toString())
         })
       })
-      describe("transfer", function () {
+      describe.only("transfer", function () {
         it("should transfer xUNO correctly", async function () {
           const initBal = await vault.viewBalance(deployer.address, 4)
           console.log("initBal:", initBal.toString())
