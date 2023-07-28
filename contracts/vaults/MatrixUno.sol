@@ -1039,13 +1039,6 @@ contract MatrixUno is ERC4626 {
             );
             return portion.mulu(rewardInfoArray[length - 1].rewards);
         }
-
-        // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked.
-        // Uno portion/unaccounted portion is 1/2 of total rewards
-        // 200,000 - 50,000 = 150,000
-        // 150,000 / 300,000 = .5
-        // unaccounted portion = ((unoDepositAmount - totalStaked) / currentBalance)
-        // unaccountedRewards = rewards * unaccountedPortion
     }
 
     /**@notice updates user balances for transferring xUNO tokens */
@@ -1065,13 +1058,11 @@ contract MatrixUno is ERC4626 {
         bool spendSTBT = claimInfoMap[from].spendStbt;
         uint256 remaining = value;
         console.log("first remaining:", remaining);
-        // 1st half
         if (spendSTBT) {
             remaining = _updateStbt(from, to, remaining);
         } else {
             remaining = _updateStable(from, to, remaining);
         }
-        // 2nd half
         console.log("halftime remaining:", remaining);
         if (remaining > 0) {
             if (spendSTBT) {
@@ -1138,13 +1129,11 @@ contract MatrixUno is ERC4626 {
             return 0;
         } else {
             for (uint8 i; i < 3; i++) {
-                //if (i != 3) {
                 console.log("i:", i);
                 console.log("uno STBT:", viewBalance(from, 3));
                 uint stableBalance = viewBalance(from, i);
                 claimInfoMap[to].balances[i] += stableBalance;
                 claimInfoMap[from].balances[i] = 0;
-                //}
             }
             console.log("code reached:", xUnoBalance);
             claimInfoMap[from].balances[4] = 0;
