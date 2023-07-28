@@ -76,7 +76,7 @@ If you see `false` console logged in the terminal, run the test command again. S
 
 #### Example contracts deployed on Goerli:
 
-- MatrixUno Vault [0x3a5124842769b541e6e9bb3a3bed96fbc0137d13](https://goerli.etherscan.io/address/0x3a5124842769b541e6e9bb3a3bed96fbc0137d13)
+- MatrixUno Vault [0xdeb13a582f7fa448cb3e4f7b8c404635d73352e7](https://goerli.etherscan.io/address/0xdeb13a582f7fa448cb3e4f7b8c404635d73352e7)
 
 - Mock Curve Pool [0x1Ae0AA56D9307bC7b13a4d43996f68892DB42911](https://goerli.etherscan.io/address/0x1Ae0AA56D9307bC7b13a4d43996f68892DB42911)
 
