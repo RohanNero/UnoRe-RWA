@@ -362,6 +362,7 @@ contract MatrixUno is ERC4626 {
         // }
         uint256 lastClaimPeriod = claimInfoMap[addr].lastClaimPeriod;
         uint256 currentPeriod = rewardInfoArray.length - 1;
+        claimInfoMap[addr].lastClaimPeriod = uint16(currentPeriod);
         uint256 totalRewards = 0;
         uint256 totalSRewards = 0;
         emit claimData(lastClaimPeriod, currentPeriod);
@@ -389,9 +390,6 @@ contract MatrixUno is ERC4626 {
                 minimumPercentage
             );
             claimInfoMap[addr].totalAmountClaimed += totalRewards;
-            claimInfoMap[addr].lastClaimPeriod = uint16(
-                rewardInfoArray.length - 1
-            );
             if (token == 2) {
                 IUSDT(stables[token]).transfer(addr, minimumReceive);
             } else {
@@ -557,8 +555,7 @@ contract MatrixUno is ERC4626 {
         revert();
     }
 
-    // ERC-20 functions
-
+    /** ERC-20 functions */
     /**@notice overridden ERC-20 transfer function to include `updatesBalance` modifier */
     function transfer(
         address to,
@@ -725,7 +722,7 @@ contract MatrixUno is ERC4626 {
         }
         uint256 stbtDeposited = claimInfoMap[addr].balances[3];
         uint256 xunoBalance = claimInfoMap[addr].balances[4];
-        if (msg.sender == uno) {
+        if (addr == uno) {
             stbtDeposited -= unoDepositAmount;
         }
         if (xunoBalance > 0 && rewardInfoArray[period].unoDeposit > 0) {
@@ -1054,6 +1051,11 @@ contract MatrixUno is ERC4626 {
     /**@notice updates user balances for transferring xUNO tokens */
     function _updatesBalance(address from, address to, uint256 value) private {
         uint totalBalance = viewTotalBalance(from);
+        console.log("total:", totalBalance);
+        console.log("depos:", unoDepositAmount);
+        if (from == uno) {
+            totalBalance -= unoDepositAmount;
+        }
         if (value > totalBalance) {
             revert MatrixUno__InsufficientBalance(
                 value,
@@ -1062,18 +1064,20 @@ contract MatrixUno is ERC4626 {
         }
         bool spendSTBT = claimInfoMap[from].spendStbt;
         uint256 remaining = value;
+        console.log("first remaining:", remaining);
         // 1st half
         if (spendSTBT) {
-            _updateStbt(from, to, remaining);
+            remaining = _updateStbt(from, to, remaining);
         } else {
-            _updateStable(from, to, remaining);
+            remaining = _updateStable(from, to, remaining);
         }
         // 2nd half
+        console.log("halftime remaining:", remaining);
         if (remaining > 0) {
             if (spendSTBT) {
-                _updateStable(from, to, remaining);
+                remaining = _updateStable(from, to, remaining);
             } else {
-                _updateStbt(from, to, remaining);
+                remaining = _updateStbt(from, to, remaining);
             }
         }
     }
@@ -1085,6 +1089,11 @@ contract MatrixUno is ERC4626 {
         uint256 remaining
     ) private returns (uint) {
         uint stbtBal = viewBalance(from, 3);
+        if (from == uno) {
+            stbtBal -= unoDepositAmount;
+        }
+        console.log("remaining:", remaining);
+        console.log("stbtBal:", stbtBal);
         if (remaining <= stbtBal) {
             claimInfoMap[from].balances[3] -= remaining;
             claimInfoMap[to].balances[3] += remaining;
@@ -1128,13 +1137,16 @@ contract MatrixUno is ERC4626 {
             claimInfoMap[to].balances[4] += remaining;
             return 0;
         } else {
-            for (uint8 i; i < 5; i++) {
-                if (i != 3) {
-                    claimInfoMap[from].balances[i] = 0;
-                    uint stableBalance = viewBalance(from, i);
-                    claimInfoMap[to].balances[i] += stableBalance;
-                }
+            for (uint8 i; i < 3; i++) {
+                //if (i != 3) {
+                console.log("i:", i);
+                console.log("uno STBT:", viewBalance(from, 3));
+                uint stableBalance = viewBalance(from, i);
+                claimInfoMap[to].balances[i] += stableBalance;
+                claimInfoMap[from].balances[i] = 0;
+                //}
             }
+            console.log("code reached:", xUnoBalance);
             claimInfoMap[from].balances[4] = 0;
             claimInfoMap[to].balances[4] += xUnoBalance;
             return remaining - xUnoBalance;

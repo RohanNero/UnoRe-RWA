@@ -35,7 +35,7 @@ developmentChains.includes(network.name)
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
       })
-      describe("stake", function () {
+      describe.only("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
@@ -224,30 +224,22 @@ developmentChains.includes(network.name)
             await approveTx.wait(1)
             console.log("approved!")
           }
-          console.log(
-            initialVaultAssets > stbtDeposit && initialAllowance >= xUnoTransfer
-          )
-          // if (
-          //   initialVaultAssets > stbtDeposit &&
-          //   initialAllowance >= xUnoTransfer
-          // ) {
-          // if (xUnoTransfer > 5e23) {
-          // const unstakeTx = await vault.connect(user).unstake(half, 1, 99, {
-          //   gasLimit: 7000000,
-          // })
-          //console.log("unstaked!")
-          // } else {
-          const unstakeTx = await vault
-            .connect(user)
-            .unstake(xUnoTransfer, 0, 99, {
+          const bal = await vault.viewBalance(user.address, 0)
+          console.log(xUnoTransfer > bal)
+          if (xUnoTransfer > bal) {
+            const unstakeTx = await vault.connect(user).unstake(half, 1, 99, {
               gasLimit: 7000000,
             })
-          console.log("unstaked!")
-          //}
+            console.log("unstaked!")
+          } else {
+            const unstakeTx = await vault
+              .connect(user)
+              .unstake(xUnoTransfer, 0, 99, {
+                gasLimit: 7000000,
+              })
+            console.log("unstaked!")
+          }
 
-          // await unstakeTx.wait(1)
-
-          //}
           const rewards = await vault.viewTotalClaimed()
           console.log("totalClaimed:", rewards.toString())
         })
@@ -437,7 +429,7 @@ developmentChains.includes(network.name)
           // )
         })
       })
-      describe("unoClaim", function () {
+      describe.only("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())
@@ -447,7 +439,7 @@ developmentChains.includes(network.name)
           console.log("final:", final.toString())
         })
       })
-      describe.only("transfer", function () {
+      describe("transfer", function () {
         it("should transfer xUNO correctly", async function () {
           const initBal = await vault.viewBalance(deployer.address, 4)
           console.log("initBal:", initBal.toString())
