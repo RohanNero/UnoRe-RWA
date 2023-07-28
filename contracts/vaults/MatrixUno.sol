@@ -640,7 +640,7 @@ contract MatrixUno is ERC4626 {
                     currentInfo.claimed +
                     currentInfo.withdrawn) -
                 (currentInfo.previousPeriodBalance + currentInfo.deposited);
-            unaccountedRewards += calculateUnaccountedRewards();
+            unaccountedRewards += _calculateUnaccountedRewards();
         }
         rewardInfoArray[length - 1].endTime = block.timestamp;
         rewardInfoArray.push(
@@ -857,28 +857,6 @@ contract MatrixUno is ERC4626 {
         return i_interval;
     }
 
-    /**@notice returns the portion of rewards that are unaccounted for
-     *@dev all unaccounted rewards are claimable by Uno Re's EOA */
-    function calculateUnaccountedRewards() public view returns (uint256) {
-        uint256 length = rewardInfoArray.length;
-        if (unoDepositAmount <= accountedForStbt) {
-            return 0;
-        } else {
-            uint256 remainder = unoDepositAmount - accountedForStbt;
-            int128 portion = remainder.divu(
-                rewardInfoArray[length - 1].currentBalance
-            );
-            return portion.mulu(rewardInfoArray[length - 1].rewards);
-        }
-
-        // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked.
-        // Uno portion/unaccounted portion is 1/2 of total rewards
-        // 200,000 - 50,000 = 150,000
-        // 150,000 / 300,000 = .5
-        // unaccounted portion = ((unoDepositAmount - totalStaked) / currentBalance)
-        // unaccountedRewards = rewards * unaccountedPortion
-    }
-
     /**@notice returns the amount of rewards that can be claimed by uno since they dont belong to any user
      *@dev current value of the `unaccountedRewards` variable */
     function viewUnaccountedRewards() external view returns (uint256) {
@@ -984,7 +962,7 @@ contract MatrixUno is ERC4626 {
         uint256 earned,
         uint8 token,
         uint8 minimumPercentage
-    ) private returns (uint256) {
+    ) internal returns (uint256) {
         if (!_isValidPercent(minimumPercentage)) {
             revert MatrixUno__InvalidPercent(minimumPercentage);
         }
@@ -1042,14 +1020,14 @@ contract MatrixUno is ERC4626 {
     }
 
     /**@notice checks upkeep and if true, calls performUpkeep */
-    function _calculateRewards() private {
+    function _calculateRewards() internal {
         if (this.checkUpkeep()) {
             this.performUpkeep();
         }
     }
 
     /**@notice updates user balances for transferring xUNO tokens */
-    function _updatesBalance(address from, address to, uint256 value) private {
+    function _updatesBalance(address from, address to, uint256 value) internal {
         uint totalBalance = viewTotalBalance(from);
         console.log("total:", totalBalance);
         console.log("depos:", unoDepositAmount);
@@ -1087,7 +1065,7 @@ contract MatrixUno is ERC4626 {
         address from,
         address to,
         uint256 remaining
-    ) private returns (uint) {
+    ) internal returns (uint) {
         uint stbtBal = viewBalance(from, 3);
         if (from == uno) {
             stbtBal -= unoDepositAmount;
@@ -1109,7 +1087,7 @@ contract MatrixUno is ERC4626 {
         address from,
         address to,
         uint256 remaining
-    ) private returns (uint) {
+    ) internal returns (uint) {
         uint8[3] memory tokens = claimInfoMap[from].spendingOrder;
         uint256 xUnoBalance = viewBalance(from, 4);
         uint256[3] memory balances = [
@@ -1205,5 +1183,27 @@ contract MatrixUno is ERC4626 {
         Math.Rounding
     ) internal pure override returns (uint256) {
         revert();
+    }
+
+    /**@notice returns the portion of rewards that are unaccounted for
+     *@dev all unaccounted rewards are claimable by Uno Re's EOA */
+    function _calculateUnaccountedRewards() internal view returns (uint256) {
+        uint256 length = rewardInfoArray.length;
+        if (unoDepositAmount <= accountedForStbt) {
+            return 0;
+        } else {
+            uint256 remainder = unoDepositAmount - accountedForStbt;
+            int128 portion = remainder.divu(
+                rewardInfoArray[length - 1].currentBalance
+            );
+            return portion.mulu(rewardInfoArray[length - 1].rewards);
+        }
+
+        // Example Scenario: 300,000 total STBT. 200,000 from UNO. 100,000 Deposited. 50,000 stablecoins staked.
+        // Uno portion/unaccounted portion is 1/2 of total rewards
+        // 200,000 - 50,000 = 150,000
+        // 150,000 / 300,000 = .5
+        // unaccounted portion = ((unoDepositAmount - totalStaked) / currentBalance)
+        // unaccountedRewards = rewards * unaccountedPortion
     }
 }
