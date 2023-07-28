@@ -35,7 +35,7 @@ developmentChains.includes(network.name)
         /** PRELIMINARY CONSOLE LOGS */
         //console.log(vault.address)
       })
-      describe.only("stake", function () {
+      describe("stake", function () {
         it("initial STBT deposit mints 200,000 xUNO", async function () {
           const initialVaultShares = await vault.balanceOf(vault.address)
           console.log("InitialVaultShares:", initialVaultShares.toString())
@@ -429,7 +429,7 @@ developmentChains.includes(network.name)
           // )
         })
       })
-      describe.only("unoClaim", function () {
+      describe("unoClaim", function () {
         it("allows uno to claim unaccountedRewards", async function () {
           const init = await vault.viewUnaccountedRewards()
           console.log("init:", init.toString())
