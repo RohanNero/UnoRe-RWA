@@ -1033,7 +1033,7 @@ contract MatrixUno is ERC4626 {
         if (unoDepositAmount <= accountedForStbt) {
             return 0;
         } else {
-            uint256 remainder = unoDepositAmount - accountedForStbt;
+            uint256 remainder = (unoDepositAmount - accountedForStbt) + 1;
             int128 portion = remainder.divu(
                 rewardInfoArray[length - 1].currentBalance
             );
