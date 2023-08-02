@@ -15,4 +15,8 @@ interface ISingleSidedInsurancePool {
     function lpTransfer(address _from, address _to, uint256 _amount) external;
 
     function riskPool() external view returns (address);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7c475f15903075f6cac3d37ea7b64bebb43815c1
