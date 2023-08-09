@@ -9,8 +9,4 @@ interface IUSDT {
     function transfer(address _to, uint256 _value) external;
 
     function balanceOf(address who) external view returns (uint256);
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 0683404acad624a2f7425d8113cc0ddffe993b0c
