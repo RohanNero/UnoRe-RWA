@@ -58,7 +58,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 7,
+            runs: 7000,
           },
         },
       },
@@ -128,6 +128,6 @@ module.exports = {
     disambiguatePaths: false,
     runOnCompile: true,
     strict: true,
-    only: ['vaults/MatrixUno.sol'],
+    only: ["vaults/MatrixUno.sol"],
   },
 }
